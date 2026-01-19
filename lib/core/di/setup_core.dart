@@ -5,5 +5,5 @@ import '../services/auth_storage_service.dart';
 
 Future<void> setupCore() async {
   Get.lazyPut(() => ApiClient(), fenix: true);
-  Get.lazyPut(() => AuthStorageService());
+  Get.lazyPut(() => AuthStorageService(), fenix: true);
 }

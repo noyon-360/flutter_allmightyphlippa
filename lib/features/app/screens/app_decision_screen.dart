@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/app_logo.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart';
+import '../../bottom_nav/screens/bottom_nav_screen.dart';
 import '/features/auth/screens/welcome_screen.dart';
 import 'package:get/get.dart';
 
@@ -37,11 +38,7 @@ class _AppDecisionScreenState extends State<AppDecisionScreen> {
         final bool isAuth = await _authStorageService.isAuthenticated();
 
         if (isAuth) {
-          // Get.offAll(
-          //   () => BottomNavScreen(role: userRole ?? UserRole.patient),
-          //   /// () => BottomNavScreen(role: UserRole.pharmacist), `Note for Test`
-          //   transition: Transition.fadeIn,
-          // );
+          Get.offAll(() => BottomNavScreen(), transition: Transition.fadeIn);
         } else {
           Get.offAll(() => const LoginScreen(), transition: Transition.fadeIn);
         }

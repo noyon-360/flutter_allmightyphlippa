@@ -48,6 +48,7 @@ class AuthEndpoints {
   static const String _base = '${ApiConstants.baseUrl}/auth';
 
   final String login = '$_base/login';
+  final String register = '$_base/register';
 
   final String forgetPassSendOtp = '$_base/forget';
   final String verifyOtp = '$_base/verify-otp';

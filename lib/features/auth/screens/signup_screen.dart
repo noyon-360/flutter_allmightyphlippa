@@ -1,381 +1,270 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutx_core/core/theme/gap.dart';
-// import 'package:flutx_core/core/validation/validators.dart';
-// import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/app_logo.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/button_widgets.dart';
+import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
+    hide Icons;
+import 'package:flutter_almightyflippa/features/auth/controller/auth_controller.dart';
+import 'package:flutx_core/flutx_core.dart';
+import 'package:get/get.dart';
 
-// import '../../../../core/constants/assest_const.dart';
-// import '../../../../core/common/widgets/app_scaffold.dart';
-// import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/common/widgets/app_scaffold.dart';
+import '../../../../core/extensions/input_decoration_extensions.dart';
 
-// import 'home_screen.dart';
+class SignupScreen extends StatelessWidget {
+  const SignupScreen({super.key});
 
-// class SignupScreen extends StatefulWidget {
-//   const SignupScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final authCtrl = Get.find<AuthController>();
 
-//   @override
-//   State<SignupScreen> createState() => _SignupScreenState();
-// }
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: AppScaffold(
+        body: Align(
+          alignment: Alignment.topCenter,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 600,
+                    minWidth: 300,
+                  ),
+                  child: Form(
+                    key: authCtrl.registerCtrl.registerFormKey,
+                    child: IntrinsicHeight(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 60),
+                          Center(
+                            child: AppLogo(
+                              height: 134,
+                              width: 134,
+                              borderRadius: 22.69,
+                              images: AssetsConstants.images.logo,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(height: 40),
 
-// class _SignupScreenState extends State<SignupScreen> {
-//   final _formKey = GlobalKey<FormState>();
-//   final FocusNode _usernameFocus = FocusNode();
-//   final FocusNode _emailFocus = FocusNode();
-//   final FocusNode _passwordFocus = FocusNode();
-//   final FocusNode _confirmPasswordFocus = FocusNode();
+                          // ... rest of the children
+                          Text(
+                            'Create Your Account',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.primaryWhite,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 24,
+                            ),
+                          ),
 
-//   final TextEditingController _usernameController = TextEditingController();
-//   final TextEditingController _emailController = TextEditingController();
-//   final TextEditingController _passwordController = TextEditingController();
-//   final TextEditingController _confirmPasswordController =
-//       TextEditingController();
+                          const SizedBox(height: 30),
 
-//   final ValueNotifier<bool> _obscurePassword = ValueNotifier<bool>(true);
-//   final ValueNotifier<bool> _obscureConfirmPassword = ValueNotifier<bool>(true);
-//   final ValueNotifier<bool> _agreeToTerms = ValueNotifier<bool>(false);
+                          Obx(
+                            () =>
+                                authCtrl
+                                    .registerCtrl
+                                    .registerErrorMessage
+                                    .value
+                                    .isNotEmpty
+                                ? Center(
+                                    child: Text(
+                                      authCtrl
+                                          .registerCtrl
+                                          .registerErrorMessage
+                                          .value,
+                                      style: TextStyle(color: AppColors.red),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
 
-//   @override
-//   void dispose() {
-//     _obscurePassword.dispose();
-//     _obscureConfirmPassword.dispose();
-//     _agreeToTerms.dispose();
-//     _usernameController.dispose();
-//     _emailController.dispose();
-//     _passwordController.dispose();
-//     _confirmPasswordController.dispose();
-//     _usernameFocus.dispose();
-//     _emailFocus.dispose();
-//     _passwordFocus.dispose();
-//     _confirmPasswordFocus.dispose();
-//     super.dispose();
-//   }
+                          const SizedBox(height: 12),
 
-//   void _submit() async {
-//     if (!_formKey.currentState!.validate()) return;
-//     if (!_agreeToTerms.value) {
-//       Get.snackbar('Error', 'Please agree to Terms & Conditions');
-//       return;
-//     }
+                          // Name field
+                          TextFormField(
+                            controller: authCtrl.registerCtrl.nameController,
+                            focusNode: authCtrl.registerCtrl.nameFocus,
+                            keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.next,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.primaryWhite,
+                            ),
+                            decoration: context.primaryInputDecoration.copyWith(
+                              hintText: "Name",
+                            ),
+                            validator: Validators.name,
+                            onFieldSubmitted: (_) => FocusScope.of(
+                              context,
+                            ).requestFocus(authCtrl.registerCtrl.emailFocus),
+                          ),
 
-//     if (mounted) FocusScope.of(context).unfocus();
-//     Get.offAll(() => const HomeScreen());
-//   }
+                          Gap.h16,
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: () => FocusScope.of(context).unfocus(),
-//       child: AppScaffold(
-//         backgroundColor: AppColors.scaffoldBackground,
-//         body: SafeArea(
-//           child: Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-//             child: Column(
-//               children: [
-//                 Expanded(
-//                   child: SingleChildScrollView(
-//                     child: Form(
-//                       key: _formKey,
-//                       child: Column(
-//                         mainAxisAlignment: MainAxisAlignment.center,
-//                         crossAxisAlignment: CrossAxisAlignment.center,
-//                         children: [
-//                           SizedBox(height: 60),
-//                           // Logo
-//                           Image.asset(
-//                             AssetsConstants.logo,
-//                             height: 100,
-//                             width: 100,
-//                           ),
-//                           SizedBox(height: 40),
+                          // Email field
+                          TextFormField(
+                            controller: authCtrl.registerCtrl.emailController,
+                            focusNode: authCtrl.registerCtrl.emailFocus,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.primaryWhite,
+                            ),
+                            decoration: context.primaryInputDecoration.copyWith(
+                              hintText: "Email",
+                            ),
+                            validator: Validators.email,
+                            onFieldSubmitted: (_) => FocusScope.of(
+                              context,
+                            ).requestFocus(authCtrl.registerCtrl.passwordFocus),
+                            autofillHints: const [AutofillHints.email],
+                          ),
 
-//                           Text(
-//                             'Create Your Account',
-//                             style: TextStyle(
-//                               color: AppColors.white,
-//                               fontWeight: FontWeight.w700,
-//                               fontSize: 24,
-//                             ),
-//                           ),
+                          Gap.h16,
 
-//                           SizedBox(height: 30),
+                          // Password field
+                          Obx(
+                            () => TextFormField(
+                              controller:
+                                  authCtrl.registerCtrl.passwordController,
+                              focusNode: authCtrl.registerCtrl.passwordFocus,
+                              obscureText:
+                                  authCtrl.registerCtrl.obscurePassword.value,
+                              textInputAction: TextInputAction.next,
+                              style: TextStyle(color: AppColors.primaryWhite),
+                              decoration: context.primaryInputDecoration
+                                  .copyWith(
+                                    hintText: "Password",
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        authCtrl
+                                                .registerCtrl
+                                                .obscurePassword
+                                                .value
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: AppColors.primaryGray,
+                                      ),
+                                      onPressed: () => authCtrl.registerCtrl
+                                          .toggleObscurePassword(),
+                                    ),
+                                  ),
+                              validator: Validators.password,
+                              onFieldSubmitted: (_) =>
+                                  FocusScope.of(context).requestFocus(
+                                    authCtrl.registerCtrl.confirmPasswordFocus,
+                                  ),
+                            ),
+                          ),
 
-//                           // Name field
-//                           TextFormField(
-//                             controller: _usernameController,
-//                             focusNode: _usernameFocus,
-//                             keyboardType: TextInputType.text,
-//                             textInputAction: TextInputAction.next,
-//                             style: TextStyle(
-//                               fontSize: 16,
-//                               color: AppColors.white,
-//                             ),
-//                             cursorColor: AppColors.white,
-//                             decoration: InputDecoration(
-//                               hintText: "Name",
-//                               hintStyle: TextStyle(color: AppColors.hintText),
-//                               filled: true,
-//                               fillColor: Colors.transparent,
-//                               contentPadding: const EdgeInsets.symmetric(
-//                                 horizontal: 18,
-//                                 vertical: 16,
-//                               ),
-//                               enabledBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(
-//                                   color: AppColors.inputBorder,
-//                                 ),
-//                               ),
-//                               focusedBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(color: AppColors.white),
-//                               ),
-//                               errorBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(color: AppColors.error),
-//                               ),
-//                               focusedErrorBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(color: AppColors.error),
-//                               ),
-//                             ),
-//                             validator: Validators.name,
-//                             onFieldSubmitted: (_) => FocusScope.of(
-//                               context,
-//                             ).requestFocus(_emailFocus),
-//                           ),
+                          Gap.h16,
 
-//                           Gap.h16,
+                          // Confirm Password field
+                          Obx(
+                            () => TextFormField(
+                              controller: authCtrl
+                                  .registerCtrl
+                                  .confirmPasswordController,
+                              focusNode:
+                                  authCtrl.registerCtrl.confirmPasswordFocus,
+                              obscureText: authCtrl
+                                  .registerCtrl
+                                  .obscureConfirmPassword
+                                  .value,
+                              textInputAction: TextInputAction.done,
+                              style: TextStyle(color: AppColors.primaryWhite),
+                              decoration: context.primaryInputDecoration
+                                  .copyWith(
+                                    hintText: "Confirm Password",
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        authCtrl
+                                                .registerCtrl
+                                                .obscureConfirmPassword
+                                                .value
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: AppColors.primaryGray,
+                                      ),
+                                      onPressed: () => authCtrl.registerCtrl
+                                          .toggleObscureConfirmPassword(),
+                                    ),
+                                  ),
+                              validator: (value) => Validators.confirmPassword(
+                                authCtrl.registerCtrl.passwordController.text,
+                                value,
+                              ),
+                              onFieldSubmitted: (_) =>
+                                  authCtrl.registerCtrl.register(),
+                            ),
+                          ),
 
-//                           // Email field
-//                           TextFormField(
-//                             controller: _emailController,
-//                             focusNode: _emailFocus,
-//                             keyboardType: TextInputType.emailAddress,
-//                             textInputAction: TextInputAction.next,
-//                             style: TextStyle(
-//                               fontSize: 16,
-//                               color: AppColors.white,
-//                             ),
-//                             cursorColor: AppColors.white,
-//                             decoration: InputDecoration(
-//                               hintText: "Email",
-//                               hintStyle: TextStyle(color: AppColors.hintText),
-//                               filled: true,
-//                               fillColor: Colors.transparent,
-//                               contentPadding: const EdgeInsets.symmetric(
-//                                 horizontal: 18,
-//                                 vertical: 16,
-//                               ),
-//                               enabledBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(
-//                                   color: AppColors.inputBorder,
-//                                 ),
-//                               ),
-//                               focusedBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(color: AppColors.white),
-//                               ),
-//                               errorBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(color: AppColors.error),
-//                               ),
-//                               focusedErrorBorder: OutlineInputBorder(
-//                                 borderRadius: BorderRadius.circular(8),
-//                                 borderSide: BorderSide(color: AppColors.error),
-//                               ),
-//                             ),
-//                             validator: Validators.email,
-//                             onFieldSubmitted: (_) => FocusScope.of(
-//                               context,
-//                             ).requestFocus(_passwordFocus),
-//                             autofillHints: const [AutofillHints.email],
-//                           ),
+                          Gap.h16,
 
-//                           Gap.h16,
+                          // Terms and Conditions
+                          Obx(
+                            () => CheckboxListTile(
+                              value: authCtrl.registerCtrl.agreeToTerms.value,
+                              onChanged: (value) =>
+                                  authCtrl.registerCtrl.toggleAgreeToTerms(),
+                              title: Text(
+                                "I agree to Terms & Conditions",
+                                style: TextStyle(color: AppColors.primaryWhite),
+                              ),
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
+                              activeColor: AppColors.primaryWhite,
+                              checkColor: AppColors.primaryBlack,
+                            ),
+                          ),
 
-//                           // Password field
-//                           ValueListenableBuilder<bool>(
-//                             valueListenable: _obscurePassword,
-//                             builder: (context, obscure, _) {
-//                               return TextFormField(
-//                                 controller: _passwordController,
-//                                 focusNode: _passwordFocus,
-//                                 obscureText: obscure,
-//                                 textInputAction: TextInputAction.next,
-//                                 style: TextStyle(color: AppColors.white),
-//                                 cursorColor: AppColors.white,
-//                                 decoration: InputDecoration(
-//                                   hintText: "Password",
-//                                   hintStyle: TextStyle(
-//                                     color: AppColors.hintText,
-//                                   ),
-//                                   filled: true,
-//                                   fillColor: Colors.transparent,
-//                                   contentPadding: const EdgeInsets.symmetric(
-//                                     horizontal: 18,
-//                                     vertical: 16,
-//                                   ),
-//                                   enabledBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.inputBorder,
-//                                     ),
-//                                   ),
-//                                   focusedBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.white,
-//                                     ),
-//                                   ),
-//                                   errorBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.error,
-//                                     ),
-//                                   ),
-//                                   focusedErrorBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.error,
-//                                     ),
-//                                   ),
-//                                 ),
-//                                 validator: (value) {
-//                                   if (value == null || value.isEmpty) {
-//                                     return 'Password is required';
-//                                   }
-//                                   if (value.length < 6) {
-//                                     return 'Password must be at least 6 characters';
-//                                   }
-//                                   return null;
-//                                 },
-//                                 onFieldSubmitted: (_) => FocusScope.of(
-//                                   context,
-//                                 ).requestFocus(_confirmPasswordFocus),
-//                               );
-//                             },
-//                           ),
+                          Gap.h16,
 
-//                           Gap.h16,
+                          // Sign Up button
+                          PrimaryButton(
+                            text: "Sign up",
+                            onApiPressed: () =>
+                                authCtrl.registerCtrl.register(),
+                          ),
 
-//                           // Confirm Password field
-//                           ValueListenableBuilder<bool>(
-//                             valueListenable: _obscureConfirmPassword,
-//                             builder: (context, obscure, _) {
-//                               return TextFormField(
-//                                 controller: _confirmPasswordController,
-//                                 focusNode: _confirmPasswordFocus,
-//                                 obscureText: obscure,
-//                                 textInputAction: TextInputAction.done,
-//                                 style: TextStyle(color: AppColors.white),
-//                                 cursorColor: AppColors.white,
-//                                 decoration: InputDecoration(
-//                                   hintText: "Confirm Password",
-//                                   hintStyle: TextStyle(
-//                                     color: AppColors.hintText,
-//                                   ),
-//                                   filled: true,
-//                                   fillColor: Colors.transparent,
-//                                   contentPadding: const EdgeInsets.symmetric(
-//                                     horizontal: 18,
-//                                     vertical: 16,
-//                                   ),
-//                                   enabledBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.inputBorder,
-//                                     ),
-//                                   ),
-//                                   focusedBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.white,
-//                                     ),
-//                                   ),
-//                                   errorBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.error,
-//                                     ),
-//                                   ),
-//                                   focusedErrorBorder: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(8),
-//                                     borderSide: BorderSide(
-//                                       color: AppColors.error,
-//                                     ),
-//                                   ),
-//                                 ),
-//                                 validator: (value) {
-//                                   if (value != _passwordController.text) {
-//                                     return 'Passwords do not match';
-//                                   }
-//                                   return null;
-//                                 },
-//                                 onFieldSubmitted: (_) => _submit(),
-//                               );
-//                             },
-//                           ),
+                          Gap.h24,
 
-//                           Gap.h16,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Already have an account? ",
+                                style: TextStyle(color: AppColors.primaryGray),
+                              ),
+                              GestureDetector(
+                                onTap: () => Get.back(),
+                                child: Text(
+                                  'Sign in',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
 
-//                           // Sign Up button
-//                           SizedBox(
-//                             width: double.infinity,
-//                             height: 52,
-//                             child: ElevatedButton(
-//                               onPressed: _submit,
-//                               style: ElevatedButton.styleFrom(
-//                                 backgroundColor: AppColors.primaryButtonColor,
-//                                 foregroundColor: AppColors.primaryButtonText,
-//                                 shape: RoundedRectangleBorder(
-//                                   borderRadius: BorderRadius.circular(30),
-//                                 ),
-//                                 elevation: 0,
-//                               ),
-//                               child: Text(
-//                                 "Sign up",
-//                                 style: TextStyle(
-//                                   fontSize: 16,
-//                                   fontWeight: FontWeight.w600,
-//                                 ),
-//                               ),
-//                             ),
-//                           ),
-
-//                           SizedBox(height: 50),
-//                         ],
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//                 Padding(
-//                   padding: const EdgeInsets.only(bottom: 20.0),
-//                   child: Row(
-//                     mainAxisAlignment: MainAxisAlignment.center,
-//                     children: [
-//                       Text(
-//                         "Already have an account? ",
-//                         style: TextStyle(color: AppColors.secondaryText),
-//                       ),
-//                       GestureDetector(
-//                         onTap: () => Get.back(),
-//                         child: Text(
-//                           'Sign in',
-//                           style: TextStyle(
-//                             color: AppColors.white,
-//                             fontWeight: FontWeight.w600,
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
+                          const SizedBox(height: 50),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}

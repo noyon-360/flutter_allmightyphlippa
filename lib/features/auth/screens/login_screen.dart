@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import '../../../core/common/widgets/app_logo.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/extensions/input_decoration_extensions.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -26,158 +27,149 @@ class LoginScreen extends StatelessWidget {
           builder: (context, constraints) {
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Gap(h: 60),
-                      AppLogo(height: 80, images: AssetsConstants.images.logo),
-                      Gap.h40,
-                      Text(
-                        "Login To Your Account",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.primaryWhite,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
+                constraints: BoxConstraints(maxWidth: 600, minWidth: 300),
+                child: Form(
+                  key: authCtrl.loginCtrl.loginFormKey,
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Gap(h: 60),
+                        Center(
+                          child: AppLogo(
+                            height: 134,
+                            width: 134,
+                            borderRadius: 22.69,
+                            images: AssetsConstants.images.logo,
+                            fit: BoxFit.contain,
+                          ),
                         ),
-                      ),
-
-                      Gap.h12,
-
-                      TextFormField(
-                        controller: authCtrl.emailController,
-                        focusNode: authCtrl.emailFocus,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.primaryWhite,
+                        Gap.h40,
+                        Text(
+                          "Login To Your Account",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.primaryWhite,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        decoration: context.primaryInputDecoration.copyWith(
-                          hintText: "Email",
-                        ),
-                        // validator: Validators.email,
-                        onFieldSubmitted: (_) => FocusScope.of(
-                          context,
-                        ).requestFocus(authCtrl.passwordFocus),
-                        autofillHints: const [AutofillHints.email],
-                      ),
-                      Gap.h24,
 
-                      "Password".text16w400().align(Alignment.topLeft),
-                      Gap(h: 8),
-                      Obx(
-                        () => TextFormField(
-                          controller: authCtrl.passwordController,
-                          focusNode: authCtrl.passwordFocus,
-                          obscureText: authCtrl.obscurePassword.value,
-                          textInputAction: TextInputAction.done,
-                          style: TextStyle(color: AppColors.primaryBlack),
+                        Gap.h12,
+
+                        Obx(
+                          () =>
+                              authCtrl
+                                  .loginCtrl
+                                  .loginErrorMessage
+                                  .value
+                                  .isNotEmpty
+                              ? Center(
+                                  child: Text(
+                                    authCtrl.loginCtrl.loginErrorMessage.value,
+                                    style: TextStyle(color: AppColors.red),
+                                  ),
+                                )
+                              : SizedBox.shrink(),
+                        ),
+
+                        Gap.h12,
+
+                        TextFormField(
+                          controller: authCtrl.loginCtrl.emailController,
+                          focusNode: authCtrl.loginCtrl.emailFocus,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: AppColors.primaryWhite,
+                          ),
                           decoration: context.primaryInputDecoration.copyWith(
-                            hintText: "Enter your Password",
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                authCtrl.obscurePassword.value
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: AppColors.primaryGray,
-                              ),
-                              onPressed: () => authCtrl.toggleObscurePassword(),
-                            ),
+                            hintText: "Email",
                           ),
-                          autofillHints: const [AutofillHints.password],
-                          onFieldSubmitted: (_) => authCtrl.login(),
+                          validator: Validators.email,
+                          onFieldSubmitted: (_) => FocusScope.of(
+                            context,
+                          ).requestFocus(authCtrl.loginCtrl.passwordFocus),
+                          autofillHints: const [AutofillHints.email],
                         ),
-                      ),
-                      Gap.h12,
+                        Gap.h16,
 
-                      Obx(
-                        () => authCtrl.loginErrorMessage.value.isNotEmpty
-                            ? Center(
-                                child: Text(
-                                  authCtrl.loginErrorMessage.value,
-                                  style: TextStyle(color: AppColors.red),
+                        Obx(
+                          () => TextFormField(
+                            controller: authCtrl.loginCtrl.passwordController,
+                            focusNode: authCtrl.loginCtrl.passwordFocus,
+                            obscureText:
+                                authCtrl.loginCtrl.obscurePassword.value,
+                            textInputAction: TextInputAction.done,
+                            style: TextStyle(color: AppColors.primaryWhite),
+                            decoration: context.primaryInputDecoration.copyWith(
+                              hintText: "Enter your Password",
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  authCtrl.loginCtrl.obscurePassword.value
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: AppColors.primaryGray,
                                 ),
-                              )
-                            : SizedBox.shrink(),
-                      ),
-
-                      Gap.h12,
-
-                      Gap.h24,
-
-                      Row(
-                        children: [
-                          Obx(
-                            () => Checkbox(
-                              value: authCtrl.rememberMe.value,
-                              activeColor: Colors.white,
-                              checkColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
+                                onPressed: () =>
+                                    authCtrl.loginCtrl.toggleObscurePassword(),
                               ),
-                              side: WidgetStateBorderSide.resolveWith((states) {
-                                if (states.contains(WidgetState.selected)) {
-                                  return BorderSide(
-                                    color: Color(0xFF1753FF),
-                                    width: 2,
-                                  );
-                                }
-                                return BorderSide(
-                                  color: Color(0xFF1753FF),
-                                  width: 1,
-                                );
-                              }),
-                              onChanged: (_) => authCtrl.toggleRememberMe(),
                             ),
+                            // validator: Validators.password,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return "Password is required";
+                              }
+                              return null;
+                            },
+                            autofillHints: const [AutofillHints.password],
+                            onFieldSubmitted: (_) => authCtrl.loginCtrl.login(),
                           ),
-                          Text("Remember me", style: TextStyle(fontSize: 14)),
-                          Spacer(),
-                          // TextButton(
-                          //   onPressed: () {
-                          //     Get.to(
-                          //       () => ForgotPasswordScreen(
-                          //         email: authCtrl.emailController.text,
-                          //       ),
-                          //     );
-                          //   },
-                          //   child: Text('Forgot password?'),
-                          // ),
-                        ],
-                      ),
-                      Gap.h24,
+                        ),
 
-                      SecondaryButton(
-                        onApiPressed: () => authCtrl.signInWithGoogle(),
-                        iconLeft: Image.asset(
-                          'assets/images/google.png',
-                          height: 24,
-                          width: 24,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.g_mobiledata),
+                        // Forget Password
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () {},
+                              child: Text("Forget Password"),
+                            ),
+                          ],
                         ),
-                        text: 'Continue with Google',
-                        backgroundColor: Colors.white,
-                      ),
-                      Gap.h24,
-                      SecondaryButton(
-                        // onApiPressed: () {
-                        //   // TODO: Apple Sign In
-                        // },
-                        iconLeft: Image.asset(
-                          'assets/images/apple.png',
-                          height: 24,
-                          width: 24,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.apple),
+
+                        PrimaryButton(
+                          text: "Login",
+                          onApiPressed: () => authCtrl.loginCtrl.login(),
                         ),
-                        text: 'Continue with Apple',
-                        backgroundColor: Colors.white,
-                      ),
-                      Gap.h40,
-                    ],
+
+                        Gap.h24,
+
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Don’t have an account? ",
+                                style: TextStyle(color: AppColors.primaryGray),
+                              ),
+                              GestureDetector(
+                                onTap: () => Get.to(() => const SignupScreen()),
+                                child: Text(
+                                  'Sign Up',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

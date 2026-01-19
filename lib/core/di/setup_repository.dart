@@ -5,5 +5,8 @@ import 'package:get/get.dart';
 import '../../features/auth/repo/auth_repo.dart';
 
 Future<void> setupRepository() async {
-  Get.getOrPutLazy<AuthRepo>(() => AuthRepoImpl(apiClient: Get.find()));
+  Get.getOrPutLazy<AuthRepo>(
+    () => AuthRepoImpl(apiClient: Get.find()),
+    fenix: true,
+  );
 }

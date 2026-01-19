@@ -1,72 +1,31 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_almightyflippa/features/auth/models/login_request_model.dart';
-import 'package:flutx_core/flutx_core.dart';
+import '../../../core/services/auth_storage_service.dart';
 import '/features/auth/repo/auth_repo.dart';
 import 'package:get/get.dart';
 
+import 'package:flutter_almightyflippa/features/auth/controller/login_controller.dart';
+import 'package:flutter_almightyflippa/features/auth/controller/register_controller.dart';
+
 class AuthController extends GetxController {
-  // TextControllers
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  // Master Controller for Auth
+  late final LoginController loginCtrl;
+  late final RegisterController registerCtrl;
 
-  // FocusNodes
-  final emailFocus = FocusNode();
-  final passwordFocus = FocusNode();
+  @override
+  void onInit() {
+    super.onInit();
+    final authRepo = Get.find<AuthRepo>();
+    final authStorageService = Get.find<AuthStorageService>();
+    loginCtrl = LoginController(authRepo, authStorageService);
+    registerCtrl = RegisterController(authRepo, authStorageService);
+  }
 
-  // States
-  final RxBool isLoading = false.obs;
-  final RxString loginErrorMessage = "".obs;
-  final RxBool obscurePassword = true.obs;
-  final RxBool rememberMe = false.obs;
+  // Shared States could go here (e.g., currentUser)
+  final RxString authErrorMessage = "".obs;
 
   @override
   void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    emailFocus.dispose();
-    passwordFocus.dispose();
+    loginCtrl.dispose();
+    registerCtrl.dispose();
     super.onClose();
-  }
-
-  // Inject AuthRepo
-  final _authRepo = Get.find<AuthRepo>();
-
-  void toggleRememberMe() {
-    rememberMe.value = !rememberMe.value;
-  }
-
-  void toggleObscurePassword() {
-    obscurePassword.value = !obscurePassword.value;
-  }
-
-  Future<void> login() async {
-    if (isLoading.value) return;
-
-    loginErrorMessage.value = "";
-    isLoading.value = true;
-
-    final request = LoginRequestModel(
-      email: emailController.text.trim(),
-      password: passwordController.text,
-    );
-    final result = await _authRepo.login(request);
-
-    result.fold(
-      (fail) {
-        isLoading.value = false;
-        loginErrorMessage.value = fail.message;
-        DPrint.log("Login Fail : ${fail.message}");
-      },
-      (success) {
-        isLoading.value = false;
-        DPrint.log("Login success : ${success.message}");
-        // Navigation or further logic on success
-      },
-    );
-  }
-
-  Future<void> signInWithGoogle() async {
-    // TODO: Implement Google Sign In
-    DPrint.log("Google Sign In clicked");
   }
 }

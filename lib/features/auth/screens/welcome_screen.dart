@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/button_widgets.dart';
+import 'package:flutter_almightyflippa/core/constants/key_constants.dart';
 import 'package:get/get.dart';
 
 import '../../../core/constants/assest_const.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/secure_store_services.dart';
 import 'login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -17,6 +19,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final PageController pageController = PageController();
     final ValueNotifier<int> currentPage = ValueNotifier<int>(0);
+    final SecureStoreServices _secureStore = SecureStoreServices();
 
     // Update current page for dots and parallax
     pageController.addListener(() {
@@ -172,7 +175,12 @@ class WelcomeScreen extends StatelessWidget {
             right: 18.0,
             bottom: 60.0, // Adjust if needed for safe area or design
             child: PrimaryButton(
-              onSimplePressed: () {
+              onSimplePressed: () async {
+                await _secureStore.storeData(
+                  KeyConstants.onboardingStatus,
+                  'true',
+                );
+                
                 Get.off(
                   () => const LoginScreen(),
                   transition: Transition.rightToLeft,
