@@ -33,14 +33,6 @@ class ApiConstants {
   /// [Endpoint Groups
   static AuthEndpoints get auth => AuthEndpoints();
   static UserEndpoints get user => UserEndpoints();
-  static MovieEndpoints get movie => MovieEndpoints();
-  static GenreEndpoints get genre => GenreEndpoints();
-  static SeriesEndpoints get series => SeriesEndpoints();
-  static HistoryEndpoints get history => HistoryEndpoints();
-  static AdsEndpoints get ads => AdsEndpoints();
-  static LikeEndpoint get like => LikeEndpoint();
-  static WatchListEndpoint get wishlist => WatchListEndpoint();
-  static ReelsEndpoint get reels => ReelsEndpoint();
 }
 
 /// [Authentication Endpoints]
@@ -50,16 +42,16 @@ class AuthEndpoints {
   final String login = '$_base/login';
   final String register = '$_base/register';
 
-  final String forgetPassSendOtp = '$_base/forget';
-  final String verifyOtp = '$_base/verify-otp';
-  final String resetPass = '$_base/reset-password';
+  // final String forgetPassSendOtp = '$_base/forget';
+  // final String verifyOtp = '$_base/verify-otp';
+  // final String resetPass = '$_base/reset-password';
 
-  final String changePassword = '$_base/change-password';
+  // final String changePassword = '$_base/change-password';
 
   final String refreshToken = '$_base/refresh-token';
 
-  final String logout = '$_base/logout';
-  final String delete = '$_base/delete';
+  // final String logout = '$_base/logout';
+  // final String delete = '$_base/delete';
 }
 
 class UserEndpoints {
@@ -69,60 +61,3 @@ class UserEndpoints {
   final String updateProfile = '$_base/update-profile';
 }
 
-class MovieEndpoints {
-  static const String _base = '${ApiConstants.baseUrl}/movies';
-
-  final String getAllMovies = _base;
-  final String getAllUpcomming = '$_base/upcoming';
-}
-
-class GenreEndpoints {
-  static const String _base = '${ApiConstants.baseUrl}/genres';
-
-  final String getAllGenre = _base;
-}
-
-class SeriesEndpoints {
-  static const String _base = '${ApiConstants.baseUrl}/series';
-
-  final String getAllSeries = _base;
-}
-
-class HistoryEndpoints {
-  static const String _base = '${ApiConstants.baseUrl}/history';
-
-  final String createHistory = _base;
-  final String getHistory = _base;
-}
-
-class AdsEndpoints {
-  static const String _base = '${ApiConstants.baseUrl}/ads';
-
-  final String getAllAds = _base;
-  String incrementWatchCount(adId) => '$_base/$adId/watch';
-}
-
-class LikeEndpoint {
-  static const String _base = '${ApiConstants.baseUrl}/likes';
-
-  final String toggleLike = '$_base/toggle';
-  // final String getAllLikes = _base;
-  final String getLikesByContent = '$_base/content';
-  final String getUserLikes = '$_base/my-likes';
-}
-
-class WatchListEndpoint {
-  static const String _base = '${ApiConstants.baseUrl}/wishlist';
-
-  final String createWishlist = _base;
-  final String getAllWishlist = _base;
-  final String getWishlist = _base;
-  String updateWishlist(String id) => '$_base/$id';
-  String deleteWishlist(String id) => '$_base/$id';
-}
-
-class ReelsEndpoint {
-  static const String _base = '${ApiConstants.baseUrl}/reels';
-
-  final String getAllReels = _base;
-}
