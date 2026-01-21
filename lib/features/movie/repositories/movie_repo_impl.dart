@@ -1,10 +1,11 @@
 import 'package:flutter_almightyflippa/core/api/api_client.dart';
 import 'package:flutter_almightyflippa/core/api/network_result.dart';
 import 'package:flutter_almightyflippa/core/constants/api_constants.dart';
-import 'package:flutter_almightyflippa/features/playlist/models/movie_series_channel_request_model.dart';
+import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
 
 import '../../../core/services/auth_storage_service.dart';
 import '../models/movie_response_model.dart';
+import '../models/single_movie_response_model.dart';
 import 'movie_repo.dart';
 
 class MovieRepoImpl implements MovieRepo {
@@ -13,21 +14,42 @@ class MovieRepoImpl implements MovieRepo {
   MovieRepoImpl({required ApiClient apiClient}) : _apiClient = apiClient;
 
   @override
-  NetworkResult<List<MovieResponseModel>> getMovies() async {
+  NetworkResult<List<MoviesResponseModel>> getMovies({
+    required int page,
+    required int limit,
+  }) async {
     final storage = AuthStorageService();
     final requestData = await ServerRequestModel.fromStorage(
       type: ServerType.movies,
       storage: storage,
-      limit: 2,
-      page: 1,
+      limit: limit,
+      page: page,
     );
 
     return _apiClient.post(
       endpoint: ApiConstants.server.connectTv,
       data: requestData.toJson(),
       fromJsonT: (json) => (json as List)
-          .map((item) => MovieResponseModel.fromJson(item))
+          .map((item) => MoviesResponseModel.fromJson(item))
           .toList(),
+    );
+  }
+
+  @override
+  NetworkResult<SingleMovieResponseModel> getMovieDetails({
+    required int streamId,
+  }) async {
+    final storage = AuthStorageService();
+    final requestData = await SingleStreamRequestModel.fromStorage(
+      streamType: ServerType.movies,
+      streamId: streamId,
+      storage: storage,
+    );
+
+    return _apiClient.post(
+      endpoint: ApiConstants.server.getPlayUrl,
+      data: requestData.toJson(),
+      fromJsonT: (json) => SingleMovieResponseModel.fromJson(json),
     );
   }
 }

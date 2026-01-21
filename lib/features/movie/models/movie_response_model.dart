@@ -1,6 +1,4 @@
-
-
-class MovieResponseModel {
+class MoviesResponseModel {
   final int num;
   final String name;
   final String streamType;
@@ -18,7 +16,7 @@ class MovieResponseModel {
   final String? customSid;
   final String directSource;
 
-  MovieResponseModel({
+  MoviesResponseModel({
     required this.num,
     required this.name,
     required this.streamType,
@@ -37,8 +35,8 @@ class MovieResponseModel {
     required this.directSource,
   });
 
-  factory MovieResponseModel.fromJson(Map<String, dynamic> json) {
-    return MovieResponseModel(
+  factory MoviesResponseModel.fromJson(Map<String, dynamic> json) {
+    return MoviesResponseModel(
       num: json['num'] ?? 0,
       name: json['name'] ?? '',
       streamType: json['stream_type'] ?? '',

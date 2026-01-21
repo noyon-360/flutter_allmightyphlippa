@@ -76,4 +76,5 @@ class ServerEndpoints {
   static const String _base = '${ApiConstants.baseUrl}/server';
 
   final String connectTv = '$_base/connect-tv';
+  final String getPlayUrl = '$_base/get-play-url';
 }

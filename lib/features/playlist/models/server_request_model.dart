@@ -78,3 +78,45 @@ class ServerRequestModel {
     );
   }
 }
+
+class SingleStreamRequestModel {
+  final String serverUrl;
+  final String username;
+  final String password;
+  final String streamType;
+  final int streamId;
+
+  SingleStreamRequestModel({
+    required this.serverUrl,
+    required this.username,
+    required this.password,
+    required this.streamType,
+    required this.streamId,
+  });
+
+  /// Creates a request model using the centralized playlist data from storage.
+  static Future<SingleStreamRequestModel> fromStorage({
+    required ServerType streamType,
+    required int streamId,
+    required AuthStorageService storage,
+  }) async {
+    final PlaylistData playlistData = await storage.getPlaylistData();
+    return SingleStreamRequestModel(
+      serverUrl: playlistData.url,
+      username: playlistData.username,
+      password: playlistData.password,
+      streamType: streamType.name,
+      streamId: streamId,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'serverUrl': serverUrl,
+      'username': username,
+      'password': password,
+      'stream_type': streamType,
+      'stream_id': streamId,
+    };
+  }
+}
