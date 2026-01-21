@@ -33,6 +33,9 @@ class ApiConstants {
   /// [Endpoint Groups
   static AuthEndpoints get auth => AuthEndpoints();
   static UserEndpoints get user => UserEndpoints();
+  static PlaylistEndpoints get playlist => PlaylistEndpoints();
+
+  static ServerEndpoints get server => ServerEndpoints();
 }
 
 /// [Authentication Endpoints]
@@ -61,3 +64,16 @@ class UserEndpoints {
   final String updateProfile = '$_base/update-profile';
 }
 
+class PlaylistEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/playlist';
+
+  final String addPlaylist = '$_base/add-playlist';
+  final String getPlaylist = '$_base/get-playlist';
+  String deletePlaylist(String id) => '$_base/delete-playlist/$id';
+}
+
+class ServerEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/server';
+
+  final String connectTv = '$_base/connect-tv';
+}

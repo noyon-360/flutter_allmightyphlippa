@@ -7,9 +7,8 @@ import 'package:flutx_core/flutx_core.dart';
 import '../../../core/services/auth_storage_service.dart';
 
 class RegisterController extends GetxController {
-  final AuthRepo _authRepo;
-  final AuthStorageService _authStorageService;
-  RegisterController(this._authRepo, this._authStorageService);
+  final AuthRepo _authRepo = Get.find<AuthRepo>();
+  final AuthStorageService _authStorageService = Get.find<AuthStorageService>();
 
   // TextControllers
   final nameController = TextEditingController();

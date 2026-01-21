@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_almightyflippa/core/common/widgets/app_scaffold.dart';
-import 'package:flutter_almightyflippa/core/common/widgets/button_widgets.dart';
-import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
-    hide Icons;
-import 'package:flutter_almightyflippa/features/auth/controller/auth_controller.dart';
+import '/core/common/widgets/app_scaffold.dart';
+import '/core/common/widgets/button_widgets.dart';
+import '/core/constants/assest_const.dart' hide Icons;
+import '/features/auth/controller/login_controller.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
 // Assuming these exist based on context
-import '../../../core/common/widgets/app_logo.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/extensions/input_decoration_extensions.dart';
+import '/core/common/widgets/app_logo.dart';
+import '/core/constants/app_colors.dart';
+import '/core/extensions/input_decoration_extensions.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -18,7 +17,7 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authCtrl = Get.put(AuthController());
+    final loginCtrl = Get.put(LoginController());
 
     return AppScaffold(
       body: Align(
@@ -29,7 +28,7 @@ class LoginScreen extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 600, minWidth: 300),
                 child: Form(
-                  key: authCtrl.loginCtrl.loginFormKey,
+                  key: loginCtrl.loginFormKey,
                   child: IntrinsicHeight(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,15 +57,10 @@ class LoginScreen extends StatelessWidget {
                         Gap.h12,
 
                         Obx(
-                          () =>
-                              authCtrl
-                                  .loginCtrl
-                                  .loginErrorMessage
-                                  .value
-                                  .isNotEmpty
+                          () => loginCtrl.loginErrorMessage.value.isNotEmpty
                               ? Center(
                                   child: Text(
-                                    authCtrl.loginCtrl.loginErrorMessage.value,
+                                    loginCtrl.loginErrorMessage.value,
                                     style: TextStyle(color: AppColors.red),
                                   ),
                                 )
@@ -76,8 +70,8 @@ class LoginScreen extends StatelessWidget {
                         Gap.h12,
 
                         TextFormField(
-                          controller: authCtrl.loginCtrl.emailController,
-                          focusNode: authCtrl.loginCtrl.emailFocus,
+                          controller: loginCtrl.emailController,
+                          focusNode: loginCtrl.emailFocus,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           style: TextStyle(
@@ -90,30 +84,29 @@ class LoginScreen extends StatelessWidget {
                           validator: Validators.email,
                           onFieldSubmitted: (_) => FocusScope.of(
                             context,
-                          ).requestFocus(authCtrl.loginCtrl.passwordFocus),
+                          ).requestFocus(loginCtrl.passwordFocus),
                           autofillHints: const [AutofillHints.email],
                         ),
                         Gap.h16,
 
                         Obx(
                           () => TextFormField(
-                            controller: authCtrl.loginCtrl.passwordController,
-                            focusNode: authCtrl.loginCtrl.passwordFocus,
-                            obscureText:
-                                authCtrl.loginCtrl.obscurePassword.value,
+                            controller: loginCtrl.passwordController,
+                            focusNode: loginCtrl.passwordFocus,
+                            obscureText: loginCtrl.obscurePassword.value,
                             textInputAction: TextInputAction.done,
                             style: TextStyle(color: AppColors.primaryWhite),
                             decoration: context.primaryInputDecoration.copyWith(
                               hintText: "Enter your Password",
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  authCtrl.loginCtrl.obscurePassword.value
+                                  loginCtrl.obscurePassword.value
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
                                   color: AppColors.primaryGray,
                                 ),
                                 onPressed: () =>
-                                    authCtrl.loginCtrl.toggleObscurePassword(),
+                                    loginCtrl.toggleObscurePassword(),
                               ),
                             ),
                             // validator: Validators.password,
@@ -124,7 +117,7 @@ class LoginScreen extends StatelessWidget {
                               return null;
                             },
                             autofillHints: const [AutofillHints.password],
-                            onFieldSubmitted: (_) => authCtrl.loginCtrl.login(),
+                            onFieldSubmitted: (_) => loginCtrl.login(),
                           ),
                         ),
 
@@ -141,7 +134,7 @@ class LoginScreen extends StatelessWidget {
 
                         PrimaryButton(
                           text: "Login",
-                          onApiPressed: () => authCtrl.loginCtrl.login(),
+                          onApiPressed: () => loginCtrl.login(),
                         ),
 
                         Gap.h24,

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../features/playlist/models/playlist_data.dart';
 
 import '../constants/key_constants.dart';
 
@@ -8,8 +10,8 @@ class AuthStorageService {
   AuthStorageService({FlutterSecureStorage? storage})
     : _secureStorage = storage ?? const FlutterSecureStorage();
 
-  // bool _isAuthenticated = false;
-  // bool get isAuthenticated => _isAuthenticated;
+  // In-memory cache for playlist data
+  PlaylistData? _cachedPlaylistData;
 
   // Store all auth data (tokens + user ID)
   Future<void> storeAuthData({
@@ -56,6 +58,65 @@ class AuthStorageService {
     await _secureStorage.write(key: KeyConstants.userId, value: userId);
   }
 
+  // Store playlist data
+  Future<void> savePlaylistData(PlaylistData data) async {
+    _cachedPlaylistData = data;
+    await _secureStorage.write(
+      key: KeyConstants.playlistData,
+      value: jsonEncode(data.toJson()),
+    );
+  }
+
+  // Get playlist data
+  Future<PlaylistData> getPlaylistData() async {
+    if (_cachedPlaylistData != null) {
+      return _cachedPlaylistData!;
+    }
+
+    final String? data = await _secureStorage.read(
+      key: KeyConstants.playlistData,
+    );
+    if (data == null || data.isEmpty) {
+      _cachedPlaylistData = PlaylistData.empty();
+      return _cachedPlaylistData!;
+    }
+
+    try {
+      final Map<String, dynamic> decoded = jsonDecode(data);
+      _cachedPlaylistData = PlaylistData.fromJson(decoded);
+      return _cachedPlaylistData!;
+    } catch (e) {
+      _cachedPlaylistData = PlaylistData.empty();
+      return _cachedPlaylistData!;
+    }
+  }
+
+  // Store playlist data (LEGACY - for individual fields if still needed)
+  Future<void> storePlaylistData({
+    required String url,
+    required String username,
+    required String password,
+  }) async {
+    final data = PlaylistData(url: url, username: username, password: password);
+    await savePlaylistData(data);
+
+    // Also store individually for backward compatibility if necessary
+    await Future.wait([
+      _secureStorage.write(key: KeyConstants.playlistUrl, value: url),
+      _secureStorage.write(key: KeyConstants.playlistUsername, value: username),
+      _secureStorage.write(key: KeyConstants.playlistPassword, value: password),
+    ]);
+  }
+
+  // Store multiple playlists
+  Future<void> storePlaylists(List<Map<String, dynamic>> playlists) async {
+    final String encodedData = jsonEncode(playlists);
+    await _secureStorage.write(
+      key: KeyConstants.playlistsList,
+      value: encodedData,
+    );
+  }
+
   // Check user authenticater or not
   Future<bool> isAuthenticated() async {
     final accessToken = await getAccessToken();
@@ -71,13 +132,6 @@ class AuthStorageService {
     final accessToken = await _secureStorage.read(
       key: KeyConstants.accessToken,
     );
-    // if (accessToken != null) {
-    //   _isAuthenticated = true;
-    // } else {
-    //   _isAuthenticated = false;
-    // }
-    // DPrint.info("Get Access Token check : $accessToken $_isAuthenticated");
-
     return accessToken;
   }
 
@@ -91,32 +145,64 @@ class AuthStorageService {
     return await _secureStorage.read(key: KeyConstants.userId);
   }
 
-  // Future<UserRole?> getUserRole() async {
-  //   final role = await _secureStorage.read(key: KeyConstants.role);
-  //   final userRole = UserRole.fromString(role);
-  //   return userRole;
-  // }
+  // Get playlist data (LEGACY)
+  Future<String?> getPlaylistUrl() async {
+    final data = await getPlaylistData();
+    return data.url.isNotEmpty
+        ? data.url
+        : await _secureStorage.read(key: KeyConstants.playlistUrl);
+  }
+
+  Future<String?> getPlaylistUsername() async {
+    final data = await getPlaylistData();
+    return data.username.isNotEmpty
+        ? data.username
+        : await _secureStorage.read(key: KeyConstants.playlistUsername);
+  }
+
+  Future<String?> getPlaylistPassword() async {
+    final data = await getPlaylistData();
+    return data.password.isNotEmpty
+        ? data.password
+        : await _secureStorage.read(key: KeyConstants.playlistPassword);
+  }
+
+  // Get multiple playlists
+  Future<List<Map<String, dynamic>>> getPlaylists() async {
+    final String? data = await _secureStorage.read(
+      key: KeyConstants.playlistsList,
+    );
+    if (data == null || data.isEmpty) return [];
+    try {
+      final List<dynamic> decoded = jsonDecode(data);
+      return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
 
   // Get all auth data at once
   Future<Map<String, String?>> getAllAuthData() async {
-    // final role = await getUserRole();
     return {
       'accessToken': await getAccessToken(),
       'refreshToken': await getRefreshToken(),
       'userId': await getUserId(),
-      // 'role': role?.name ?? UserRole.patient.name,
     };
   }
 
   // Clear all auth data (logout)
   Future<void> clearAuthData() async {
+    _cachedPlaylistData = null;
     await Future.wait([
       _secureStorage.delete(key: KeyConstants.accessToken),
       _secureStorage.delete(key: KeyConstants.refreshToken),
       _secureStorage.delete(key: KeyConstants.userId),
-      // _secureStorage.delete(key: KeyConstants.role),
+      _secureStorage.delete(key: KeyConstants.playlistUrl),
+      _secureStorage.delete(key: KeyConstants.playlistUsername),
+      _secureStorage.delete(key: KeyConstants.playlistPassword),
+      _secureStorage.delete(key: KeyConstants.playlistsList),
+      _secureStorage.delete(key: KeyConstants.playlistData),
     ]);
-    // _isAuthenticated = false;
   }
 
   // Check if user ID exists

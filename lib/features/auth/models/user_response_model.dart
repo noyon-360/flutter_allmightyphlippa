@@ -9,8 +9,7 @@ class UserModel {
   final String? language;
   final bool? ticketAlerts;
   final bool? licenseExpiryAlerts;
-  final bool?
-  inactiveAlerts; // Renamed from lnactiveAlerts for clarity, but JSON has 'lnactiveAlerts'
+  final bool? inactiveAlerts;
   final bool? teenDriverAlerts;
   final bool? communityAlerts;
   final String? role;
@@ -62,8 +61,7 @@ class UserModel {
       language: json['language'],
       ticketAlerts: json['ticketAlerts'],
       licenseExpiryAlerts: json['licenseExpiryAlerts'],
-      inactiveAlerts:
-          json['lnactiveAlerts'], // Matching the typo in JSON 'lnactiveAlerts'
+      inactiveAlerts: json['lnactiveAlerts'],
       teenDriverAlerts: json['teenDriverAlerts'],
       communityAlerts: json['communityAlerts'],
       role: json['role'],

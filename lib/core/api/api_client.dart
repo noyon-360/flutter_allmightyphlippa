@@ -25,6 +25,7 @@ class ApiClient {
 
   bool _isRefreshing = false;
   final List<Completer<void>> _pendingRequests = [];
+  final Completer<void> _initCompleter = Completer<void>();
 
   // Singleton instance
   static final ApiClient _instance = ApiClient._internal();
@@ -42,9 +43,16 @@ class ApiClient {
   bool _isInitialized = false;
 
   ApiClient._internal() {
+    _init();
+  }
+
+  Future<void> _init() async {
     if (!_isInitialized) {
-      _initialize();
+      await _initialize();
       _isInitialized = true;
+    }
+    if (!_initCompleter.isCompleted) {
+      _initCompleter.complete();
     }
   }
 
@@ -160,39 +168,34 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
     bool cache = false,
+    Duration? cacheDuration,
     CancelToken? cancelToken,
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
+    await _initCompleter.future;
+
+    final bool isGet = method.toUpperCase() == 'GET';
     final connectivityCheck = await _checkConnectivity();
     if (connectivityCheck.isLeft()) {
-      if (cache && method.toUpperCase() == 'GET') {
+      if (isGet && cache) {
         final cachedData = await _cacheService.getCachedData(
           endpoint,
-          requestData: data,
+          requestData: queryParameters,
         );
 
         if (cachedData != null) {
-          DPrint.info('Serving cached data for $endpoint');
+          DPrint.info('Serving cached data for $endpoint (offline)');
           return Right(
             NetworkSuccess<T>(
               data: fromJsonT(cachedData),
-              message: 'Served from cache',
+              message: 'Served from cache (offline)',
               statusCode: 200,
             ),
           );
         }
       }
-
-      return connectivityCheck.fold(
-        (failure) => Left(failure),
-        (_) => const Left(UnknownFailure(message: 'Connectivity check failed')),
-      );
-
-      // return connectivityCheck.fold(
-      //   (failure) => Left(failure),
-      //   (_) => const Left(UnknownFailure(message: 'Connectivity check failed')),
-      // );
+      return const Left(NoInternetFailure());
     }
 
     try {
@@ -235,17 +238,32 @@ class ApiClient {
       // final data = (baseResponse.data as T);
 
       if (baseResponse.success) {
-        // Ensure message and statusCode are non-null
         final message = baseResponse.message;
-        final statusCode = response.statusCode ?? 0;
+        final statusCode = response.statusCode ?? 200;
 
-        return Right(
-          NetworkSuccess<T>(
-            data: baseResponse.data as T,
-            message: message,
-            statusCode: statusCode,
-          ),
+        final successResult = NetworkSuccess<T>(
+          data: baseResponse.data as T,
+          message: message,
+          statusCode: statusCode,
         );
+
+        // 4. Cache the fresh response if it's a cached GET request
+        if (isGet && cache) {
+          final rawResponseData = response.data as Map<String, dynamic>?;
+          final dataToCache = rawResponseData?['data'];
+
+          if (dataToCache != null) {
+            await _cacheService.cacheData(
+              endpoint,
+              data: dataToCache,
+              requestData: queryParameters,
+              cacheDuration: cacheDuration,
+            );
+            DPrint.info('Cached fresh response for $endpoint');
+          }
+        }
+
+        return Right(successResult);
       }
 
       return Left(
@@ -268,6 +286,8 @@ class ApiClient {
               queryParameters: queryParameters,
               options: options,
               cancelToken: cancelToken,
+              cache: cache,
+              cacheDuration: cacheDuration,
               onSendProgress: onSendProgress,
               onReceiveProgress: onReceiveProgress,
             );
@@ -297,6 +317,7 @@ class ApiClient {
     Options? options,
     CancelToken? cancelToken,
     bool cache = false,
+    Duration? cacheDuration,
     ProgressCallback? onReceiveProgress,
   }) => _request(
     method: 'GET',
@@ -306,6 +327,7 @@ class ApiClient {
     options: options,
     cancelToken: cancelToken,
     cache: cache,
+    cacheDuration: cacheDuration,
     onReceiveProgress: onReceiveProgress,
   );
 
@@ -316,7 +338,6 @@ class ApiClient {
     Options? options,
     CancelToken? cancelToken,
     ProgressCallback? onSendProgress,
-    bool cache = false,
     FormData? formData,
   }) => _request(
     method: 'POST',
@@ -326,7 +347,6 @@ class ApiClient {
     options: options,
     cancelToken: cancelToken,
     onSendProgress: onSendProgress,
-    cache: cache,
     fromData: formData,
   );
 
@@ -336,7 +356,6 @@ class ApiClient {
     required T Function(dynamic) fromJsonT,
     Options? options,
     CancelToken? cancelToken,
-    bool cache = false,
     FormData? formData,
   }) => _request(
     method: 'PATCH',
@@ -345,7 +364,6 @@ class ApiClient {
     data: data,
     options: options,
     cancelToken: cancelToken,
-    cache: cache,
     fromData: formData,
   );
 
@@ -355,7 +373,6 @@ class ApiClient {
     required T Function(dynamic) fromJsonT,
     Options? options,
     CancelToken? cancelToken,
-    bool cache = false,
     FormData? formData,
   }) => _request(
     method: 'PUT',
@@ -364,7 +381,6 @@ class ApiClient {
     data: data,
     options: options,
     cancelToken: cancelToken,
-    cache: cache,
     fromData: formData,
   );
 
@@ -374,7 +390,6 @@ class ApiClient {
     required T Function(dynamic) fromJsonT,
     Options? options,
     CancelToken? cancelToken,
-    bool cache = false,
     FormData? formData,
   }) => _request(
     method: 'DELETE',
@@ -383,7 +398,6 @@ class ApiClient {
     data: data,
     options: options,
     cancelToken: cancelToken,
-    cache: cache,
     fromData: formData,
   );
 

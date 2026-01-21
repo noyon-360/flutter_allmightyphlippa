@@ -28,12 +28,7 @@ class BottomNavScreen extends StatelessWidget {
 
     return AppScaffold(
       removePadding: true,
-      body: Obx(
-        () => IndexedStack(
-          index: controller.selectedIndex.value,
-          children: pages,
-        ),
-      ),
+      body: Obx(() => pages[controller.selectedIndex.value]),
       bottomNavigationBar: Obx(
         () => Container(
           height: 70,

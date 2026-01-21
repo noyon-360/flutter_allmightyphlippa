@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import '/features/playlist/screens/playlist_list_screen.dart';
 import '/core/services/auth_storage_service.dart';
 import '/features/auth/models/login_request_model.dart';
 import '/features/auth/repo/auth_repo.dart';
-import '/features/bottom_nav/screens/bottom_nav_screen.dart';
 import 'package:get/get.dart';
 import 'package:flutx_core/flutx_core.dart';
 
 class LoginController extends GetxController {
-  final AuthRepo _authRepo;
-  final AuthStorageService _authStorageService;
-  LoginController(this._authRepo, this._authStorageService);
+  final AuthRepo _authRepo = Get.find<AuthRepo>();
+  final AuthStorageService _authStorageService = Get.find<AuthStorageService>();
 
   // TextControllers
   final emailController = TextEditingController();
@@ -64,7 +63,7 @@ class LoginController extends GetxController {
             userId: data.user?.id ?? '',
           );
 
-          Get.to(() => BottomNavScreen());
+          Get.to(() => const PlaylistListScreen());
         },
       );
     }

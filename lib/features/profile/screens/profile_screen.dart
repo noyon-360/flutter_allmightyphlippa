@@ -8,6 +8,8 @@ import 'package:flutter_almightyflippa/features/profile/controller/profile_contr
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
+import '../../../core/common/widgets/app_cached_image.dart';
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -41,16 +43,23 @@ class ProfileScreen extends StatelessWidget {
                     height: 80,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: user?.avatar?.url != null
-                            ? NetworkImage(user!.avatar!.url!)
-                            : const AssetImage(
-                                    'assets/images/splash_and_login_logo.png',
-                                  )
-                                  as ImageProvider,
-                        fit: BoxFit.cover,
-                      ),
                     ),
+                    child: (user?.avatar?.url?.isNotEmpty ?? false)
+                        ? AppCachedImage(
+                            imageUrl: user!.avatar!.url!,
+                            width: 80,
+                            height: 80,
+                            borderRadius: BorderRadius.circular(12),
+                            fit: BoxFit.cover,
+                            onTap: () {},
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              'assets/images/splash_and_login_logo.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                   ),
                   Gap.w16,
                   Expanded(

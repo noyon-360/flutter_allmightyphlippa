@@ -11,4 +11,10 @@ class KeyConstants {
 
   static const String email = 'email';
   static const String password = 'password';
+
+  static const String playlistUrl = 'playlist_url';
+  static const String playlistUsername = 'playlist_username';
+  static const String playlistPassword = 'playlist_password';
+  static const String playlistsList = 'playlists_list';
+  static const String playlistData = 'playlist_data';
 }

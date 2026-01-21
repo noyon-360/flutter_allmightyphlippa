@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_almightyflippa/core/common/widgets/app_logo.dart';
-import 'package:flutter_almightyflippa/core/common/widgets/button_widgets.dart';
-import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
-    hide Icons;
-import 'package:flutter_almightyflippa/features/auth/controller/auth_controller.dart';
+import '/core/common/widgets/app_logo.dart';
+import '/core/common/widgets/button_widgets.dart';
+import '/core/constants/assest_const.dart' hide Icons;
+import '/features/auth/controller/register_controller.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/common/widgets/app_scaffold.dart';
-import '../../../../core/extensions/input_decoration_extensions.dart';
+import '/core/constants/app_colors.dart';
+import '/core/common/widgets/app_scaffold.dart';
+import '/core/extensions/input_decoration_extensions.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authCtrl = Get.find<AuthController>();
+    final registerCtrl = Get.put(RegisterController());
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -32,7 +31,7 @@ class SignupScreen extends StatelessWidget {
                     minWidth: 300,
                   ),
                   child: Form(
-                    key: authCtrl.registerCtrl.registerFormKey,
+                    key: registerCtrl.registerFormKey,
                     child: IntrinsicHeight(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -65,17 +64,13 @@ class SignupScreen extends StatelessWidget {
 
                           Obx(
                             () =>
-                                authCtrl
-                                    .registerCtrl
+                                registerCtrl
                                     .registerErrorMessage
                                     .value
                                     .isNotEmpty
                                 ? Center(
                                     child: Text(
-                                      authCtrl
-                                          .registerCtrl
-                                          .registerErrorMessage
-                                          .value,
+                                      registerCtrl.registerErrorMessage.value,
                                       style: TextStyle(color: AppColors.red),
                                     ),
                                   )
@@ -86,8 +81,8 @@ class SignupScreen extends StatelessWidget {
 
                           // Name field
                           TextFormField(
-                            controller: authCtrl.registerCtrl.nameController,
-                            focusNode: authCtrl.registerCtrl.nameFocus,
+                            controller: registerCtrl.nameController,
+                            focusNode: registerCtrl.nameFocus,
                             keyboardType: TextInputType.text,
                             textInputAction: TextInputAction.next,
                             style: TextStyle(
@@ -100,15 +95,15 @@ class SignupScreen extends StatelessWidget {
                             validator: Validators.name,
                             onFieldSubmitted: (_) => FocusScope.of(
                               context,
-                            ).requestFocus(authCtrl.registerCtrl.emailFocus),
+                            ).requestFocus(registerCtrl.emailFocus),
                           ),
 
                           Gap.h16,
 
                           // Email field
                           TextFormField(
-                            controller: authCtrl.registerCtrl.emailController,
-                            focusNode: authCtrl.registerCtrl.emailFocus,
+                            controller: registerCtrl.emailController,
+                            focusNode: registerCtrl.emailFocus,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             style: TextStyle(
@@ -121,7 +116,7 @@ class SignupScreen extends StatelessWidget {
                             validator: Validators.email,
                             onFieldSubmitted: (_) => FocusScope.of(
                               context,
-                            ).requestFocus(authCtrl.registerCtrl.passwordFocus),
+                            ).requestFocus(registerCtrl.passwordFocus),
                             autofillHints: const [AutofillHints.email],
                           ),
 
@@ -130,11 +125,9 @@ class SignupScreen extends StatelessWidget {
                           // Password field
                           Obx(
                             () => TextFormField(
-                              controller:
-                                  authCtrl.registerCtrl.passwordController,
-                              focusNode: authCtrl.registerCtrl.passwordFocus,
-                              obscureText:
-                                  authCtrl.registerCtrl.obscurePassword.value,
+                              controller: registerCtrl.passwordController,
+                              focusNode: registerCtrl.passwordFocus,
+                              obscureText: registerCtrl.obscurePassword.value,
                               textInputAction: TextInputAction.next,
                               style: TextStyle(color: AppColors.primaryWhite),
                               decoration: context.primaryInputDecoration
@@ -142,23 +135,19 @@ class SignupScreen extends StatelessWidget {
                                     hintText: "Password",
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        authCtrl
-                                                .registerCtrl
-                                                .obscurePassword
-                                                .value
+                                        registerCtrl.obscurePassword.value
                                             ? Icons.visibility_off_outlined
                                             : Icons.visibility_outlined,
                                         color: AppColors.primaryGray,
                                       ),
-                                      onPressed: () => authCtrl.registerCtrl
-                                          .toggleObscurePassword(),
+                                      onPressed: () =>
+                                          registerCtrl.toggleObscurePassword(),
                                     ),
                                   ),
                               validator: Validators.password,
-                              onFieldSubmitted: (_) =>
-                                  FocusScope.of(context).requestFocus(
-                                    authCtrl.registerCtrl.confirmPasswordFocus,
-                                  ),
+                              onFieldSubmitted: (_) => FocusScope.of(
+                                context,
+                              ).requestFocus(registerCtrl.confirmPasswordFocus),
                             ),
                           ),
 
@@ -167,15 +156,11 @@ class SignupScreen extends StatelessWidget {
                           // Confirm Password field
                           Obx(
                             () => TextFormField(
-                              controller: authCtrl
-                                  .registerCtrl
-                                  .confirmPasswordController,
-                              focusNode:
-                                  authCtrl.registerCtrl.confirmPasswordFocus,
-                              obscureText: authCtrl
-                                  .registerCtrl
-                                  .obscureConfirmPassword
-                                  .value,
+                              controller:
+                                  registerCtrl.confirmPasswordController,
+                              focusNode: registerCtrl.confirmPasswordFocus,
+                              obscureText:
+                                  registerCtrl.obscureConfirmPassword.value,
                               textInputAction: TextInputAction.done,
                               style: TextStyle(color: AppColors.primaryWhite),
                               decoration: context.primaryInputDecoration
@@ -183,24 +168,22 @@ class SignupScreen extends StatelessWidget {
                                     hintText: "Confirm Password",
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        authCtrl
-                                                .registerCtrl
+                                        registerCtrl
                                                 .obscureConfirmPassword
                                                 .value
                                             ? Icons.visibility_off_outlined
                                             : Icons.visibility_outlined,
                                         color: AppColors.primaryGray,
                                       ),
-                                      onPressed: () => authCtrl.registerCtrl
+                                      onPressed: () => registerCtrl
                                           .toggleObscureConfirmPassword(),
                                     ),
                                   ),
                               validator: (value) => Validators.confirmPassword(
-                                authCtrl.registerCtrl.passwordController.text,
+                                registerCtrl.passwordController.text,
                                 value,
                               ),
-                              onFieldSubmitted: (_) =>
-                                  authCtrl.registerCtrl.register(),
+                              onFieldSubmitted: (_) => registerCtrl.register(),
                             ),
                           ),
 
@@ -209,9 +192,9 @@ class SignupScreen extends StatelessWidget {
                           // Terms and Conditions
                           Obx(
                             () => CheckboxListTile(
-                              value: authCtrl.registerCtrl.agreeToTerms.value,
+                              value: registerCtrl.agreeToTerms.value,
                               onChanged: (value) =>
-                                  authCtrl.registerCtrl.toggleAgreeToTerms(),
+                                  registerCtrl.toggleAgreeToTerms(),
                               title: Text(
                                 "I agree to Terms & Conditions",
                                 style: TextStyle(color: AppColors.primaryWhite),
@@ -228,8 +211,7 @@ class SignupScreen extends StatelessWidget {
                           // Sign Up button
                           PrimaryButton(
                             text: "Sign up",
-                            onApiPressed: () =>
-                                authCtrl.registerCtrl.register(),
+                            onApiPressed: () => registerCtrl.register(),
                           ),
 
                           Gap.h24,
