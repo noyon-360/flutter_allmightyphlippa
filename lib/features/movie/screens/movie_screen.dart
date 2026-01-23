@@ -48,9 +48,7 @@ class _MovieScreenState extends State<MovieScreen> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (movieCtrl.isLoading.value) {
-        return const Center(
-          child: CircularProgressIndicator(color: AppColors.red),
-        );
+        return _buildShimmerContent();
       }
 
       return Column(
@@ -280,5 +278,103 @@ class _MovieScreenState extends State<MovieScreen> {
         ],
       );
     });
+  }
+
+  Widget _buildShimmerContent() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 50,
+            decoration: BoxDecoration(
+              color: AppColors.containerBgColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            height: 24,
+            width: 100,
+            decoration: BoxDecoration(
+              color: AppColors.containerBgColor,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 140,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 3,
+              itemBuilder: (context, index) => Container(
+                width: 160,
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.containerBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            height: 24,
+            width: 120,
+            decoration: BoxDecoration(
+              color: AppColors.containerBgColor,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.builder(
+              itemCount: 5,
+              itemBuilder: (context, index) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.containerBgColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 16,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: AppColors.containerBgColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 12,
+                            width: 150,
+                            decoration: BoxDecoration(
+                              color: AppColors.containerBgColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

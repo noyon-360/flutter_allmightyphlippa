@@ -84,10 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMovieList() {
     return Obx(() {
       if (movieCtrl.isLoading.value && movieCtrl.movies.isEmpty) {
-        return const SizedBox(
-          height: 200,
-          child: Center(child: CircularProgressIndicator(color: AppColors.red)),
-        );
+        return _buildShimmerList();
       }
 
       if (movieCtrl.movies.isEmpty) {
@@ -169,10 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSeriesList() {
     return Obx(() {
       if (seriesCtrl.isLoading.value && seriesCtrl.series.isEmpty) {
-        return const SizedBox(
-          height: 200,
-          child: Center(child: CircularProgressIndicator(color: AppColors.red)),
-        );
+        return _buildShimmerList();
       }
 
       if (seriesCtrl.series.isEmpty) {
@@ -251,6 +245,54 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     });
+  }
+
+  Widget _buildShimmerList() {
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Container(
+            width: 140,
+            margin: const EdgeInsets.only(right: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.containerBgColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 14,
+                  width: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  height: 12,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildPlaceholder() {
