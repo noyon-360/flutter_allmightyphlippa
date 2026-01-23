@@ -25,7 +25,13 @@ Future<void> setupRepository() async {
 
   Get.getOrPutLazy<PlaylistRepo>(() => PlaylistRepoImpl(), fenix: true);
 
-  Get.getOrPutLazy<MovieRepo>(() => MovieRepoImpl(apiClient: Get.find()));
+  Get.getOrPutLazy<MovieRepo>(
+    () => MovieRepoImpl(apiClient: Get.find()),
+    fenix: true,
+  );
 
-  Get.getOrPutLazy<SeriesRepo>(() => SeriesRepoImpl(apiClient: Get.find()));
+  Get.getOrPutLazy<SeriesRepo>(
+    () => SeriesRepoImpl(apiClient: Get.find()),
+    fenix: true,
+  );
 }
