@@ -46,241 +46,229 @@ class _MovieScreenState extends State<MovieScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
-      body: SafeArea(
-        child: Obx(() {
-          if (movieCtrl.isLoading.value) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.red),
-            );
-          }
+    return Obx(() {
+      if (movieCtrl.isLoading.value) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.red),
+        );
+      }
 
-          return Column(
-            children: [
-              // Search Bar - Fixed at top
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    hintStyle: const TextStyle(color: AppColors.hintText),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AppColors.iconColor,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.containerBgColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(color: AppColors.primaryWhite),
+      return Column(
+        children: [
+          // Search Bar - Fixed at top
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search',
+                hintStyle: const TextStyle(color: AppColors.hintText),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: AppColors.iconColor,
+                ),
+                filled: true,
+                fillColor: AppColors.containerBgColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
                 ),
               ),
+              style: const TextStyle(color: AppColors.primaryWhite),
+            ),
+          ),
 
-              Expanded(
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    // Genres Title
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Genres',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    color: AppColors.primaryWhite,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            Text(
-                              'See All',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppColors.primaryGray),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Genres List
-                    SliverToBoxAdapter(
-                      child: Container(
-                        height: 140,
-                        margin: const EdgeInsets.symmetric(vertical: 16),
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _genres.length,
-                          itemBuilder: (context, index) {
-                            return Container(
-                              width: 160,
-                              margin: const EdgeInsets.only(right: 16),
-                              decoration: BoxDecoration(
-                                color: AppColors
-                                    .containerBgColor, // Fallback color
-                                borderRadius: BorderRadius.circular(12),
-                                // Gradient or Image could go here
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Placeholder for genre image/gradient
-                                  Positioned(
-                                    bottom: 10,
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          _genres[index]['name']!,
-                                          style: const TextStyle(
-                                            color: AppColors.primaryWhite,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const Text(
-                                          'Lorem Ipsum',
-                                          style: TextStyle(
-                                            color: AppColors.primaryGray,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-
-                    // Top Search Title
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 8.0,
-                        ),
-                        child: Text(
-                          'Top Search',
+          Expanded(
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                // Genres Title
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Genres',
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
                                 color: AppColors.primaryWhite,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
-                      ),
+                        Text(
+                          'See All',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.primaryGray),
+                        ),
+                      ],
                     ),
+                  ),
+                ),
 
-                    // Movie List
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final movie = movieCtrl.movies[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0,
+                // Genres List
+                SliverToBoxAdapter(
+                  child: Container(
+                    height: 140,
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _genres.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          width: 160,
+                          margin: const EdgeInsets.only(right: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.containerBgColor, // Fallback color
+                            borderRadius: BorderRadius.circular(12),
+                            // Gradient or Image could go here
                           ),
-                          child: InkWell(
-                            onTap: () {
-                              Get.to(
-                                () => VideoPlayScreen(
-                                  streamId: movie.streamId,
-                                  type: ServerType.movies,
-                                ),
-                              );
-                            },
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 100,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.containerBgColor,
-                                    borderRadius: BorderRadius.circular(8),
-                                    image: movie.streamIcon.isNotEmpty
-                                        ? DecorationImage(
-                                            image: NetworkImage(
-                                              movie.streamIcon,
-                                            ),
-                                            fit: BoxFit.cover,
-                                            onError: (_, __) {},
-                                          )
-                                        : null,
-                                  ),
-                                  child: movie.streamIcon.isEmpty
-                                      ? const Icon(
-                                          Icons.movie,
-                                          color: AppColors.iconColor,
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        movie.name,
-                                        style: const TextStyle(
-                                          color: AppColors.primaryWhite,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Placeholder for genre image/gradient
+                              Positioned(
+                                bottom: 10,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      _genres[index]['name']!,
+                                      style: const TextStyle(
+                                        color: AppColors.primaryWhite,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        // Formatting date and duration if available, else placeholder
-                                        '${movie.added} | Movie | 2h 44m 31s',
-                                        style: const TextStyle(
-                                          color: AppColors.primaryGray,
-                                          fontSize: 12,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const Text(
+                                      'Lorem Ipsum',
+                                      style: TextStyle(
+                                        color: AppColors.primaryGray,
+                                        fontSize: 12,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         );
-                      }, childCount: movieCtrl.movies.length),
+                      },
                     ),
+                  ),
+                ),
 
-                    // Loading Indicator for Pagination
-                    if (movieCtrl.isMoreLoading.value)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.red,
+                // Top Search Title
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: Text(
+                      'Top Search',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.primaryWhite,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Movie List
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final movie = movieCtrl.movies[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          Get.to(
+                            () => VideoPlayScreen(
+                              streamId: movie.streamId,
+                              type: ServerType.movies,
                             ),
-                          ),
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: AppColors.containerBgColor,
+                                borderRadius: BorderRadius.circular(8),
+                                image: movie.streamIcon.isNotEmpty
+                                    ? DecorationImage(
+                                        image: NetworkImage(movie.streamIcon),
+                                        fit: BoxFit.cover,
+                                        onError: (_, __) {},
+                                      )
+                                    : null,
+                              ),
+                              child: movie.streamIcon.isEmpty
+                                  ? const Icon(
+                                      Icons.movie,
+                                      color: AppColors.iconColor,
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    movie.name,
+                                    style: const TextStyle(
+                                      color: AppColors.primaryWhite,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    // Formatting date and duration if available, else placeholder
+                                    '${movie.added} | Movie | 2h 44m 31s',
+                                    style: const TextStyle(
+                                      color: AppColors.primaryGray,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-
-                    const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
-                  ],
+                    );
+                  }, childCount: movieCtrl.movies.length),
                 ),
-              ),
-            ],
-          );
-        }),
-      ),
-    );
+
+                // Loading Indicator for Pagination
+                if (movieCtrl.isMoreLoading.value)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(
+                        child: CircularProgressIndicator(color: AppColors.red),
+                      ),
+                    ),
+                  ),
+
+                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
