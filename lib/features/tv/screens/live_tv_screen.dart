@@ -1,10 +1,241 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 
-class LiveTVScreen extends StatelessWidget {
-  const LiveTVScreen({super.key});
+import '../../../core/constants/app_colors.dart';
+import '../../video/screens/live_video_play_screen.dart';
+import '../controllers/live_tv_controller.dart';
+
+class LiveTvScreen extends StatefulWidget {
+  const LiveTvScreen({super.key});
+
+  @override
+  State<LiveTvScreen> createState() => _LiveTvScreenState();
+}
+
+class _LiveTvScreenState extends State<LiveTvScreen> {
+  final liveTvCtrl = Get.find<LiveTvController>();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      liveTvCtrl.getLiveTvList(isLoadMore: true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Live TV'));
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Obx(() {
+        final screenWidth = MediaQuery.of(context).size.width;
+        int crossAxisCount = 2;
+        if (screenWidth >= 900) {
+          crossAxisCount = 4;
+        } else if (screenWidth >= 600) {
+          crossAxisCount = 3;
+        }
+
+        if (liveTvCtrl.isLoading.value && liveTvCtrl.liveTvList.isEmpty) {
+          return _buildShimmerContent(crossAxisCount);
+        }
+
+        return Column(
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search Channel',
+                  hintStyle: const TextStyle(color: AppColors.hintText),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.iconColor,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.containerBgColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(color: AppColors.primaryWhite),
+                onChanged: (value) {
+                  // TODO: Implement search logic if needed
+                },
+              ),
+            ),
+
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await liveTvCtrl.getLiveTvList();
+                },
+                color: AppColors.red,
+                child: GridView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: 1.5,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount:
+                      liveTvCtrl.liveTvList.length +
+                      (liveTvCtrl.isMoreLoading.value ? crossAxisCount : 0),
+                  itemBuilder: (context, index) {
+                    if (index >= liveTvCtrl.liveTvList.length) {
+                      return _buildSingleShimmerItem();
+                    }
+
+                    final channel = liveTvCtrl.liveTvList[index];
+                    return InkWell(
+                      onTap: () {
+                        // Live video play screen
+                        Get.to(
+                          () => LiveVideoPlayScreen(
+                            streamId: channel.streamId,
+                            channelName: channel.name,
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.containerBgColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primaryWhite.withOpacity(0.05),
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          children: [
+                            // Background/Icon
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: channel.streamIcon.isNotEmpty
+                                    ? Image.network(
+                                        channel.streamIcon,
+                                        fit: BoxFit.contain,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                              return const Icon(
+                                                Icons.tv,
+                                                color: AppColors.iconColor,
+                                                size: 40,
+                                              );
+                                            },
+                                      )
+                                    : const Icon(
+                                        Icons.tv,
+                                        color: AppColors.iconColor,
+                                        size: 40,
+                                      ),
+                              ),
+                            ),
+
+                            // Bottom Overlay for Name
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                    colors: [
+                                      Colors.black.withOpacity(0.8),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  channel.name,
+                                  style: const TextStyle(
+                                    color: AppColors.primaryWhite,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildShimmerContent(int crossAxisCount) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Container(
+            height: 50,
+            decoration: BoxDecoration(
+              color: AppColors.containerBgColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: GridView.builder(
+              itemCount: crossAxisCount * 4, // Show 4 rows of shimmer
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: 1.5,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemBuilder: (context, index) => _buildSingleShimmerItem(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleShimmerItem() {
+    return Shimmer.fromColors(
+      baseColor: AppColors.containerBgColor,
+      highlightColor: AppColors.primaryWhite.withOpacity(0.1),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.containerBgColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 }

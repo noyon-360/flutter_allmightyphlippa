@@ -20,7 +20,7 @@ class BottomNavScreen extends StatelessWidget {
 
     final List<Widget> pages = [
       const HomeScreen(),
-      const LiveTVScreen(),
+      const LiveTvScreen(),
       const MovieScreen(),
       const SeriesScreen(),
       const ProfileScreen(),

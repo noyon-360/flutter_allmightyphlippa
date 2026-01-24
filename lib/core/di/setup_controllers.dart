@@ -4,8 +4,11 @@ import 'package:flutter_almightyflippa/features/profile/controller/profile_contr
 import 'package:flutter_almightyflippa/features/series/controllers/series_controller.dart';
 import 'package:get/get.dart';
 
+import '../../features/tv/controllers/live_tv_controller.dart';
+
 Future<void> setupControllers() async {
   Get.getOrPutLazy(() => ProfileController(), fenix: true);
   Get.getOrPutLazy(() => MovieController(), fenix: true);
   Get.getOrPutLazy(() => SeriesController(), fenix: true);
+  Get.getOrPutLazy(() => LiveTvController(), fenix: true);
 }

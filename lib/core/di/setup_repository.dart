@@ -10,6 +10,8 @@ import 'package:get/get.dart';
 import '../../features/auth/repo/auth_repo.dart';
 import '../../features/movie/repositories/movie_repo.dart';
 import '../../features/movie/repositories/movie_repo_impl.dart';
+import '../../features/tv/repositories/live_tv_repo.dart';
+import '../../features/tv/repositories/live_tv_repo_impl.dart';
 import '../utils/getx_helper.dart';
 
 Future<void> setupRepository() async {
@@ -32,6 +34,11 @@ Future<void> setupRepository() async {
 
   Get.getOrPutLazy<SeriesRepo>(
     () => SeriesRepoImpl(apiClient: Get.find()),
+    fenix: true,
+  );
+
+  Get.getOrPutLazy<LiveTvRepo>(
+    () => LiveTvRepoImpl(apiClient: Get.find()),
     fenix: true,
   );
 }
