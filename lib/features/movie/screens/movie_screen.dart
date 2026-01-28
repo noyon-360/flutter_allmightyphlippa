@@ -17,13 +17,13 @@ class _MovieScreenState extends State<MovieScreen> {
   final movieCtrl = Get.put(MovieController());
   final ScrollController _scrollController = ScrollController();
 
-  final List<Map<String, String>> _genres = [
-    {
-      'name': 'Bollywood',
-      'image': 'assets/images/bollywood.png',
-    }, // Placeholder paths, logic only
-    {'name': 'Hollywood', 'image': 'assets/images/hollywood.png'},
-  ];
+  // final List<Map<String, String>> _genres = [
+  //   {
+  //     'name': 'Bollywood',
+  //     'image': 'assets/images/bollywood.png',
+  //   }, // Placeholder paths, logic only
+  //   {'name': 'Hollywood', 'image': 'assets/images/hollywood.png'},
+  // ];
 
   @override
   void initState() {
@@ -86,82 +86,82 @@ class _MovieScreenState extends State<MovieScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   // Genres Title
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Genres',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: AppColors.primaryWhite,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          Text(
-                            'See All',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.primaryGray),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // SliverToBoxAdapter(
+                  //   child: Padding(
+                  //     padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  //     child: Row(
+                  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //       children: [
+                  //         Text(
+                  //           'Genres',
+                  //           style: Theme.of(context).textTheme.titleLarge
+                  //               ?.copyWith(
+                  //                 color: AppColors.primaryWhite,
+                  //                 fontWeight: FontWeight.bold,
+                  //               ),
+                  //         ),
+                  //         Text(
+                  //           'See All',
+                  //           style: Theme.of(context).textTheme.bodyMedium
+                  //               ?.copyWith(color: AppColors.primaryGray),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
 
                   // Genres List
-                  SliverToBoxAdapter(
-                    child: Container(
-                      height: 140,
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _genres.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            width: 160,
-                            margin: const EdgeInsets.only(right: 16),
-                            decoration: BoxDecoration(
-                              color:
-                                  AppColors.containerBgColor, // Fallback color
-                              borderRadius: BorderRadius.circular(12),
-                              // Gradient or Image could go here
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Placeholder for genre image/gradient
-                                Positioned(
-                                  bottom: 10,
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        _genres[index]['name']!,
-                                        style: const TextStyle(
-                                          color: AppColors.primaryWhite,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      const Text(
-                                        'Lorem Ipsum',
-                                        style: TextStyle(
-                                          color: AppColors.primaryGray,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+                  // SliverToBoxAdapter(
+                  //   child: Container(
+                  //     height: 140,
+                  //     margin: const EdgeInsets.symmetric(vertical: 16),
+                  //     child: ListView.builder(
+                  //       scrollDirection: Axis.horizontal,
+                  //       padding: const EdgeInsets.symmetric(horizontal: 16),
+                  //       itemCount: _genres.length,
+                  //       itemBuilder: (context, index) {
+                  //         return Container(
+                  //           width: 160,
+                  //           margin: const EdgeInsets.only(right: 16),
+                  //           decoration: BoxDecoration(
+                  //             color:
+                  //                 AppColors.containerBgColor, // Fallback color
+                  //             borderRadius: BorderRadius.circular(12),
+                  //             // Gradient or Image could go here
+                  //           ),
+                  //           child: Stack(
+                  //             alignment: Alignment.center,
+                  //             children: [
+                  //               // Placeholder for genre image/gradient
+                  //               Positioned(
+                  //                 bottom: 10,
+                  //                 child: Column(
+                  //                   children: [
+                  //                     Text(
+                  //                       _genres[index]['name']!,
+                  //                       style: const TextStyle(
+                  //                         color: AppColors.primaryWhite,
+                  //                         fontWeight: FontWeight.bold,
+                  //                         fontSize: 16,
+                  //                       ),
+                  //                     ),
+                  //                     const Text(
+                  //                       'Lorem Ipsum',
+                  //                       style: TextStyle(
+                  //                         color: AppColors.primaryGray,
+                  //                         fontSize: 12,
+                  //                       ),
+                  //                     ),
+                  //                   ],
+                  //                 ),
+                  //               ),
+                  //             ],
+                  //           ),
+                  //         );
+                  //       },
+                  //     ),
+                  //   ),
+                  // ),
 
                   // Top Search Title
                   SliverToBoxAdapter(

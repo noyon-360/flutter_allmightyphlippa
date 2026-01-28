@@ -78,14 +78,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(Icons.flash_on, color: Colors.amber, size: 40),
                 ),
               ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.notifications_none_outlined,
-                  color: AppColors.primaryWhite,
-                  size: 28,
-                ),
-              ),
+              // IconButton(
+              //   onPressed: () {},
+              //   icon: const Icon(
+              //     Icons.notifications_none_outlined,
+              //     color: AppColors.primaryWhite,
+              //     size: 28,
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(height: 20),

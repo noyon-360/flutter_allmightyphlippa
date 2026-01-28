@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
+import 'package:flutx_core/core/debug_print.dart';
 import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -258,24 +259,73 @@ class VideoPlayController extends GetxController {
       // 1. Fetch resume position if we have video info
       Duration startPosition = Duration.zero;
       if (_currentVideoId != null) {
+        // Fetch watch history to check for resume position as requested by user
         final result = await videoStatusRepo.getVideoStatus(_currentVideoId!);
         if (result.isRight()) {
-          final statusSuccess = result.getOrElse(() => throw Exception());
-          final status = statusSuccess.data;
+          final historySuccess = result.getOrElse(() => throw Exception());
+          final historyItem = historySuccess.data;
 
-          isLoved.value = status.isLoved;
+          // Find the current video in history list
+          // final historyItem = historyList.firstWhereOrNull(
+          //   (item) => item.videoId == _currentVideoId,
+          // );
 
-          if (!status.isCompleted && status.currentTime > 0) {
-            startPosition = Duration(seconds: status.currentTime.toInt());
+          isLoved.value = historyItem.isLoved;
+
+          if (!historyItem.isCompleted && historyItem.currentTime > 0) {
+            // Check if the video is nearly at the end
+            // If remaining time < 10 seconds OR progress > 95%, start from beginning
+            final remainingSeconds =
+                historyItem.duration - historyItem.currentTime;
+            final progressPercentage = historyItem.duration > 0
+                ? (historyItem.currentTime / historyItem.duration)
+                : 0.0;
+
+            if (remainingSeconds < 10 || progressPercentage > 0.95) {
+              startPosition = Duration.zero;
+              DPrint.log(
+                "Video nearly finished, starting from beginning. Remaining: $remainingSeconds, Progress: $progressPercentage",
+              );
+            } else {
+              startPosition = Duration(
+                seconds: historyItem.currentTime.toInt(),
+              );
+              DPrint.log("Resuming from saved position: $startPosition");
+            }
           }
+        } else {
+          startPosition = Duration.zero;
+          isLoved.value = false;
         }
       }
 
-      // 2. Open Player
+      // 2. Open Player (start paused to allow seeking)
       await player.open(Media(videoUrl), play: false);
+
       if (startPosition > Duration.zero) {
+        // Wait for player to be ready (has duration)
+        final Completer<void> ready = Completer();
+        final sub = player.stream.duration.listen((d) {
+          if (d > Duration.zero && !ready.isCompleted) {
+            ready.complete();
+          }
+        });
+
+        // timeout after 10 seconds if it never gets duration
+        await ready.future.timeout(const Duration(seconds: 10)).catchError((_) {
+          DPrint.log("Timed out waiting for duration");
+        });
+        await sub.cancel();
+
+        // Seek to the start position
         await player.seek(startPosition);
+        DPrint.log("Seeked to: $startPosition");
+
+        // Small additional delay to ensure seek is processed
+        await Future.delayed(const Duration(milliseconds: 200));
       }
+
+      // 3. Start playback
       await player.play();
 
       isVideoInitialized.value = true;

@@ -83,7 +83,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
                       Container(
                         color: Colors.black,
                         child: controller.isVideoInitialized.value
-                            ? Video(controller: controller.videoController)
+                            ? Video(controller: controller.videoController,)
                             : const Center(
                                 child: CircularProgressIndicator(
                                   color: AppColors.red,

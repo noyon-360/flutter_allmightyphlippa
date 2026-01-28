@@ -254,7 +254,7 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                   Gap.h8,
                                   Text(
-                                    "Video ID: ${history.videoId.length > 8 ? '${history.videoId.substring(0, 8)}...' : history.videoId}",
+                                    history.name ?? 'Unknown',
                                     style: const TextStyle(
                                       color: AppColors.primaryWhite,
                                       fontSize: 14,

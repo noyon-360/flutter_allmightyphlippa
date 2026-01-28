@@ -139,7 +139,7 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      item.name,
+                                      item.name ?? 'Unknown Title',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,

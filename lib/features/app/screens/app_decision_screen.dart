@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../playlist/screens/add_playlist_screen.dart';
+import 'package:flutter_almightyflippa/features/playlist/screens/playlist_list_screen.dart';
 import '/core/common/widgets/app_logo.dart';
 import '/core/constants/assest_const.dart';
 import '/features/auth/screens/welcome_screen.dart';
@@ -50,7 +50,7 @@ class _AppDecisionScreenState extends State<AppDecisionScreen> {
             );
           } else {
             Get.offAll(
-              () => const AddPlaylistScreen(),
+              () => const PlaylistListScreen(),
               transition: Transition.fadeIn,
             );
           }

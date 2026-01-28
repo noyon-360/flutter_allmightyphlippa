@@ -5,7 +5,7 @@ class WatchHistoryModel {
   final String videoType;
   final int? seasonNumber;
   final int? episodeNumber;
-  final String name;
+  final String? name;
   final double currentTime;
   final String thumbnail;
   final double duration;

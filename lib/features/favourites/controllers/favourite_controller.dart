@@ -67,7 +67,7 @@ class FavouriteController extends GetxController {
   Future<void> removeFavourite(WatchHistoryModel item) async {
     final result = await _videoStatusRepo.updateVideoStatus(
       UpdateVideoStatusRequest(
-        title: item.name,
+        title: item.name ?? 'Unknown Title',
         videoId: item.videoId,
         videoType: item.videoType,
         isLoved: false,

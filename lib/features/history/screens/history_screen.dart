@@ -158,9 +158,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    item.name.isNotEmpty
-                                        ? item.name
-                                        : 'Unknown Title',
+                                    item.name ?? 'Unknown Title',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
