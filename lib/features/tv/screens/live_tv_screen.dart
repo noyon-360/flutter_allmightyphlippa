@@ -56,30 +56,30 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         return Column(
           children: [
             // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search Channel',
-                  hintStyle: const TextStyle(color: AppColors.hintText),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: AppColors.iconColor,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.containerBgColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                style: const TextStyle(color: AppColors.primaryWhite),
-                onChanged: (value) {
-                  // TODO: Implement search logic if needed
-                },
-              ),
-            ),
-
+            /// [Todo: Implement search bar later]
+            // Padding(
+            //   padding: const EdgeInsets.all(16.0),
+            //   child: TextField(
+            //     decoration: InputDecoration(
+            //       hintText: 'Search Channel',
+            //       hintStyle: const TextStyle(color: AppColors.hintText),
+            //       prefixIcon: const Icon(
+            //         Icons.search,
+            //         color: AppColors.iconColor,
+            //       ),
+            //       filled: true,
+            //       fillColor: AppColors.containerBgColor,
+            //       border: OutlineInputBorder(
+            //         borderRadius: BorderRadius.circular(8),
+            //         borderSide: BorderSide.none,
+            //       ),
+            //     ),
+            //     style: const TextStyle(color: AppColors.primaryWhite),
+            //     onChanged: (value) {
+            //       // TODO: Implement search logic if needed
+            //     },
+            //   ),
+            // ),
             Expanded(
               child: RefreshIndicator.adaptive(
                 onRefresh: () async {

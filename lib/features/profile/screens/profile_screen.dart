@@ -12,6 +12,7 @@ import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.
 
 import '../../../core/common/widgets/app_cached_image.dart';
 import '../../../core/common/widgets/button_widgets.dart';
+import '../../auth/controller/auth_controller.dart';
 import '../../favourites/screens/favourite_screen.dart';
 import '../../history/screens/history_screen.dart';
 import '../../app/screens/about_app_screen.dart';
@@ -396,14 +397,7 @@ class ProfileScreen extends StatelessWidget {
                                     backgroundColor: AppColors.red,
                                     textColor: Colors.white,
                                     onSimplePressed: () {
-                                      Get.back();
-                                      Get.snackbar(
-                                        "Coming Soon",
-                                        "Delete account feature is under development",
-                                        backgroundColor:
-                                            AppColors.containerBgColor,
-                                        colorText: Colors.white,
-                                      );
+                                      Get.put(AuthController()).deleteAccount();
                                     },
                                   ),
                                 ),

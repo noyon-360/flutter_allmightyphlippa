@@ -43,6 +43,12 @@ class AuthController extends GetxController {
   void toggleObscureNewPassword() => obscureNewPassword.toggle();
   void toggleObscureConfirmPassword() => obscureConfirmPassword.toggle();
 
+  void _clearFields() {
+    oldPasswordController.clear();
+    newPasswordController.clear();
+    confirmPasswordController.clear();
+  }
+
   Future<void> changePassword() async {
     if (changePasswordFormKey.currentState?.validate() ?? false) {
       errorMessage.value = "";
@@ -78,9 +84,21 @@ class AuthController extends GetxController {
     }
   }
 
-  void _clearFields() {
-    oldPasswordController.clear();
-    newPasswordController.clear();
-    confirmPasswordController.clear();
+  Future<void> deleteAccount() async {
+    isLoading.value = true;
+
+    final result = await _authRepo.deleteAccount();
+
+    isLoading.value = false;
+
+    result.fold(
+      (failure) {
+        errorMessage.value = failure.message;
+      },
+      (success) {
+        Get.back();
+        _clearFields();
+      },
+    );
   }
 }

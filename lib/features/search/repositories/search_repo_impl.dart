@@ -5,7 +5,6 @@ import 'package:flutter_almightyflippa/features/playlist/models/server_request_m
 import 'package:flutter_almightyflippa/features/search/repositories/search_repo.dart';
 
 import '../../../core/services/auth_storage_service.dart';
-import '../../movie/models/movie_response_model.dart';
 
 class SearchRepoImpl implements SearchRepo {
   final ApiClient _apiClient;

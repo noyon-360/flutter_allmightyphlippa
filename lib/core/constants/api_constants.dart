@@ -60,7 +60,7 @@ class AuthEndpoints {
   final String refreshToken = '$_base/refresh-token';
 
   // final String logout = '$_base/logout';
-  // final String delete = '$_base/delete';
+  final String deleteAccount = '$_base/delete-account';
 }
 
 class UserEndpoints {
