@@ -47,15 +47,16 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     try {
       isPipAvailable = await pip!.isPipAvailable;
     } catch (e) {
-      debugPrint('PiP check error: $e');
+      debugPrint('PiP availability check error: $e');
       isPipAvailable = false;
     }
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.hidden &&
+    if ((state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.paused) &&
         isPipAvailable &&
         pip != null &&
         controller.isVideoInitialized.value) {

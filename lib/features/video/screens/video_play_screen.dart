@@ -42,13 +42,22 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     if (Platform.isAndroid || Platform.isIOS) {
       pip = Floating();
       _checkPipAvailability();
-      _pipSubscription = pip?.pipStatusStream.listen((status) {
-        if (mounted) {
-          setState(() {
-            _pipStatus = status;
-          });
-        }
-      });
+      try {
+        _pipSubscription = pip?.pipStatusStream.listen(
+          (status) {
+            if (mounted) {
+              setState(() {
+                _pipStatus = status;
+              });
+            }
+          },
+          onError: (e) {
+            debugPrint('PiP stream error: $e');
+          },
+        );
+      } catch (e) {
+        debugPrint('Failed to initialize PiP stream: $e');
+      }
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeVideo(type: widget.type, streamId: widget.streamId);
@@ -60,15 +69,16 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     try {
       isPipAvailable = await pip!.isPipAvailable;
     } catch (e) {
-      debugPrint('PiP check error: $e');
+      debugPrint('PiP availability check error: $e');
       isPipAvailable = false;
     }
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.hidden &&
+    if ((state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.paused) &&
         isPipAvailable &&
         pip != null &&
         controller.isVideoInitialized.value) {
@@ -141,33 +151,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                         child: Stack(
                           children: [
                             MaterialVideoControlsTheme(
-                              normal: MaterialVideoControlsThemeData(
+                              normal: const MaterialVideoControlsThemeData(
                                 buttonBarHeight: 48.0,
-                                bufferingIndicatorBuilder: (context) =>
-                                    const Center(
-                                  child: SizedBox(
-                                    width: 32,
-                                    height: 32,
-                                    child: CircularProgressIndicator(
-                                      color: AppColors.red,
-                                      strokeWidth: 3,
-                                    ),
-                                  ),
-                                ),
                               ),
-                              fullscreen: MaterialVideoControlsThemeData(
-                                bufferingIndicatorBuilder: (context) =>
-                                    const Center(
-                                  child: SizedBox(
-                                    width: 32,
-                                    height: 32,
-                                    child: CircularProgressIndicator(
-                                      color: AppColors.red,
-                                      strokeWidth: 3,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                              fullscreen:
+                                  const MaterialVideoControlsThemeData(),
                               child: Video(
                                 controller: controller.videoController,
                                 fit: BoxFit.cover,

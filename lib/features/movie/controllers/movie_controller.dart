@@ -74,7 +74,11 @@ class MovieController extends GetxController {
 
     result.fold(
       (fail) {
-        DPrint.error('Error fetching movie details: ${fail.message}');
+        DPrint.error(
+          '❌ ERROR: Fetching movie details failed for streamId: $streamId',
+        );
+        DPrint.error('   Message: ${fail.message}');
+        DPrint.error('   Status Code: ${fail.statusCode}');
       },
       (success) {
         DPrint.info('Movie details fetched successfully');
