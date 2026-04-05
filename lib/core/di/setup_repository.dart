@@ -9,6 +9,8 @@ import 'package:flutter_almightyflippa/features/video/repositories/video_status_
 import 'package:flutter_almightyflippa/features/video/repositories/video_status_repo_impl.dart';
 import 'package:get/get.dart';
 
+import '../../features/genre/repo/genre_repo.dart';
+import '../../features/genre/repo/genre_repo_impl.dart';
 import '../../features/search/repositories/search_repo.dart';
 import '../../features/search/repositories/search_repo_impl.dart';
 
@@ -55,6 +57,11 @@ Future<void> setupRepository() async {
 
   Get.getOrPutLazy<SearchRepo>(
     () => SearchRepoImpl(apiClient: Get.find()),
+    fenix: true,
+  );
+
+  Get.getOrPutLazy<GenreRepo>(
+    () => GenreRepoImpl(apiClient: Get.find()),
     fenix: true,
   );
 }
