@@ -11,7 +11,8 @@ import '/core/extensions/input_decoration_extensions.dart';
 import '../controllers/playlist_controller.dart';
 
 class AddPlaylistScreen extends StatelessWidget {
-  const AddPlaylistScreen({super.key});
+  final bool isEdit;
+  const AddPlaylistScreen({super.key, this.isEdit = false});
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +155,13 @@ class AddPlaylistScreen extends StatelessWidget {
                       const Gap(h: 20),
                       PrimaryButton(
                         text: "Add Playlist",
-                        onApiPressed: () => playlistCtrl.addPlaylist(),
+                        onApiPressed: () async {
+                          if (isEdit) {
+                            await playlistCtrl.addPlaylistBackList();
+                          } else {
+                            await playlistCtrl.addPlaylist();
+                          }
+                        },
                       ),
                       const Gap(h: 24),
                     ],

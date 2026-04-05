@@ -9,7 +9,8 @@ import '../controllers/playlist_controller.dart';
 import 'add_playlist_screen.dart';
 
 class PlaylistListScreen extends StatelessWidget {
-  const PlaylistListScreen({super.key});
+  final bool isEdit;
+  const PlaylistListScreen({super.key, this.isEdit = false});
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +152,13 @@ class PlaylistListScreen extends StatelessWidget {
           const Gap(h: 20),
           PrimaryButton(
             text: "Add New Playlist",
-            onSimplePressed: () => Get.to(() => const AddPlaylistScreen()),
+            onSimplePressed: () {
+              if (isEdit) {
+                Get.to(() => AddPlaylistScreen(isEdit: true));
+              } else {
+                Get.to(() => AddPlaylistScreen(isEdit: false));
+              }
+            },
           ),
           Gap.bottomBarGap,
         ],
