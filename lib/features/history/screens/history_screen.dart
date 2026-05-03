@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../playlist/models/server_request_model.dart';
@@ -97,7 +98,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      child: InkWell(
+                      child: TvFocusWrapper(
                         onTap: () {
                           // Try to parse streamId, default to 0 if fails
                           final streamId = int.tryParse(item.videoId) ?? 0;

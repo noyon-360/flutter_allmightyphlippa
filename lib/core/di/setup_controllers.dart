@@ -15,6 +15,7 @@ Future<void> setupControllers() async {
   Get.getOrPutLazy(() => MovieController(), fenix: true);
   Get.getOrPutLazy(() => SeriesController(), fenix: true);
   Get.getOrPutLazy(() => LiveTvController(), fenix: true);
-  Get.getOrPutLazy(() => search_ctrl.SearchController(), fenix: true);
+  Get.getOrPutLazy(() => search_ctrl.SearchingController(), fenix: true);
   Get.getOrPutLazy(() => SubscriptionController(), fenix: true);
+  Get.getOrPutLazy(() => search_ctrl.SearchingController(), fenix: true);
 }

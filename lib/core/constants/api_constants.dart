@@ -1,9 +1,9 @@
 class ApiConstants {
   /// [Base Configuration]
-  // static const String baseDomain = 'http://10.10.5.48:5001'; // Noyon Office
+  static const String baseDomain = 'http://10.10.5.41:5001'; // Noyon Office
   // static const String baseDomain = 'http://192.168.0.218:5000'; // Noyon Home
 
-  static const String baseDomain = 'https://api.labbytv.com'; // PRODUCTION
+  // static const String baseDomain = 'https://api.labbytv.com'; // PRODUCTION
 
   static const String baseUrl = '$baseDomain/api/v1';
 
@@ -44,6 +44,7 @@ class ApiConstants {
   static VideoEndpoints get video => VideoEndpoints();
 
   static PaymentEndpoints get payment => PaymentEndpoints();
+  static GenreEndpoints get genre => GenreEndpoints();
 }
 
 /// [Authentication Endpoints]
@@ -100,4 +101,12 @@ class PaymentEndpoints {
 
   final String getMySubscription = '$_base/my-subscription';
   final String verifyApplePurchase = '$_base/verify-apple-purchase';
+}
+
+class GenreEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/category';
+
+  final String getCategories = _base;
+
+  String getCategoriesByType(String id) => '$_base/$id';
 }

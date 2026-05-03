@@ -4,8 +4,8 @@ import 'package:flutter_almightyflippa/features/app/screens/app_decision_screen.
 import 'package:get/get.dart';
 import 'core/init/app_initializer.dart';
 
-void main() {
-  AppInitializer.initializeApp();
+void main() async {
+  await AppInitializer.initializeApp();
   runApp(const MyApp());
 }
 

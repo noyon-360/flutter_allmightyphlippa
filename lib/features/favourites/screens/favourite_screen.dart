@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../playlist/models/server_request_model.dart';
@@ -89,7 +90,7 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
                 itemCount: controller.favourites.length,
                 itemBuilder: (context, index) {
                   final item = controller.favourites[index];
-                  return InkWell(
+                  return TvFocusWrapper(
                     onTap: () {
                       Get.to(
                         () => VideoPlayScreen(

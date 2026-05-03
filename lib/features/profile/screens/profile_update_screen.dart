@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/common/widgets/app_cached_image.dart';
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 
 class ProfileUpdateScreen extends StatefulWidget {
   const ProfileUpdateScreen({super.key});
@@ -142,7 +143,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: GestureDetector(
+                        child: TvFocusWrapper(
                           onTap: _pickImage,
                           child: Container(
                             width: 36,
@@ -207,8 +208,8 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
-                        color: AppColors.primaryWhite,
-                        width: 1,
+                        color: AppColors.red,
+                        width: 2.0,
                       ),
                     ),
                     errorBorder: OutlineInputBorder(
@@ -280,8 +281,8 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
-                        color: AppColors.primaryWhite,
-                        width: 1,
+                        color: AppColors.red,
+                        width: 2.0,
                       ),
                     ),
                     errorBorder: OutlineInputBorder(

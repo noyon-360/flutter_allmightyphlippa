@@ -14,7 +14,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final _searchCtrl = Get.find<sc.SearchController>();
+  final _searchCtrl = Get.find<sc.SearchingController>();
   late sc.SearchState _state;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();

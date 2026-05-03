@@ -1,5 +1,6 @@
 // import '/core/base/base_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
 
 import '../../constants/app_colors.dart';
@@ -18,6 +19,7 @@ class PrimaryButton extends StatelessWidget {
   final Color backgroundColor;
   final Color textColor;
   final double borderRadius;
+  final FocusNode? focusNode;
 
   const PrimaryButton({
     super.key,
@@ -32,6 +34,7 @@ class PrimaryButton extends StatelessWidget {
     this.backgroundColor = AppColors.primaryWhite,
     this.textColor = AppColors.primaryBlack,
     this.borderRadius = 25.0,
+    this.focusNode,
   });
 
   String get _uniqueTag => tag ?? text;
@@ -40,7 +43,8 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLoading = Get.put(false.obs, tag: _uniqueTag);
 
-    return GestureDetector(
+    return TvFocusWrapper(
+      focusNode: focusNode,
       onTap: onApiPressed != null
           ? () async {
               if (isLoading.value) return;
@@ -128,6 +132,7 @@ class SecondaryButton extends StatelessWidget {
   final Color textColor;
   final Color? backgroundColor;
   final double borderRadius;
+  final FocusNode? focusNode;
   final double borderWidth;
   final Widget? iconLeft;
   final Widget? iconRight;
@@ -147,6 +152,7 @@ class SecondaryButton extends StatelessWidget {
     this.borderWidth = 1.0,
     this.iconLeft,
     this.iconRight,
+    this.focusNode,
   });
 
   String get _uniqueTag => tag ?? text;
@@ -155,7 +161,8 @@ class SecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLoading = Get.put(false.obs, tag: _uniqueTag);
 
-    return GestureDetector(
+    return TvFocusWrapper(
+      focusNode: focusNode,
       onTap: onApiPressed != null
           ? () async {
               if (isLoading.value) return;

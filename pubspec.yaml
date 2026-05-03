@@ -1,7 +1,10 @@
 name: flutter_almightyflippa
 description: "LABBY"
 publish_to: "none"
-version: 1.0.0+1
+
+version: 1.0.10+10 # Android
+# version: 1.0.0+1 # Android TV
+# version: 1.0.0+1 # IOS
 
 environment:
   sdk: ^3.9.2
@@ -17,7 +20,7 @@ dependencies:
   flutx_core: ^1.1.1+1
   shimmer: ^3.0.0
   file_picker: ^10.3.8
-  pin_code_fields: ^8.0.1
+  pin_code_fields: ^9.1.0
   image_picker: ^1.2.1
 
   # Network and cache
@@ -34,11 +37,12 @@ dependencies:
   cached_network_image: ^3.4.1
   
   # Video
-  video_player: ^2.10.1
+  video_player: ^2.11.1
   chewie: ^1.13.0
   media_kit: ^1.1.10
-  media_kit_video: ^1.2.4
+  media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.4
+  floating: ^6.0.0
 
   # Icons for app
   flutter_launcher_icons: ^0.14.4
@@ -50,7 +54,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter_launcher_icons:
   android: "launcher_icon"

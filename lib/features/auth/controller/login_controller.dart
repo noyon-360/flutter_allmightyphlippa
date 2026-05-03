@@ -17,6 +17,7 @@ class LoginController extends GetxController {
   // FocusNodes
   final emailFocus = FocusNode();
   final passwordFocus = FocusNode();
+  final loginButtonFocus = FocusNode();
 
   // Form Key
   final loginFormKey = GlobalKey<FormState>();
@@ -31,6 +32,7 @@ class LoginController extends GetxController {
     passwordController.dispose();
     emailFocus.dispose();
     passwordFocus.dispose();
+    loginButtonFocus.dispose();
     super.onClose();
   }
 

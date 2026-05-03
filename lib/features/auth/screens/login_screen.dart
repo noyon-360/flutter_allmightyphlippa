@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '/core/common/widgets/app_scaffold.dart';
 import '/core/common/widgets/button_widgets.dart';
 import '/core/constants/assest_const.dart' hide Icons;
@@ -70,6 +71,7 @@ class LoginScreen extends StatelessWidget {
                         Gap.h12,
 
                         TextFormField(
+                          autofocus: true,
                           controller: loginCtrl.emailController,
                           focusNode: loginCtrl.emailFocus,
                           keyboardType: TextInputType.emailAddress,
@@ -125,9 +127,14 @@ class LoginScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            TextButton(
-                              onPressed: () {},
-                              child: Text("Forget Password"),
+                            TvFocusWrapper(
+                              onTap: () {
+                                // TODO: Implement forget password
+                              },
+                              child: Text(
+                                "Forget Password",
+                                style: TextStyle(color: AppColors.primaryWhite),
+                              ),
                             ),
                           ],
                         ),
@@ -135,6 +142,7 @@ class LoginScreen extends StatelessWidget {
                         PrimaryButton(
                           text: "Login",
                           onApiPressed: () => loginCtrl.login(),
+                          focusNode: loginCtrl.loginButtonFocus,
                         ),
 
                         Gap.h24,
@@ -148,7 +156,7 @@ class LoginScreen extends StatelessWidget {
                                 "Don’t have an account? ",
                                 style: TextStyle(color: AppColors.primaryGray),
                               ),
-                              GestureDetector(
+                              TvFocusWrapper(
                                 onTap: () => Get.to(() => const SignupScreen()),
                                 child: Text(
                                   'Sign Up',

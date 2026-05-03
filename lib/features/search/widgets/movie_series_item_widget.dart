@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../movie/models/movie_response_model.dart';
@@ -39,7 +40,7 @@ class MovieSeriesItemWidget extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: InkWell(
+      child: TvFocusWrapper(
         onTap: () {
           Get.to(() => VideoPlayScreen(streamId: streamId, type: type));
         },

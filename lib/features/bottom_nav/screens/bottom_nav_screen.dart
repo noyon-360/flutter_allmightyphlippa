@@ -4,6 +4,7 @@ import 'package:flutter_almightyflippa/core/common/widgets/app_scaffold.dart';
 import 'package:flutter_almightyflippa/core/constants/app_colors.dart';
 import 'package:flutter_almightyflippa/core/utils/app_svg.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart';
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../home/screens/home_screen.dart';
 import '../../movie/screens/movie_screen.dart';
 import '../../profile/screens/profile_screen.dart';
@@ -87,9 +88,9 @@ class BottomNavScreen extends StatelessWidget {
     required BottomNavController controller,
   }) {
     final isSelected = controller.selectedIndex.value == index;
-    return GestureDetector(
+    return TvFocusWrapper(
       onTap: () => controller.changeIndex(index),
-      behavior: HitTestBehavior.opaque,
+      // behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

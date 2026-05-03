@@ -7,6 +7,7 @@ import 'package:flutter_almightyflippa/features/series/controllers/series_contro
 import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.dart';
 import 'package:get/get.dart';
 
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../playlist/models/server_request_model.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
     hide Icons;
@@ -136,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          GestureDetector(
+          TvFocusWrapper(
             onTap: onSeeAll,
             child: const Text(
               'See All',
@@ -174,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: movieCtrl.movies.length,
           itemBuilder: (context, index) {
             final movie = movieCtrl.movies[index];
-            return GestureDetector(
+            return TvFocusWrapper(
               onTap: () {
                 Get.to(
                   () => VideoPlayScreen(
@@ -256,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: seriesCtrl.series.length,
           itemBuilder: (context, index) {
             final series = seriesCtrl.series[index];
-            return GestureDetector(
+            return TvFocusWrapper(
               onTap: () {
                 if (series.seriesId != null) {
                   Get.to(

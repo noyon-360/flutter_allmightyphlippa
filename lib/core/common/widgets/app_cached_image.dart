@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_almightyflippa/core/constants/app_colors.dart';
+import 'tv_focus_wrapper.dart';
 import '../shimmer/shimmer_loader.dart';
 
 class AppCachedImage extends StatelessWidget {
@@ -52,7 +53,7 @@ class AppCachedImage extends StatelessWidget {
 
     // 2️⃣ If network URL is null or empty, show placeholder
     if (imageUrl == null || imageUrl!.isEmpty) {
-      return GestureDetector(
+      return TvFocusWrapper(
         onTap: onTap,
         child: ClipRRect(
           borderRadius: borderRadius ?? BorderRadius.zero,

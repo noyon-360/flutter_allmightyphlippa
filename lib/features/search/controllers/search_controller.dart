@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/features/tv/models/live_tv_reponse_model.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
@@ -23,13 +24,14 @@ class SearchState {
   }
 }
 
-class SearchController extends GetxController {
+class SearchingController extends GetxController {
   final _searchRepo = Get.find<SearchRepo>();
   final int _limit = 10;
 
   final Map<ServerType, SearchState> _states = {
     ServerType.movies: SearchState(),
     ServerType.series: SearchState(),
+    ServerType.channels: SearchState(),
   };
 
   SearchState getState(ServerType type) => _states[type] ??= SearchState();
@@ -70,8 +72,10 @@ class SearchController extends GetxController {
       fromJson: (json) {
         if (type == ServerType.movies) {
           return MoviesResponseModel.fromJson(json);
-        } else {
+        } else if (type == ServerType.series) {
           return SeriesResponesModel.fromJson(json);
+        } else if (type == ServerType.channels) {
+          return LiveTvModel.fromJson(json);
         }
       },
     );

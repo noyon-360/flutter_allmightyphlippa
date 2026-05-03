@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../../core/constants/assest_const.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/secure_store_services.dart';
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import 'login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -129,7 +130,7 @@ class WelcomeScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(_pageCount, (i) {
                           final bool active = i == page;
-                          return GestureDetector(
+                          return TvFocusWrapper(
                             onTap: () {
                               pageController.animateToPage(
                                 i,

@@ -22,6 +22,7 @@ class RegisterController extends GetxController {
   final emailFocus = FocusNode();
   final passwordFocus = FocusNode();
   final confirmPasswordFocus = FocusNode();
+  final signUpButtonFocus = FocusNode();
 
   // Form Key
   final registerFormKey = GlobalKey<FormState>();
@@ -43,6 +44,7 @@ class RegisterController extends GetxController {
     emailFocus.dispose();
     passwordFocus.dispose();
     confirmPasswordFocus.dispose();
+    signUpButtonFocus.dispose();
     super.onClose();
   }
 

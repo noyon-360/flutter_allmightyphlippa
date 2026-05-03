@@ -18,7 +18,7 @@ extension InputDecorationExtensions on BuildContext {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppSizes.paddingSm.size),
-      borderSide: BorderSide(color: AppColors.primaryGray, width: 1.5),
+      borderSide: BorderSide(color: AppColors.red, width: 2.0),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppSizes.paddingSm.size),

@@ -1,6 +1,8 @@
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
+import '../../genre/controllers/genre_controller.dart';
+import '../../playlist/models/server_request_model.dart';
 import '../models/movie_response_model.dart';
 import '../models/single_movie_response_model.dart';
 import '../repositories/movie_repo.dart';
@@ -21,6 +23,7 @@ class MovieController extends GetxController {
   void onInit() {
     super.onInit();
     getMovies();
+    Get.put(GenreController()).getGenres(type: ServerType.movies);
   }
 
   Future<void> getMovies({bool isLoadMore = false}) async {
@@ -74,7 +77,11 @@ class MovieController extends GetxController {
 
     result.fold(
       (fail) {
-        DPrint.error('Error fetching movie details: ${fail.message}');
+        DPrint.error(
+          '❌ ERROR: Fetching movie details failed for streamId: $streamId',
+        );
+        DPrint.error('   Message: ${fail.message}');
+        DPrint.error('   Status Code: ${fail.statusCode}');
       },
       (success) {
         DPrint.info('Movie details fetched successfully');

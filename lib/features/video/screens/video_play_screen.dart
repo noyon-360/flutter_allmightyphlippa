@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
+
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -6,6 +10,7 @@ import '/core/constants/app_colors.dart';
 import 'package:get/get.dart';
 
 import '../controllers/video_play_controller.dart';
+import 'package:floating/floating.dart';
 
 class VideoPlayScreen extends StatefulWidget {
   final int streamId;
@@ -20,17 +25,66 @@ class VideoPlayScreen extends StatefulWidget {
   State<VideoPlayScreen> createState() => _VideoPlayScreenState();
 }
 
-class _VideoPlayScreenState extends State<VideoPlayScreen> {
+class _VideoPlayScreenState extends State<VideoPlayScreen>
+    with WidgetsBindingObserver {
   final controller = Get.put(VideoPlayController());
   final ScrollController _scrollController = ScrollController();
+
+  Floating? pip;
+  bool isPipAvailable = false;
+  PiPStatus _pipStatus = PiPStatus.disabled;
+  StreamSubscription<PiPStatus>? _pipSubscription;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addObserver(this);
+    if (Platform.isAndroid) {
+      pip = Floating();
+      _checkPipAvailability();
+      try {
+        _pipSubscription = pip?.pipStatusStream.listen(
+          (status) {
+            if (mounted) {
+              setState(() {
+                _pipStatus = status;
+              });
+            }
+          },
+          onError: (e) {
+            debugPrint('PiP stream error: $e');
+          },
+        );
+      } catch (e) {
+        debugPrint('Failed to initialize PiP stream: $e');
+      }
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeVideo(type: widget.type, streamId: widget.streamId);
     });
+  }
+
+  Future<void> _checkPipAvailability() async {
+    if (pip == null) return;
+    try {
+      isPipAvailable = await pip!.isPipAvailable;
+    } catch (e) {
+      debugPrint('PiP availability check error: $e');
+      isPipAvailable = false;
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if ((state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.paused) &&
+        isPipAvailable &&
+        pip != null &&
+        controller.isVideoInitialized.value) {
+      pip!.enable(const ImmediatePiP(aspectRatio: Rational.landscape()));
+    }
   }
 
   void _onScroll() {
@@ -47,6 +101,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _pipSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     // Explicitly delete the controller to ensure player is disposed and video stops.
     Get.delete<VideoPlayController>();
     super.dispose();
@@ -54,13 +110,23 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Temporarily disabled PiPSwitcher to debug blank screen issue.
+    // We will return only the main content for now.
+    return _buildMainContent(context);
+  }
+
+  Widget _buildMainContent(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primaryBlack,
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.red),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(color: AppColors.red),
+              ),
             );
           }
 
@@ -69,180 +135,255 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
           final series = controller.seriesCtrl.series;
           final singleSeries = controller.seriesCtrl.singleSeries.value;
 
-          return Column(
-            children: [
-              // Fixed Video Player
-              Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Stack(
-                    children: [
-                      Container(
-                        color: Colors.black,
-                        child: controller.isVideoInitialized.value
-                            ? Video(controller: controller.videoController,)
-                            : const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.red,
-                                ),
-                              ),
-                      ),
-                      const Positioned(
-                        top: 10,
-                        left: 10,
-                        child: BackButton(color: Colors.white),
-                      ),
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: IconButton(
-                          icon: const Icon(Icons.settings, color: Colors.white),
-                          onPressed: () {
-                            _showSettingsDialog(context);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Scrollable Content
-              Expanded(
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return Column(
+                children: [
+                  // Fixed Video Player
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight,
+                    ),
+                    child: Container(
+                      width: MediaQuery.of(context).size.width,
+                      color: Colors.black,
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Stack(
                           children: [
-                            Text(
-                              controller.title,
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              controller.subTitle,
-                              style: const TextStyle(
-                                color: AppColors.primaryGray,
-                                fontSize: 14,
+                            MaterialVideoControlsTheme(
+                              normal: const MaterialVideoControlsThemeData(
+                                buttonBarHeight: 48.0,
+                                controlsHoverDuration: Duration(seconds: 10),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              controller.description,
-                              style: const TextStyle(
-                                color: AppColors.primaryGray,
-                                fontSize: 14,
-                                height: 1.5,
+                              fullscreen:
+                                  const MaterialVideoControlsThemeData(
+                                controlsHoverDuration: Duration(seconds: 10),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                InkWell(
-                                  onTap: () => controller.toggleFavorite(),
-                                  child: Column(
-                                    children: [
-                                      Obx(() {
-                                        return Icon(
-                                          controller.isLoved.value
-                                              ? Icons.favorite
-                                              : Icons.favorite_border,
-                                          color: Colors.white,
-                                          size: 30,
-                                        );
-                                      }),
-
-                                      Text(
-                                        "Favourite",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
+                              child: Focus(
+                                autofocus: true,
+                                child: Video(
+                                  controller: controller.videoController,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
                                 ),
-                              ],
+                              ),
                             ),
+                            Obx(() {
+                              if (!controller.isVideoInitialized.value) {
+                                return const Positioned.fill(
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 32,
+                                      height: 32,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.red,
+                                        strokeWidth: 3,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            }),
+                            if (_pipStatus != PiPStatus.enabled) ...[
+                              Positioned(
+                                top: 10,
+                                left: 10,
+                                child: TvFocusWrapper(
+                                  onTap: () => Navigator.pop(context),
+                                  child: const BackButton(color: Colors.white),
+                                ),
+                              ),
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: Row(
+                                  children: [
+                                    if (isPipAvailable)
+                                      TvFocusWrapper(
+                                        onTap: () {
+                                          if (pip != null) {
+                                            pip!.enable(
+                                              const ImmediatePiP(
+                                                aspectRatio:
+                                                    Rational.landscape(),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Icon(
+                                            Icons.picture_in_picture_alt,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    TvFocusWrapper(
+                                      onTap: () {
+                                        _showSettingsDialog(context);
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Icon(
+                                          Icons.settings,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
                     ),
+                  ),
 
-                    // Related List or Episodes
-                    if (controller.currentType.value == ServerType.movies)
-                      _buildMovieList(context, movies)
-                    else if (controller.currentType.value ==
-                        ServerType.series) ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0,
-                          ),
-                          child: Text(
-                            'Episodes',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: AppColors.primaryWhite,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ),
-                      ),
-                      _buildEpisodeList(context, singleSeries),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 16.0,
-                          ),
-                          child: Text(
-                            'Other Series',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: AppColors.primaryWhite,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ),
-                      ),
-                      _buildSeriesList(context, series),
-                    ],
-
-                    // Loading Indicator for Pagination
-                    SliverToBoxAdapter(
-                      child: Obx(() {
-                        final isMoreLoading =
-                            controller.currentType.value == ServerType.movies
-                            ? controller.movieCtrl.isMoreLoading.value
-                            : controller.seriesCtrl.isMoreLoading.value;
-                        if (isMoreLoading) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.red,
+                  // Scrollable Content
+                  if (_pipStatus != PiPStatus.enabled)
+                    Expanded(
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    controller.title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    controller.subTitle,
+                                    style: const TextStyle(
+                                      color: AppColors.primaryGray,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    controller.description,
+                                    style: const TextStyle(
+                                      color: AppColors.primaryGray,
+                                      fontSize: 14,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      TvFocusWrapper(
+                                        onTap: () =>
+                                            controller.toggleFavorite(),
+                                        child: Column(
+                                          children: [
+                                            Obx(() {
+                                              return Icon(
+                                                controller.isLoved.value
+                                                    ? Icons.favorite
+                                                    : Icons.favorite_border,
+                                                color: Colors.white,
+                                                size: 30,
+                                              );
+                                            }),
+                                            const Text(
+                                              "Favourite",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        }
-                        return const SizedBox(height: 20);
-                      }),
+                          ),
+
+                          // Related List or Episodes
+                          if (controller.currentType.value == ServerType.movies)
+                            _buildMovieList(context, movies)
+                          else if (controller.currentType.value ==
+                              ServerType.series) ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8.0,
+                                ),
+                                child: Text(
+                                  'Episodes',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        color: AppColors.primaryWhite,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ),
+                            ),
+                            _buildEpisodeList(context, singleSeries),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 16.0,
+                                ),
+                                child: Text(
+                                  'Other Series',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        color: AppColors.primaryWhite,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ),
+                            ),
+                            _buildSeriesList(context, series),
+                          ],
+
+                          // Loading Indicator for Pagination
+                          SliverToBoxAdapter(
+                            child: Obx(() {
+                              final isMoreLoading =
+                                  controller.currentType.value ==
+                                      ServerType.movies
+                                  ? controller.movieCtrl.isMoreLoading.value
+                                  : controller.seriesCtrl.isMoreLoading.value;
+                              if (isMoreLoading) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.red,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox(height: 20);
+                            }),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           );
         }),
       ),
@@ -255,7 +396,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
         final movie = movies[index];
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: InkWell(
+          child: TvFocusWrapper(
             onTap: () {
               controller.initializeVideo(
                 type: ServerType.movies,
@@ -329,7 +470,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
         final item = series[index];
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: InkWell(
+          child: TvFocusWrapper(
             onTap: () {
               controller.initializeVideo(
                 type: ServerType.series,
@@ -421,7 +562,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: InkWell(
+          child: TvFocusWrapper(
             onTap: () {
               controller.playEpisode(episode);
               _scrollController.animateTo(
@@ -557,7 +698,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        InkWell(
+                        TvFocusWrapper(
                           onTap: () => Navigator.pop(context),
                           child: Container(
                             padding: const EdgeInsets.all(4),
@@ -662,8 +803,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.white)),
-        InkWell(
-          onTap: onTap,
+        TvFocusWrapper(
+          onTap: () => onTap(),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -832,7 +973,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen> {
                       final isSelected =
                           controller.playbackSpeed.value == speed;
 
-                      return InkWell(
+                      return TvFocusWrapper(
                         onTap: () {
                           controller.setPlaybackSpeed(speed);
                           Navigator.pop(context);

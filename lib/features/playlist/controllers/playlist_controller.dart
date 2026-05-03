@@ -132,6 +132,45 @@ class PlaylistController extends GetxController {
     }
   }
 
+  Future<void> addPlaylistBackList() async {
+    if (playlistFormKey.currentState?.validate() ?? false) {
+      playlistErrorMessage.value = "";
+
+      final playlist = PlaylistModel(
+        name: nameController.text.trim(),
+        userName: usernameController.text.trim(),
+        password: passwordController.text.trim(),
+        url: urlController.text.trim(),
+      );
+
+      final result = await _playlistRepo.addPlaylist(playlist);
+
+      result.fold(
+        (fail) {
+          playlistErrorMessage.value = fail.message;
+        },
+        (success) async {
+          // final playlistData = PlaylistData(
+          //   url: urlController.text.trim(),
+          //   username: usernameController.text.trim(),
+          //   password: passwordController.text.trim(),
+          // );
+          // await _authStorageService.savePlaylistData(playlistData);
+
+          // // Clear inputs
+          // nameController.clear();
+          // usernameController.clear();
+          // passwordController.clear();
+          // urlController.clear();
+
+          // updateControllers();
+
+          Get.back();
+        },
+      );
+    }
+  }
+
   Future<void> deletePlaylist(String id) async {
     final result = await _playlistRepo.deletePlaylist(id);
 
