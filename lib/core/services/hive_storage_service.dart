@@ -19,16 +19,20 @@ class HiveStorageService {
   /// Initialize Hive and open the default box
   /// Call this in main() before runApp()
   static Future<void> init() async {
-    await Hive.initFlutter();
+    try {
+      await Hive.initFlutter();
 
-    // Optional: Register adapters here if using custom objects
-    // Hive.registerAdapter(UserModelAdapter());
-    // Hive.registerAdapter(SettingsAdapter());
+      // Optional: Register adapters here if using custom objects
+      // Hive.registerAdapter(UserModelAdapter());
+      // Hive.registerAdapter(SettingsAdapter());
 
     final instance = HiveStorageService();
     instance._box = await Hive.openBox(_defaultBox);
     DPrint.log("HiveStorageService initialized successfully");
+  } catch (e) {
+    DPrint.error("HiveStorageService initialization failed: $e");
   }
+}
 
   // Helper to get the box
   Box get box => _box;

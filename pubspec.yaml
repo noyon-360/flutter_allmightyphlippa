@@ -2,7 +2,7 @@ name: flutter_almightyflippa
 description: "LABBY"
 publish_to: "none"
 
-version: 1.0.10+10 # Android
+version: 1.0.12+12 # Android
 # version: 1.0.0+1 # Android TV
 # version: 1.0.0+1 # IOS
 
