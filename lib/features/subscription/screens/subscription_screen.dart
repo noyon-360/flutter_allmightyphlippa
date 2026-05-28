@@ -151,9 +151,13 @@ class SubscriptionScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: isActive ? AppColors.red.withOpacity(0.1) : Colors.transparent,
+          color: isActive
+              ? AppColors.red.withAlpha((0.1 * 255).toInt())
+              : Colors.transparent,
           border: Border.all(
-            color: isActive ? AppColors.red : Colors.white.withOpacity(0.5),
+            color: isActive
+                ? AppColors.red
+                : Colors.white.withAlpha((0.5 * 255).toInt()),
             width: isActive ? 2 : 1,
           ),
         ),
@@ -193,7 +197,7 @@ class SubscriptionScreen extends StatelessWidget {
                   TextSpan(
                     text: ' ${_periodLabel(product.id)}',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withAlpha((0.7 * 255).toInt()),
                       fontSize: 18,
                     ),
                   ),
@@ -201,7 +205,7 @@ class SubscriptionScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Divider(color: Colors.white.withOpacity(0.2)),
+            Divider(color: Colors.white.withAlpha((0.2 * 255).toInt())),
             const SizedBox(height: 16),
             _buildFeatureRow('Instant sync across devices'),
             const SizedBox(height: 12),
@@ -211,11 +215,7 @@ class SubscriptionScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _buildFeatureRow('No watermarks'),
             const SizedBox(height: 12),
-            _buildFeatureRow('No PRO subscription ads'),
-            const SizedBox(height: 12),
             _buildFeatureRow('No device limit'),
-            const SizedBox(height: 12),
-            _buildFeatureRow('Supports ongoing app development'),
             const SizedBox(height: 12),
             _buildFeatureRow('Offline playback'),
           ],
@@ -244,7 +244,10 @@ class SubscriptionScreen extends StatelessWidget {
       onPressed: controller.restorePurchases,
       child: Text(
         'Restore Purchases',
-        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+        style: TextStyle(
+          color: Colors.white.withAlpha((0.5 * 255).toInt()),
+          fontSize: 14,
+        ),
       ),
     );
   }
