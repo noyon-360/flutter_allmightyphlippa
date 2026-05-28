@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../controllers/subscription_controller.dart';
@@ -27,48 +26,59 @@ class SubscriptionScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
-            const Text(
-              'Subscription',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                'Subscription',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 60),
-            Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
-              }
-
-              if (controller.products.isEmpty) {
-                return _buildEmptyState(controller);
-              }
-
-              return Column(
-                children: controller.products.map((product) {
-                  DPrint.log("product price ${product.price}");
-                  DPrint.log("product description ${product.description}");
-                  DPrint.log("product id ${product.id}");
-                  DPrint.log("product title ${product.title}");
-                  return _buildSubscriptionCard(
-                    product,
-                    controller,
-                    profileController,
+              const SizedBox(height: 60),
+              Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
                   );
-                }).toList(),
-              );
-            }),
-            const Spacer(),
-            _buildRestoreButton(controller),
-            const SizedBox(height: 20),
-          ],
+                }
+
+                if (controller.products.isEmpty) {
+                  return _buildEmptyState(controller);
+                }
+
+                final order = [
+                  SubscriptionController.monthlyId,
+                  SubscriptionController.quarterlyId,
+                  SubscriptionController.yearlyId,
+                ];
+                final sorted = [...controller.products]
+                  ..sort(
+                    (a, b) =>
+                        order.indexOf(a.id).compareTo(order.indexOf(b.id)),
+                  );
+                return Column(
+                  children: sorted.map((product) {
+                    DPrint.log("product price ${product.price}");
+                    DPrint.log("product description ${product.description}");
+                    DPrint.log("product id ${product.id}");
+                    DPrint.log("product title ${product.title}");
+                    return _buildSubscriptionCard(
+                      product,
+                      controller,
+                      profileController,
+                    );
+                  }).toList(),
+                );
+              }),
+              _buildRestoreButton(controller),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -94,13 +104,37 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
+  String _periodLabel(String productId) {
+    if (productId == SubscriptionController.yearlyId) return '/year';
+    if (productId == SubscriptionController.quarterlyId) return '/quarter';
+    return '/month';
+  }
+
+  bool _isCurrentPlan(String productId, ProfileController profileController) {
+    final user = profileController.userProfile.value;
+    if (user?.subscriptionStatus != 'active') return false;
+    final plan = (user?.plan ?? '').toLowerCase();
+    if (productId == SubscriptionController.monthlyId) {
+      return plan.contains('month') || plan == SubscriptionController.monthlyId;
+    }
+    if (productId == SubscriptionController.quarterlyId) {
+      return plan.contains('quarter') ||
+          plan == SubscriptionController.quarterlyId;
+    }
+    if (productId == SubscriptionController.yearlyId) {
+      return plan.contains('year') ||
+          plan.contains('annual') ||
+          plan == SubscriptionController.yearlyId;
+    }
+    return false;
+  }
+
   Widget _buildSubscriptionCard(
     ProductDetails product,
     SubscriptionController controller,
     ProfileController profileController,
   ) {
-    final bool isActive =
-        profileController.userProfile.value?.subscriptionStatus == 'active';
+    final bool isActive = _isCurrentPlan(product.id, profileController);
 
     return GestureDetector(
       onTap: isActive
@@ -157,7 +191,7 @@ class SubscriptionScreen extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text: ' /month',
+                    text: ' ${_periodLabel(product.id)}',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 18,
@@ -169,9 +203,21 @@ class SubscriptionScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Divider(color: Colors.white.withOpacity(0.2)),
             const SizedBox(height: 16),
-            _buildFeatureRow('Watch all you want.'),
+            _buildFeatureRow('Instant sync across devices'),
             const SizedBox(height: 12),
-            _buildFeatureRow('Full Quality for Video Watch'),
+            _buildFeatureRow('Unlimited EPG navigation'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('EPG reminders'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('No watermarks'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('No PRO subscription ads'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('No device limit'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('Supports ongoing app development'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('Offline playback'),
           ],
         ),
       ),

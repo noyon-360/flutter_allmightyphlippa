@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -19,7 +18,16 @@ class SubscriptionController extends GetxController {
   final isStoreAvailable = false.obs;
 
   // Product IDs from App Store Connect
-  static const String _monthlySubscriptionId = 'month_subscription';
+  static const String monthlyId = 'month_subscription';
+  static const String quarterlyId = 'premium_quarterly';
+  static const String yearlyId = 'premium_t_yearly';
+
+  // Keep private aliases for internal use
+  static const String _monthlySubscriptionId = monthlyId;
+  static const String _weeklySubscriptionId = quarterlyId;
+  static const String _yearlySubscriptionId = yearlyId;
+
+  final selectedProductId = monthlyId.obs;
 
   @override
   void onInit() {
@@ -51,7 +59,11 @@ class SubscriptionController extends GetxController {
   Future<void> fetchProducts() async {
     isLoading.value = true;
     try {
-      const Set<String> _kIds = <String>{_monthlySubscriptionId};
+      const Set<String> _kIds = <String>{
+        _monthlySubscriptionId,
+        _weeklySubscriptionId,
+        _yearlySubscriptionId,
+      };
       final ProductDetailsResponse response = await _inAppPurchase
           .queryProductDetails(_kIds);
 
@@ -86,8 +98,10 @@ class SubscriptionController extends GetxController {
     List<PurchaseDetails> purchaseDetailsList,
   ) async {
     for (var purchaseDetails in purchaseDetailsList) {
-      debugPrint('Purchase Update: ID=${purchaseDetails.productID}, Status=${purchaseDetails.status}');
-      
+      debugPrint(
+        'Purchase Update: ID=${purchaseDetails.productID}, Status=${purchaseDetails.status}',
+      );
+
       if (purchaseDetails.status == PurchaseStatus.pending) {
         isLoading.value = true;
       } else {
@@ -169,6 +183,16 @@ class SubscriptionController extends GetxController {
         return true;
       },
     );
+  }
+
+  void selectProduct(String id) => selectedProductId.value = id;
+
+  ProductDetails? getProductById(String id) {
+    try {
+      return products.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> restorePurchases() async {
