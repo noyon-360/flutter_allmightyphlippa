@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
 import '../../profile/controller/profile_controller.dart';
 import '../repositories/subscription_repo.dart';
@@ -59,13 +61,13 @@ class SubscriptionController extends GetxController {
   Future<void> fetchProducts() async {
     isLoading.value = true;
     try {
-      const Set<String> _kIds = <String>{
+      const Set<String> kIds = <String>{
         _monthlySubscriptionId,
         _weeklySubscriptionId,
         _yearlySubscriptionId,
       };
       final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails(_kIds);
+          .queryProductDetails(kIds);
 
       if (response.notFoundIDs.isNotEmpty) {
         debugPrint('Products not found: ${response.notFoundIDs}');
@@ -160,29 +162,60 @@ class SubscriptionController extends GetxController {
   }
 
   Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
-    // 1. Get receipt data
-    String? receiptData;
-
     if (Platform.isIOS) {
-      receiptData = purchaseDetails.verificationData.serverVerificationData;
+      final iosDetails = purchaseDetails as AppStorePurchaseDetails;
+      final originalTransactionId = iosDetails
+          .skPaymentTransaction
+          .originalTransaction
+          ?.transactionIdentifier;
+
+      if (originalTransactionId == null) {
+        debugPrint('iOS: originalTransactionId is null');
+        return false;
+      }
+
+      final result = await _subscriptionRepo.verifyApplePurchase(
+        originalTransactionId,
+      );
+      return result.fold(
+        (failure) {
+          debugPrint('Backend Verification Failed: ${failure.message}');
+          Get.snackbar('Verification Failed', failure.message);
+          return false;
+        },
+        (success) {
+          debugPrint('Backend Verification Success');
+          return true;
+        },
+      );
     }
 
-    if (receiptData == null) return false;
+    if (Platform.isAndroid) {
+      final androidDetails = purchaseDetails as GooglePlayPurchaseDetails;
+      final purchaseToken =
+          androidDetails.billingClientPurchase.purchaseToken;
 
-    // 2. Send to backend
-    final result = await _subscriptionRepo.verifyApplePurchase(receiptData);
+      const packageName = 'com.almightyflippa.labbytv';
 
-    return result.fold(
-      (failure) {
-        debugPrint('Backend Verification Failed: ${failure.message}');
-        Get.snackbar('Verification Failed', failure.message);
-        return false;
-      },
-      (success) {
-        debugPrint('Backend Verification Success');
-        return true;
-      },
-    );
+      final result = await _subscriptionRepo.verifyGooglePurchase(
+        purchaseToken: purchaseToken,
+        subscriptionId: purchaseDetails.productID,
+        packageName: packageName,
+      );
+      return result.fold(
+        (failure) {
+          debugPrint('Backend Verification Failed: ${failure.message}');
+          Get.snackbar('Verification Failed', failure.message);
+          return false;
+        },
+        (success) {
+          debugPrint('Backend Verification Success');
+          return true;
+        },
+      );
+    }
+
+    return false;
   }
 
   void selectProduct(String id) => selectedProductId.value = id;
