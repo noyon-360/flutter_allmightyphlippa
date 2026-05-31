@@ -4,7 +4,7 @@ publish_to: "none"
 
 # version: 1.0.12+12 # Android
 # version: 1.0.0+1 # Android TV
-version: 1.0.1+1 # IOS
+version: 1.0.2+1 # IOS
 
 environment:
   sdk: ^3.9.2
