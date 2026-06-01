@@ -34,6 +34,9 @@ class SubscriptionController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Refresh profile so subscriptionStatus/subscriptionProductId are current
+    // when the screen opens, which drives the "CURRENT PLAN" badge visibility.
+    Get.find<ProfileController>().refreshProfile();
     final purchaseUpdated = _inAppPurchase.purchaseStream;
     _subscription = purchaseUpdated.listen(
       _listenToPurchaseUpdated,

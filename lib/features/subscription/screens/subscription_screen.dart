@@ -11,7 +11,8 @@ class SubscriptionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SubscriptionController());
+    // Use Get.find — SubscriptionController is globally registered in setup_controllers.dart
+    final controller = Get.find<SubscriptionController>();
     final profileController = Get.find<ProfileController>();
 
     return Scaffold(
@@ -67,10 +68,14 @@ class SubscriptionScreen extends StatelessWidget {
                     DPrint.log("product description ${product.description}");
                     DPrint.log("product id ${product.id}");
                     DPrint.log("product title ${product.title}");
-                    return _buildSubscriptionCard(
-                      product,
-                      controller,
-                      profileController,
+                    // Wrap each card in an Obx so it rebuilds when the profile
+                    // (subscriptionStatus / subscriptionProductId) changes.
+                    return Obx(
+                      () => _buildSubscriptionCard(
+                        product,
+                        controller,
+                        profileController,
+                      ),
                     );
                   }).toList(),
                 );
@@ -113,20 +118,7 @@ class SubscriptionScreen extends StatelessWidget {
   bool _isCurrentPlan(String productId, ProfileController profileController) {
     final user = profileController.userProfile.value;
     if (user?.subscriptionStatus != 'active') return false;
-    final plan = (user?.plan ?? '').toLowerCase();
-    if (productId == SubscriptionController.monthlyId) {
-      return plan.contains('month') || plan == SubscriptionController.monthlyId;
-    }
-    if (productId == SubscriptionController.quarterlyId) {
-      return plan.contains('quarter') ||
-          plan == SubscriptionController.quarterlyId;
-    }
-    if (productId == SubscriptionController.yearlyId) {
-      return plan.contains('year') ||
-          plan.contains('annual') ||
-          plan == SubscriptionController.yearlyId;
-    }
-    return false;
+    return user?.subscriptionProductId == productId;
   }
 
   Widget _buildSubscriptionCard(
