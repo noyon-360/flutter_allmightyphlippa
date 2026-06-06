@@ -178,9 +178,9 @@ class VideoPlayController extends GetxController {
     // Reset settings
     playbackSpeed.value = 1.0;
     currentVideoTrack.value = null;
-    availableVideoTracks.clear();
+    availableVideoTracks.value = [];
     currentSubtitleTrack.value = null;
-    availableSubtitleTracks.clear();
+    availableSubtitleTracks.value = [];
     isSubtitleEnabled.value = true;
 
     try {
@@ -232,9 +232,9 @@ class VideoPlayController extends GetxController {
     // Reset settings
     playbackSpeed.value = 1.0;
     currentVideoTrack.value = null;
-    availableVideoTracks.clear();
+    availableVideoTracks.value = [];
     currentSubtitleTrack.value = null;
-    availableSubtitleTracks.clear();
+    availableSubtitleTracks.value = [];
     isSubtitleEnabled.value = true;
 
     try {

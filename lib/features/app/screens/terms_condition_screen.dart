@@ -42,19 +42,19 @@ class TermsConditionScreen extends StatelessWidget {
             Gap.h24,
             _buildSection(
               '1. Acceptance of Terms',
-              'By accessing or using Almighty Flippa, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.',
+              'By accessing or using LABBY TV, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.',
             ),
             _buildSection(
               '2. Use License',
-              'Permission is granted to temporarily download one copy of the materials (information or software) on Almighty Flippa for personal, non-commercial transitory viewing only.',
+              'Permission is granted to temporarily download one copy of the materials (information or software) on LABBY TV for personal, non-commercial transitory viewing only.',
             ),
             _buildSection(
               '3. Disclaimer',
-              'The materials on Almighty Flippa are provided on an "as is" basis. Almighty Flippa makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.',
+              'The materials on LABBY TV are provided on an "as is" basis. LABBY TV makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.',
             ),
             _buildSection(
               '4. Limitations',
-              'In no event shall Almighty Flippa or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials.',
+              'In no event shall LABBY TV or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials.',
             ),
             _buildSection(
               '5. Governing Law',

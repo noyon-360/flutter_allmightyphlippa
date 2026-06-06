@@ -38,7 +38,7 @@ class AboutAppScreen extends StatelessWidget {
             ),
             Gap.h24,
             const Text(
-              'Almighty Flippa',
+              'LABBY TV',
               style: TextStyle(
                 color: AppColors.primaryWhite,
                 fontSize: 24,
@@ -63,7 +63,7 @@ class AboutAppScreen extends StatelessWidget {
             ),
             Gap.h16,
             const Text(
-              'Welcome to Almighty Flippa, your ultimate destination for high-quality video streaming. We provide a vast collection of movies and series for your entertainment.',
+              'Welcome to LABBY TV, your ultimate destination for high-quality video streaming. We provide a vast collection of movies and series for your entertainment.',
               style: TextStyle(
                 color: AppColors.primaryGray,
                 fontSize: 14,
@@ -72,7 +72,7 @@ class AboutAppScreen extends StatelessWidget {
             ),
             Gap.h24,
             const Text(
-              'Our mission is to deliver a seamless and enjoyable viewing experience to our users worldwide. Thank you for choosing Almighty Flippa.',
+              'Our mission is to deliver a seamless and enjoyable viewing experience to our users worldwide. Thank you for choosing LABBY TV.',
               style: TextStyle(
                 color: AppColors.primaryGray,
                 fontSize: 14,
@@ -81,7 +81,7 @@ class AboutAppScreen extends StatelessWidget {
             ),
             Gap.h48,
             const Text(
-              '© 2026 Almighty Flippa. All rights reserved.',
+              '© 2026 LABBY TV. All rights reserved.',
               style: TextStyle(color: AppColors.primaryGray, fontSize: 12),
             ),
           ],
