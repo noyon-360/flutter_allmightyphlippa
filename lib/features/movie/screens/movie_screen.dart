@@ -56,14 +56,16 @@ class _MovieScreenState extends State<MovieScreen> {
   }
 
   void _showAllCategories(BuildContext context) {
-    Get.to(() => CategorySelectionScreen(
-          title: 'Movie Categories',
-          genreTag: 'movies',
-          selectedCategoryId: movieCtrl.selectedCategoryId,
-          onCategorySelected: (categoryId) {
-            movieCtrl.getMovies(categoryId: categoryId);
-          },
-        ));
+    Get.to(
+      () => CategorySelectionScreen(
+        title: 'Movie Categories',
+        genreTag: 'movies',
+        selectedCategoryId: movieCtrl.selectedCategoryId,
+        onCategorySelected: (categoryId) {
+          movieCtrl.getMovies(categoryId: categoryId);
+        },
+      ),
+    );
   }
 
   @override
@@ -285,7 +287,7 @@ class _MovieScreenState extends State<MovieScreen> {
                                       const SizedBox(height: 8),
                                       Text(
                                         // Formatting date and duration if available, else placeholder
-                                        '${movie.added} | Movie | 2h 44m 31s',
+                                        '${movie.added} | Movie',
                                         style: const TextStyle(
                                           color: AppColors.primaryGray,
                                           fontSize: 12,
