@@ -79,6 +79,7 @@
 	<array>
 		<string>audio</string>
 		<string>fetch</string>
+		<string>video-picture-in-picture</string>
 	</array>
 </dict>
 </plist>

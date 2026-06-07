@@ -1,16 +1,14 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
-
+import 'package:flutter_almightyflippa/core/services/pip_service.dart';
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
+import 'package:floating/floating.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '/core/constants/app_colors.dart';
 import 'package:get/get.dart';
 
 import '../controllers/video_play_controller.dart';
-import 'package:floating/floating.dart';
 
 class VideoPlayScreen extends StatefulWidget {
   final int streamId;
@@ -30,60 +28,37 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   final controller = Get.put(VideoPlayController());
   final ScrollController _scrollController = ScrollController();
 
-  Floating? pip;
-  bool isPipAvailable = false;
+  late final PiPService _pipService;
   PiPStatus _pipStatus = PiPStatus.disabled;
-  StreamSubscription<PiPStatus>? _pipSubscription;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addObserver(this);
-    if (Platform.isAndroid) {
-      pip = Floating();
-      _checkPipAvailability();
-      try {
-        _pipSubscription = pip?.pipStatusStream.listen(
-          (status) {
-            if (mounted) {
-              setState(() {
-                _pipStatus = status;
-              });
-            }
-          },
-          onError: (e) {
-            debugPrint('PiP stream error: $e');
-          },
-        );
-      } catch (e) {
-        debugPrint('Failed to initialize PiP stream: $e');
-      }
-    }
+    _pipService = PiPService(
+      onStatusChanged: (status) {
+        if (mounted) setState(() => _pipStatus = status);
+      },
+    );
+    _pipService.initialize().then((_) {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeVideo(type: widget.type, streamId: widget.streamId);
     });
-  }
-
-  Future<void> _checkPipAvailability() async {
-    if (pip == null) return;
-    try {
-      isPipAvailable = await pip!.isPipAvailable;
-    } catch (e) {
-      debugPrint('PiP availability check error: $e');
-      isPipAvailable = false;
-    }
-    if (mounted) setState(() {});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if ((state == AppLifecycleState.hidden ||
             state == AppLifecycleState.paused) &&
-        isPipAvailable &&
-        pip != null &&
+        _pipService.isAvailable &&
         controller.isVideoInitialized.value) {
-      pip!.enable(const ImmediatePiP(aspectRatio: Rational.landscape()));
+      _pipService.enable(
+        videoUrl: controller.currentPlayUrl,
+        positionSeconds: controller.currentPositionSeconds,
+      );
     }
   }
 
@@ -101,17 +76,14 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   @override
   void dispose() {
     _scrollController.dispose();
-    _pipSubscription?.cancel();
+    _pipService.dispose();
     WidgetsBinding.instance.removeObserver(this);
-    // Explicitly delete the controller to ensure player is disposed and video stops.
     Get.delete<VideoPlayController>();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Temporarily disabled PiPSwitcher to debug blank screen issue.
-    // We will return only the main content for now.
     return _buildMainContent(context);
   }
 
@@ -201,18 +173,13 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 right: 10,
                                 child: Row(
                                   children: [
-                                    if (isPipAvailable)
+                                    if (_pipService.isAvailable)
                                       TvFocusWrapper(
-                                        onTap: () {
-                                          if (pip != null) {
-                                            pip!.enable(
-                                              const ImmediatePiP(
-                                                aspectRatio:
-                                                    Rational.landscape(),
-                                              ),
-                                            );
-                                          }
-                                        },
+                                        onTap: () => _pipService.enable(
+                                          videoUrl: controller.currentPlayUrl,
+                                          positionSeconds:
+                                              controller.currentPositionSeconds,
+                                        ),
                                         child: const Padding(
                                           padding: EdgeInsets.all(8.0),
                                           child: Icon(

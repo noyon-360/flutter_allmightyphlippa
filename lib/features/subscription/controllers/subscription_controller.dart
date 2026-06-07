@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -166,14 +167,22 @@ class SubscriptionController extends GetxController {
 
   Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
     if (Platform.isIOS) {
-      final iosDetails = purchaseDetails as AppStorePurchaseDetails;
-      final originalTransactionId = iosDetails
-          .skPaymentTransaction
-          .originalTransaction
-          ?.transactionIdentifier;
+      String? originalTransactionId;
+
+      if (purchaseDetails is SK2PurchaseDetails) {
+        // StoreKit 2 (iOS 15+): extract from the JWS payload
+        final jws = purchaseDetails.verificationData.serverVerificationData;
+        originalTransactionId = _decodeJWSOriginalTransactionId(jws);
+      } else if (purchaseDetails is AppStorePurchaseDetails) {
+        // StoreKit 1 (legacy): use the payment transaction directly
+        originalTransactionId = purchaseDetails
+            .skPaymentTransaction
+            .originalTransaction
+            ?.transactionIdentifier;
+      }
 
       if (originalTransactionId == null) {
-        debugPrint('iOS: originalTransactionId is null');
+        debugPrint('iOS: could not extract originalTransactionId');
         return false;
       }
 
@@ -236,6 +245,25 @@ class SubscriptionController extends GetxController {
       await _inAppPurchase.restorePurchases();
     } catch (e) {
       debugPrint('Restore failed: $e');
+    }
+  }
+
+  // Decodes the middle (payload) segment of a JWS token and returns the
+  // originalTransactionId field, which the backend verification endpoint expects.
+  String? _decodeJWSOriginalTransactionId(String jws) {
+    try {
+      final parts = jws.split('.');
+      if (parts.length < 2) return null;
+      var payload = parts[1];
+      // base64url has no padding — add it back before decoding
+      final remainder = payload.length % 4;
+      if (remainder != 0) payload = payload.padRight(payload.length + (4 - remainder), '=');
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final map = jsonDecode(decoded) as Map<String, dynamic>;
+      return map['originalTransactionId']?.toString();
+    } catch (e) {
+      debugPrint('JWS decode error: $e');
+      return null;
     }
   }
 }

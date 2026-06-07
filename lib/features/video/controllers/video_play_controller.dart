@@ -47,6 +47,14 @@ class VideoPlayController extends GetxController {
   final _updateInterval = const Duration(seconds: 10);
   String? _currentVideoId;
   String? _currentVideoType;
+  String? _currentPlayUrl;
+
+  /// The URL currently loaded into the player — used by iOS PiP fallback.
+  String? get currentPlayUrl => _currentPlayUrl;
+
+  /// Current playback position in seconds — used by iOS PiP to seek on resume.
+  double get currentPositionSeconds =>
+      player.state.position.inMilliseconds / 1000.0;
 
   bool get isSubscribed {
     final user = profileCtrl.userProfile.value;
@@ -262,6 +270,7 @@ class VideoPlayController extends GetxController {
   }
 
   Future<void> _initializePlayer(String videoUrl) async {
+    _currentPlayUrl = videoUrl;
     try {
       // 1. Fetch resume position if we have video info
       Duration startPosition = Duration.zero;

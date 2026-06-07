@@ -1,12 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:chewie/chewie.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/pip_service.dart';
 import '../controllers/live_video_play_controller.dart';
-import 'package:floating/floating.dart';
 
 class LiveVideoPlayScreen extends StatefulWidget {
   final int streamId;
@@ -26,46 +25,36 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     with WidgetsBindingObserver {
   final controller = Get.put(LiveVideoPlayController());
 
-  Floating? pip;
-  bool isPipAvailable = false;
+  late final PiPService _pipService;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (Platform.isAndroid) {
-      pip = Floating();
-      _checkPipAvailability();
-    }
+    _pipService = PiPService();
+    _pipService.initialize().then((_) {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeLiveVideo(streamId: widget.streamId);
     });
-  }
-
-  Future<void> _checkPipAvailability() async {
-    if (pip == null) return;
-    try {
-      isPipAvailable = await pip!.isPipAvailable;
-    } catch (e) {
-      debugPrint('PiP availability check error: $e');
-      isPipAvailable = false;
-    }
-    if (mounted) setState(() {});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if ((state == AppLifecycleState.hidden ||
             state == AppLifecycleState.paused) &&
-        isPipAvailable &&
-        pip != null &&
+        _pipService.isAvailable &&
         controller.isVideoInitialized.value) {
-      pip!.enable(const ImmediatePiP(aspectRatio: Rational.landscape()));
+      // Live TV: no URL/position needed — iOS uses view-hierarchy AVPlayerLayer,
+      // Android uses the floating package directly.
+      _pipService.enable();
     }
   }
 
   @override
   void dispose() {
+    _pipService.dispose();
     WidgetsBinding.instance.removeObserver(this);
     Get.delete<LiveVideoPlayController>();
     super.dispose();
@@ -89,18 +78,11 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
           style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_in_picture_alt, color: Colors.white),
-            onPressed: () {
-              if (isPipAvailable && pip != null) {
-                pip!.enable(
-                  const ImmediatePiP(aspectRatio: Rational.landscape()),
-                );
-              } else {
-                Get.snackbar('Error', 'PiP is not available on this device');
-              }
-            },
-          ),
+          if (_pipService.isAvailable)
+            IconButton(
+              icon: const Icon(Icons.picture_in_picture_alt, color: Colors.white),
+              onPressed: () => _pipService.enable(),
+            ),
         ],
       ),
       body: Container(
