@@ -95,9 +95,10 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
                       Get.to(
                         () => VideoPlayScreen(
                           streamId: int.tryParse(item.videoId) ?? 0,
-                          type: item.videoType == 'movie'
+                        type: item.videoType == 'movie'
                               ? ServerType.movies
                               : ServerType.series,
+                          autoPlay: item.videoType == 'movie' ? true : false,
                         ),
                       );
                     },

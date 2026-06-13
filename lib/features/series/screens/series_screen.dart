@@ -298,12 +298,13 @@ class _SeriesScreenState extends State<SeriesScreen> {
                           ),
                           child: TvFocusWrapper(
                             onTap: () {
-                              Get.to(
-                                () => VideoPlayScreen(
-                                  streamId: series.seriesId!,
-                                  type: ServerType.series,
-                                ),
-                              );
+                                Get.to(
+                                  () => VideoPlayScreen(
+                                    streamId: series.seriesId!,
+                                    type: ServerType.series,
+                                    autoPlay: false,
+                                  ),
+                                );
                             },
                             child: Row(
                               children: [

@@ -25,6 +25,7 @@ class VideoPlayController extends GetxController {
   late final VideoController videoController;
 
   final isVideoInitialized = false.obs;
+  final hasStartedPlaying = false.obs;
   final currentType = Rxn<ServerType>();
   final isLoading = false.obs;
 
@@ -182,12 +183,13 @@ class VideoPlayController extends GetxController {
   Future<void> initializeVideo({
     required ServerType type,
     required int streamId,
+    bool autoPlay = true,
   }) async {
     // Reset previous state
     isVideoInitialized.value = false;
-    isLoading.value = true;
     currentType.value = type;
     currentEpisode.value = null;
+    hasStartedPlaying.value = autoPlay;
 
     // Reset settings
     playbackSpeed.value = 1.0;
@@ -199,16 +201,16 @@ class VideoPlayController extends GetxController {
 
     try {
       if (type == ServerType.movies) {
-        await _loadMovie(streamId);
+        await _loadMovie(streamId, autoPlay: autoPlay);
       } else if (type == ServerType.series) {
-        await _loadSeries(streamId);
+        await _loadSeries(streamId, autoPlay: autoPlay);
       }
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _loadMovie(int streamId) async {
+  Future<void> _loadMovie(int streamId, {bool autoPlay = true}) async {
     // Fetch details
     await movieCtrl.getMovieDetails(streamId: streamId);
 
@@ -217,13 +219,15 @@ class VideoPlayController extends GetxController {
     if (movie != null && movie.playUrl.isNotEmpty) {
       _currentVideoId = streamId.toString();
       _currentVideoType = 'movie';
-      await _initializePlayer(movie.playUrl);
+      await _initializePlayer(movie.playUrl, autoPlay: autoPlay);
     }
   }
 
-  Future<void> _loadSeries(int streamId) async {
+  Future<void> _loadSeries(int streamId, {bool autoPlay = true}) async {
     // Fetch details
     await seriesCtrl.getSeriesDetails(streamId: streamId);
+
+    if (!autoPlay) return;
 
     final series = seriesCtrl.singleSeries.value;
     if (series != null) {
@@ -239,7 +243,8 @@ class VideoPlayController extends GetxController {
     }
   }
 
-  Future<void> playEpisode(Episode episode) async {
+  Future<void> playEpisode(Episode episode, {bool autoPlay = true}) async {
+    hasStartedPlaying.value = true;
     currentEpisode.value = episode;
     isVideoInitialized.value = false;
 
@@ -265,14 +270,14 @@ class VideoPlayController extends GetxController {
 
       _currentVideoId = episode.id.toString();
       _currentVideoType = 'series';
-      await _initializePlayer(playUrl);
+      await _initializePlayer(playUrl, autoPlay: autoPlay);
     } catch (e) {
       debugPrint('Error playing episode: $e');
       // Get.snackbar('Error', 'Failed to play episode');
     }
   }
 
-  Future<void> _initializePlayer(String videoUrl) async {
+  Future<void> _initializePlayer(String videoUrl, {bool autoPlay = true}) async {
     _currentPlayUrl = videoUrl;
     try {
       // 1. Fetch resume position if we have video info
@@ -363,7 +368,9 @@ class VideoPlayController extends GetxController {
       }
 
       // 3. Start playback
-      await player.play();
+      if (autoPlay) {
+        await player.play();
+      }
 
       isVideoInitialized.value = true;
       _startPositionListener();
