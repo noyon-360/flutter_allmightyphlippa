@@ -251,7 +251,7 @@ class VideoPlayController extends GetxController {
       final urlObject = Uri.parse(playlistData.url);
       final fileExt = episode.containerExtension != null && episode.containerExtension!.isNotEmpty 
           ? episode.containerExtension 
-          : 'mp4'; // most common for series episodes if not specified
+          : 'mkv'; // fallback to mkv if the server doesn't provide the format
 
       final playUrl = urlObject.replace(
         path: '/series/${playlistData.username}/${playlistData.password}/${episode.id}.$fileExt'
