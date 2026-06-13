@@ -106,6 +106,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
           final movies = controller.movieCtrl.movies;
           final series = controller.seriesCtrl.series;
           final singleSeries = controller.seriesCtrl.singleSeries.value;
+          final currentEpisode = controller.currentEpisode.value;
 
           return LayoutBuilder(
             builder: (context, constraints) {
@@ -128,8 +129,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 buttonBarHeight: 48.0,
                                 controlsHoverDuration: Duration(seconds: 10),
                               ),
-                              fullscreen:
-                                  const MaterialVideoControlsThemeData(
+                              fullscreen: const MaterialVideoControlsThemeData(
                                 controlsHoverDuration: Duration(seconds: 10),
                               ),
                               child: Focus(
@@ -525,99 +525,101 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final episode = allEpisodes[index];
-        final isPlaying = controller.currentEpisode.value?.id == episode.id;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: TvFocusWrapper(
-            onTap: () {
-              controller.playEpisode(episode);
-              _scrollController.animateTo(
-                0,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeIn,
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isPlaying
-                    ? AppColors.red.withOpacity(0.1)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: isPlaying
-                    ? Border.all(color: AppColors.red.withOpacity(0.5))
-                    : null,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppColors.containerBgColor,
-                      borderRadius: BorderRadius.circular(8),
-                      image:
-                          episode.info?.movieImage != null &&
-                              episode.info!.movieImage!.isNotEmpty
-                          ? DecorationImage(
-                              image: NetworkImage(episode.info!.movieImage!),
-                              fit: BoxFit.cover,
-                              onError: (_, __) {},
+          child: Obx(() {
+            final isPlaying = controller.currentEpisode.value?.id == episode.id;
+
+            return TvFocusWrapper(
+              onTap: () {
+                controller.playEpisode(episode);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isPlaying
+                      ? AppColors.red.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: isPlaying
+                      ? Border.all(color: AppColors.red.withOpacity(0.5))
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppColors.containerBgColor,
+                        borderRadius: BorderRadius.circular(8),
+                        image:
+                            episode.info?.movieImage != null &&
+                                episode.info!.movieImage!.isNotEmpty
+                            ? DecorationImage(
+                                image: NetworkImage(episode.info!.movieImage!),
+                                fit: BoxFit.cover,
+                                onError: (_, __) {},
+                              )
+                            : null,
+                      ),
+                      child:
+                          episode.info?.movieImage == null ||
+                              episode.info!.movieImage!.isEmpty
+                          ? const Icon(
+                              Icons.play_circle_outline,
+                              color: AppColors.iconColor,
+                            )
+                          : isPlaying
+                          ? const Center(
+                              child: Icon(
+                                Icons.play_arrow,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                             )
                           : null,
                     ),
-                    child:
-                        episode.info?.movieImage == null ||
-                            episode.info!.movieImage!.isEmpty
-                        ? const Icon(
-                            Icons.play_circle_outline,
-                            color: AppColors.iconColor,
-                          )
-                        : isPlaying
-                        ? const Center(
-                            child: Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              size: 30,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            episode.title ?? "Episode ${episode.episodeNum}",
+                            style: TextStyle(
+                              color: isPlaying
+                                  ? AppColors.red
+                                  : AppColors.primaryWhite,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          episode.title ?? "Episode ${episode.episodeNum}",
-                          style: TextStyle(
-                            color: isPlaying
-                                ? AppColors.red
-                                : AppColors.primaryWhite,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
-                          style: const TextStyle(
-                            color: AppColors.primaryGray,
-                            fontSize: 12,
+                          const SizedBox(height: 4),
+                          Text(
+                            'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
+                            style: const TextStyle(
+                              color: AppColors.primaryGray,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  if (isPlaying)
-                    const Icon(Icons.equalizer, color: AppColors.red, size: 20),
-                ],
+                    if (isPlaying)
+                      const Icon(
+                        Icons.equalizer,
+                        color: AppColors.red,
+                        size: 20,
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         );
       }, childCount: allEpisodes.length),
     );
