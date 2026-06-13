@@ -2,7 +2,7 @@ name: flutter_almightyflippa
 description: "LABBY"
 publish_to: "none"
 
-version: 1.0.15+15 # Android
+version: 1.0.16+16 # Android
 # version: 1.0.0+1 # Android TV
 # version: 1.0.2+1 # IOS
 
@@ -35,7 +35,7 @@ dependencies:
   intl: ^0.20.2
   flutter_svg: ^2.2.3
   cached_network_image: ^3.4.1
-  
+
   # Video
   video_player: ^2.11.1
   chewie: ^1.13.0
@@ -79,12 +79,9 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/images/splash_and_login_logo.png"
 
-
 flutter:
-
   uses-material-design: true
 
   assets:
     - assets/icons/
     - assets/images/
-    
