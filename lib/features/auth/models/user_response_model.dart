@@ -22,6 +22,7 @@ class UserModel {
   final int? v;
   final String? subscriptionStatus;
   final String? plan;
+  final String? subscriptionProductId;
 
   UserModel({
     this.avatar,
@@ -47,6 +48,7 @@ class UserModel {
     this.v,
     this.subscriptionStatus,
     this.plan,
+    this.subscriptionProductId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -82,6 +84,7 @@ class UserModel {
       v: json['__v'],
       subscriptionStatus: json['subscriptionStatus'],
       plan: json['plan'],
+      subscriptionProductId: json['subscriptionProductId'],
     );
   }
 
@@ -110,6 +113,7 @@ class UserModel {
       '__v': v,
       'subscriptionStatus': subscriptionStatus,
       'plan': plan,
+      'subscriptionProductId': subscriptionProductId,
     };
   }
 }

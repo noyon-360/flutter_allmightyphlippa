@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutx_core/core/debug_print.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -16,18 +17,42 @@ class HiveStorageService {
 
   late Box _box;
 
+  static bool _isInitialized = false;
+  static bool get isInitialized => _isInitialized;
+
   /// Initialize Hive and open the default box
   /// Call this in main() before runApp()
   static Future<void> init() async {
-    await Hive.initFlutter();
+    if (_isInitialized) return;
 
-    // Optional: Register adapters here if using custom objects
-    // Hive.registerAdapter(UserModelAdapter());
-    // Hive.registerAdapter(SettingsAdapter());
+    try {
+      DPrint.log("📦 Initializing Hive...");
+      await Hive.initFlutter();
+      _isInitialized = true;
+    } catch (e) {
+      DPrint.error("❌ Hive.initFlutter() failed: $e");
+      DPrint.info("⚠️ Attempting fallback initialization with system temp directory...");
+      
+      try {
+        // Fallback to system temp directory to avoid path_provider native issues
+        final tempDir = Directory.systemTemp;
+        Hive.init(tempDir.path);
+        _isInitialized = true;
+        DPrint.log("✅ Hive initialized with fallback path: ${tempDir.path}");
+      } catch (e2) {
+        DPrint.error("❌ Fallback Hive initialization failed: $e2");
+        _isInitialized = false;
+        return;
+      }
+    }
 
-    final instance = HiveStorageService();
-    instance._box = await Hive.openBox(_defaultBox);
-    DPrint.log("HiveStorageService initialized successfully");
+    try {
+      final instance = HiveStorageService();
+      instance._box = await Hive.openBox(_defaultBox);
+      DPrint.log("✅ HiveStorageService initialized successfully with box: $_defaultBox");
+    } catch (e) {
+      DPrint.error("❌ Failed to open default Hive box: $e");
+    }
   }
 
   // Helper to get the box

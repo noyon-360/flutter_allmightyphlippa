@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutx_core/core/debug_print.dart';
 import 'connectivity_service.dart';
+import 'hive_storage_service.dart';
 import '../api/api_client.dart';
 
 class QueuedRequest {
@@ -42,7 +43,17 @@ class RequestQueueService {
   RequestQueueService._internal();
 
   Future<void> initialize() async {
-    _box = await Hive.openBox(_boxName);
+    if (!HiveStorageService.isInitialized) {
+      DPrint.error('Cannot initialize RequestQueueService: Hive is not initialized');
+      return;
+    }
+
+    try {
+      _box = await Hive.openBox(_boxName);
+    } catch (e) {
+      DPrint.error('Failed to open RequestQueueService box: $e');
+      return;
+    }
 
     // Listen for reconnection to flush the queue
     ConnectivityService.instance.onReconnected.listen((_) {

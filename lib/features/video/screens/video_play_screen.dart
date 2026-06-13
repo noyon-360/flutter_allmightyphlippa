@@ -1,24 +1,24 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
-
+import 'package:flutter_almightyflippa/core/services/pip_service.dart';
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
+import 'package:floating/floating.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '/core/constants/app_colors.dart';
 import 'package:get/get.dart';
-
+import 'package:collection/collection.dart';
 import '../controllers/video_play_controller.dart';
-import 'package:floating/floating.dart';
 
 class VideoPlayScreen extends StatefulWidget {
   final int streamId;
   final ServerType type;
+  final bool autoPlay;
   const VideoPlayScreen({
     super.key,
     required this.streamId,
     required this.type,
+    this.autoPlay = true,
   });
 
   @override
@@ -30,60 +30,41 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   final controller = Get.put(VideoPlayController());
   final ScrollController _scrollController = ScrollController();
 
-  Floating? pip;
-  bool isPipAvailable = false;
+  late final PiPService _pipService;
   PiPStatus _pipStatus = PiPStatus.disabled;
-  StreamSubscription<PiPStatus>? _pipSubscription;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addObserver(this);
-    if (Platform.isAndroid) {
-      pip = Floating();
-      _checkPipAvailability();
-      try {
-        _pipSubscription = pip?.pipStatusStream.listen(
-          (status) {
-            if (mounted) {
-              setState(() {
-                _pipStatus = status;
-              });
-            }
-          },
-          onError: (e) {
-            debugPrint('PiP stream error: $e');
-          },
-        );
-      } catch (e) {
-        debugPrint('Failed to initialize PiP stream: $e');
-      }
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.initializeVideo(type: widget.type, streamId: widget.streamId);
+    _pipService = PiPService(
+      onStatusChanged: (status) {
+        if (mounted) setState(() => _pipStatus = status);
+      },
+    );
+    _pipService.initialize().then((_) {
+      if (mounted) setState(() {});
     });
-  }
-
-  Future<void> _checkPipAvailability() async {
-    if (pip == null) return;
-    try {
-      isPipAvailable = await pip!.isPipAvailable;
-    } catch (e) {
-      debugPrint('PiP availability check error: $e');
-      isPipAvailable = false;
-    }
-    if (mounted) setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.initializeVideo(
+        type: widget.type,
+        streamId: widget.streamId,
+        autoPlay: widget.autoPlay,
+      );
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if ((state == AppLifecycleState.hidden ||
             state == AppLifecycleState.paused) &&
-        isPipAvailable &&
-        pip != null &&
+        _pipService.isAvailable &&
         controller.isVideoInitialized.value) {
-      pip!.enable(const ImmediatePiP(aspectRatio: Rational.landscape()));
+      _pipService.enable(
+        videoUrl: controller.currentPlayUrl,
+        positionSeconds: controller.currentPositionSeconds,
+      );
     }
   }
 
@@ -101,17 +82,14 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   @override
   void dispose() {
     _scrollController.dispose();
-    _pipSubscription?.cancel();
+    _pipService.dispose();
     WidgetsBinding.instance.removeObserver(this);
-    // Explicitly delete the controller to ensure player is disposed and video stops.
     Get.delete<VideoPlayController>();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Temporarily disabled PiPSwitcher to debug blank screen issue.
-    // We will return only the main content for now.
     return _buildMainContent(context);
   }
 
@@ -134,6 +112,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
           final movies = controller.movieCtrl.movies;
           final series = controller.seriesCtrl.series;
           final singleSeries = controller.seriesCtrl.singleSeries.value;
+          final currentEpisode = controller.currentEpisode.value;
 
           return LayoutBuilder(
             builder: (context, constraints) {
@@ -149,15 +128,84 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                       color: Colors.black,
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
-                        child: Stack(
-                          children: [
-                            MaterialVideoControlsTheme(
+                        child: Obx(() {
+                          if (!controller.hasStartedPlaying.value) {
+                            final imageUrl = controller.currentType.value == ServerType.movies
+                                ? controller.movieCtrl.movie.value?.streamData.info.movieImage
+                                : controller.seriesCtrl.singleSeries.value?.data?.info?.cover;
+                            
+                            return Stack(
+                              children: [
+                                if (imageUrl != null && imageUrl.isNotEmpty)
+                                  Positioned.fill(
+                                    child: Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const SizedBox(),
+                                    ),
+                                  ),
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.3),
+                                          Colors.black.withOpacity(0.8),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Center(
+                                  child: TvFocusWrapper(
+                                    onTap: () {
+                                      if (controller.currentType.value == ServerType.series) {
+                                        final firstEpisode = controller.seriesCtrl.singleSeries.value?.data?.episodes?.values.firstOrNull?.firstOrNull;
+                                        if (firstEpisode != null) {
+                                          controller.playEpisode(firstEpisode);
+                                        }
+                                      } else {
+                                        controller.hasStartedPlaying.value = true;
+                                        controller.player.play();
+                                      }
+                                    },
+                                    child: Container(
+                                      width: 80,
+                                      height: 80,
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.play_arrow_rounded,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 10,
+                                  left: 10,
+                                  child: TvFocusWrapper(
+                                    onTap: () => Navigator.pop(context),
+                                    child: const BackButton(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Stack(
+                            children: [
+                              MaterialVideoControlsTheme(
                               normal: const MaterialVideoControlsThemeData(
                                 buttonBarHeight: 48.0,
                                 controlsHoverDuration: Duration(seconds: 10),
                               ),
-                              fullscreen:
-                                  const MaterialVideoControlsThemeData(
+                              fullscreen: const MaterialVideoControlsThemeData(
                                 controlsHoverDuration: Duration(seconds: 10),
                               ),
                               child: Focus(
@@ -170,9 +218,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 ),
                               ),
                             ),
-                            Obx(() {
-                              if (!controller.isVideoInitialized.value) {
-                                return const Positioned.fill(
+                              if (!controller.isVideoInitialized.value)
+                                const Positioned.fill(
                                   child: Center(
                                     child: SizedBox(
                                       width: 32,
@@ -183,62 +230,55 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                       ),
                                     ),
                                   ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            }),
-                            if (_pipStatus != PiPStatus.enabled) ...[
-                              Positioned(
-                                top: 10,
-                                left: 10,
-                                child: TvFocusWrapper(
-                                  onTap: () => Navigator.pop(context),
-                                  child: const BackButton(color: Colors.white),
                                 ),
-                              ),
-                              Positioned(
-                                top: 10,
-                                right: 10,
-                                child: Row(
-                                  children: [
-                                    if (isPipAvailable)
+                              if (_pipStatus != PiPStatus.enabled) ...[
+                                Positioned(
+                                  top: 10,
+                                  left: 10,
+                                  child: TvFocusWrapper(
+                                    onTap: () => Navigator.pop(context),
+                                    child: const BackButton(color: Colors.white),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: Row(
+                                    children: [
+                                      if (_pipService.isAvailable)
+                                        TvFocusWrapper(
+                                          onTap: () => _pipService.enable(
+                                            videoUrl: controller.currentPlayUrl,
+                                            positionSeconds:
+                                                controller.currentPositionSeconds,
+                                          ),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Icon(
+                                              Icons.picture_in_picture_alt,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
                                       TvFocusWrapper(
                                         onTap: () {
-                                          if (pip != null) {
-                                            pip!.enable(
-                                              const ImmediatePiP(
-                                                aspectRatio:
-                                                    Rational.landscape(),
-                                              ),
-                                            );
-                                          }
+                                          _showSettingsDialog(context);
                                         },
                                         child: const Padding(
                                           padding: EdgeInsets.all(8.0),
                                           child: Icon(
-                                            Icons.picture_in_picture_alt,
+                                            Icons.settings,
                                             color: Colors.white,
                                           ),
                                         ),
                                       ),
-                                    TvFocusWrapper(
-                                      onTap: () {
-                                        _showSettingsDialog(context);
-                                      },
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Icon(
-                                          Icons.settings,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
-                        ),
+                          );
+                        }),
                       ),
                     ),
                   ),
@@ -282,6 +322,49 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                       height: 1.5,
                                     ),
                                   ),
+                                  const SizedBox(height: 16),
+                                  Obx(() {
+                                    if (!controller.hasStartedPlaying.value) {
+                                      return Center(
+                                        child: TvFocusWrapper(
+                                          onTap: () {
+                                            if (controller.currentType.value == ServerType.series) {
+                                              final firstEpisode = controller.seriesCtrl.singleSeries.value?.data?.episodes?.values.firstOrNull?.firstOrNull;
+                                              if (firstEpisode != null) {
+                                                controller.playEpisode(firstEpisode);
+                                              }
+                                            } else {
+                                              controller.hasStartedPlaying.value = true;
+                                              controller.player.play();
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.red,
+                                              borderRadius: BorderRadius.circular(30),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.play_arrow, color: Colors.white),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  "WATCH NOW",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  }),
                                   const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -475,6 +558,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
               controller.initializeVideo(
                 type: ServerType.series,
                 streamId: item.seriesId!,
+                autoPlay: false,
               );
               _scrollController.animateTo(
                 0,
@@ -558,99 +642,101 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final episode = allEpisodes[index];
-        final isPlaying = controller.currentEpisode.value?.id == episode.id;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: TvFocusWrapper(
-            onTap: () {
-              controller.playEpisode(episode);
-              _scrollController.animateTo(
-                0,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeIn,
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isPlaying
-                    ? AppColors.red.withOpacity(0.1)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: isPlaying
-                    ? Border.all(color: AppColors.red.withOpacity(0.5))
-                    : null,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppColors.containerBgColor,
-                      borderRadius: BorderRadius.circular(8),
-                      image:
-                          episode.info?.movieImage != null &&
-                              episode.info!.movieImage!.isNotEmpty
-                          ? DecorationImage(
-                              image: NetworkImage(episode.info!.movieImage!),
-                              fit: BoxFit.cover,
-                              onError: (_, __) {},
+          child: Obx(() {
+            final isPlaying = controller.currentEpisode.value?.id == episode.id;
+
+            return TvFocusWrapper(
+              onTap: () {
+                controller.playEpisode(episode);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isPlaying
+                      ? AppColors.red.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: isPlaying
+                      ? Border.all(color: AppColors.red.withOpacity(0.5))
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppColors.containerBgColor,
+                        borderRadius: BorderRadius.circular(8),
+                        image:
+                            episode.info?.movieImage != null &&
+                                episode.info!.movieImage!.isNotEmpty
+                            ? DecorationImage(
+                                image: NetworkImage(episode.info!.movieImage!),
+                                fit: BoxFit.cover,
+                                onError: (_, __) {},
+                              )
+                            : null,
+                      ),
+                      child:
+                          episode.info?.movieImage == null ||
+                              episode.info!.movieImage!.isEmpty
+                          ? const Icon(
+                              Icons.play_circle_outline,
+                              color: AppColors.iconColor,
+                            )
+                          : isPlaying
+                          ? const Center(
+                              child: Icon(
+                                Icons.play_arrow,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                             )
                           : null,
                     ),
-                    child:
-                        episode.info?.movieImage == null ||
-                            episode.info!.movieImage!.isEmpty
-                        ? const Icon(
-                            Icons.play_circle_outline,
-                            color: AppColors.iconColor,
-                          )
-                        : isPlaying
-                        ? const Center(
-                            child: Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              size: 30,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            episode.title ?? "Episode ${episode.episodeNum}",
+                            style: TextStyle(
+                              color: isPlaying
+                                  ? AppColors.red
+                                  : AppColors.primaryWhite,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          episode.title ?? "Episode ${episode.episodeNum}",
-                          style: TextStyle(
-                            color: isPlaying
-                                ? AppColors.red
-                                : AppColors.primaryWhite,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
-                          style: const TextStyle(
-                            color: AppColors.primaryGray,
-                            fontSize: 12,
+                          const SizedBox(height: 4),
+                          Text(
+                            'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
+                            style: const TextStyle(
+                              color: AppColors.primaryGray,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  if (isPlaying)
-                    const Icon(Icons.equalizer, color: AppColors.red, size: 20),
-                ],
+                    if (isPlaying)
+                      const Icon(
+                        Icons.equalizer,
+                        color: AppColors.red,
+                        size: 20,
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         );
       }, childCount: allEpisodes.length),
     );

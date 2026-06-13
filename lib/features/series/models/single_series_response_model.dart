@@ -1,5 +1,3 @@
-
-
 class SingleSeriesResponseModel {
   SeriesDataContent? data;
   String? playUrl;
@@ -18,7 +16,7 @@ class SingleSeriesResponseModel {
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    data['playUrl'] = this.playUrl;
+    data['playUrl'] = playUrl;
     return data;
   }
 }
@@ -53,15 +51,15 @@ class SeriesDataContent {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    if (this.seasons != null) {
-      data['seasons'] = this.seasons!.map((v) => v.toJson()).toList();
+    if (seasons != null) {
+      data['seasons'] = seasons!.map((v) => v.toJson()).toList();
     }
-    if (this.info != null) {
-      data['info'] = this.info!.toJson();
+    if (info != null) {
+      data['info'] = info!.toJson();
     }
-    if (this.episodes != null) {
+    if (episodes != null) {
       final Map<String, dynamic> episodesMap = {};
-      this.episodes!.forEach((key, value) {
+      episodes!.forEach((key, value) {
         episodesMap[key] = value.map((v) => v.toJson()).toList();
       });
       data['episodes'] = episodesMap;
@@ -82,6 +80,8 @@ class Season {
   String? releaseDate;
   String? duration;
 
+  List<Episode>? episodeModels;
+
   Season({
     this.name,
     this.episodeCount,
@@ -93,33 +93,47 @@ class Season {
     this.coverBig,
     this.releaseDate,
     this.duration,
+    this.episodeModels,
   });
 
   Season.fromJson(Map<String, dynamic> json) {
-    name = json['name'];
-    episodeCount = json['episode_count'];
-    overview = json['overview'];
-    airDate = json['air_date'];
-    cover = json['cover'];
-    coverTmdb = json['cover_tmdb'];
-    seasonNumber = json['season_number'];
-    coverBig = json['cover_big'];
-    releaseDate = json['releaseDate'];
-    duration = json['duration'];
+    name = json['name']?.toString();
+    episodeCount = json['episode_count']?.toString();
+    overview = json['overview']?.toString();
+    airDate = json['air_date']?.toString();
+    cover = json['cover']?.toString();
+    coverTmdb = json['cover_tmdb']?.toString();
+    seasonNumber = json['season_number'] is String
+        ? int.tryParse(json['season_number'])
+        : json['season_number'];
+    coverBig = json['cover_big']?.toString();
+    releaseDate = json['releaseDate']?.toString();
+    duration = json['duration']?.toString();
+    if (json['episodeModels'] != null) {
+      episodeModels = <Episode>[];
+      json['episodeModels'].forEach((v) {
+        episodeModels!.add(Episode.fromJson(v));
+      });
+    }
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['name'] = this.name;
-    data['episode_count'] = this.episodeCount;
-    data['overview'] = this.overview;
-    data['air_date'] = this.airDate;
-    data['cover'] = this.cover;
-    data['cover_tmdb'] = this.coverTmdb;
-    data['season_number'] = this.seasonNumber;
-    data['cover_big'] = this.coverBig;
-    data['releaseDate'] = this.releaseDate;
-    data['duration'] = this.duration;
+    data['name'] = name;
+    data['episode_count'] = episodeCount;
+    data['overview'] = overview;
+    data['air_date'] = airDate;
+    data['cover'] = cover;
+    data['cover_tmdb'] = coverTmdb;
+    data['season_number'] = seasonNumber;
+    data['cover_big'] = coverBig;
+    data['releaseDate'] = releaseDate;
+    data['duration'] = duration;
+    if (episodeModels != null) {
+      data['episodeModels'] = episodeModels!
+          .map((v) => v.toJson())
+          .toList();
+    }
     return data;
   }
 }
@@ -162,23 +176,23 @@ class SeriesInfo {
   });
 
   SeriesInfo.fromJson(Map<String, dynamic> json) {
-    name = json['name'];
-    cover = json['cover'];
-    plot = json['plot'];
-    cast = json['cast'];
-    director = json['director'];
-    genre = json['genre'];
-    releaseDate = json['releaseDate'] ?? json['release_date'];
-    lastModified = json['last_modified'];
-    rating = json['rating'];
-    rating5based = json['rating_5based'];
+    name = json['name']?.toString();
+    cover = json['cover']?.toString();
+    plot = json['plot']?.toString();
+    cast = json['cast']?.toString();
+    director = json['director']?.toString();
+    genre = json['genre']?.toString();
+    releaseDate = (json['releaseDate'] ?? json['release_date'])?.toString();
+    lastModified = json['last_modified']?.toString();
+    rating = json['rating']?.toString();
+    rating5based = json['rating_5based']?.toString();
     if (json['backdrop_path'] != null) {
       backdropPath = List<String>.from(json['backdrop_path']);
     }
-    tmdb = json['tmdb'];
-    youtubeTrailer = json['youtube_trailer'];
-    episodeRunTime = json['episode_run_time'];
-    categoryId = json['category_id'];
+    tmdb = json['tmdb']?.toString();
+    youtubeTrailer = json['youtube_trailer']?.toString();
+    episodeRunTime = json['episode_run_time']?.toString();
+    categoryId = json['category_id']?.toString();
     if (json['category_ids'] != null) {
       categoryIds = List<int>.from(json['category_ids']);
     }
@@ -186,22 +200,22 @@ class SeriesInfo {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['name'] = this.name;
-    data['cover'] = this.cover;
-    data['plot'] = this.plot;
-    data['cast'] = this.cast;
-    data['director'] = this.director;
-    data['genre'] = this.genre;
-    data['releaseDate'] = this.releaseDate;
-    data['last_modified'] = this.lastModified;
-    data['rating'] = this.rating;
-    data['rating_5based'] = this.rating5based;
-    data['backdrop_path'] = this.backdropPath;
-    data['tmdb'] = this.tmdb;
-    data['youtube_trailer'] = this.youtubeTrailer;
-    data['episode_run_time'] = this.episodeRunTime;
-    data['category_id'] = this.categoryId;
-    data['category_ids'] = this.categoryIds;
+    data['name'] = name;
+    data['cover'] = cover;
+    data['plot'] = plot;
+    data['cast'] = cast;
+    data['director'] = director;
+    data['genre'] = genre;
+    data['releaseDate'] = releaseDate;
+    data['last_modified'] = lastModified;
+    data['rating'] = rating;
+    data['rating_5based'] = rating5based;
+    data['backdrop_path'] = backdropPath;
+    data['tmdb'] = tmdb;
+    data['youtube_trailer'] = youtubeTrailer;
+    data['episode_run_time'] = episodeRunTime;
+    data['category_id'] = categoryId;
+    data['category_ids'] = categoryIds;
     return data;
   }
 }
@@ -230,15 +244,19 @@ class Episode {
   });
 
   Episode.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    episodeNum = json['episode_num'];
-    title = json['title'];
-    containerExtension = json['container_extension'];
+    id = json['id']?.toString();
+    episodeNum = json['episode_num'] is String
+        ? int.tryParse(json['episode_num'])
+        : json['episode_num'];
+    title = json['title']?.toString();
+    containerExtension = json['container_extension']?.toString();
     info = json['info'] != null ? EpisodeInfo.fromJson(json['info']) : null;
-    customSid = json['custom_sid'];
-    added = json['added'];
-    season = json['season'];
-    directSource = json['direct_source'];
+    customSid = json['custom_sid']?.toString();
+    added = json['added']?.toString();
+    season = json['season'] is String
+        ? int.tryParse(json['season'])
+        : json['season'];
+    directSource = json['direct_source']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -284,20 +302,24 @@ class EpisodeInfo {
   });
 
   EpisodeInfo.fromJson(Map<String, dynamic> json) {
-    airDate = json['air_date'];
-    crew = json['crew'];
+    airDate = json['air_date']?.toString();
+    crew = json['crew']?.toString();
     rating = json['rating'];
-    id = json['id'];
-    movieImage = json['movie_image'];
-    durationSecs = json['duration_secs'];
-    duration = json['duration'];
+    id = json['id'] is String ? int.tryParse(json['id']) : json['id'];
+    movieImage = json['movie_image']?.toString();
+    durationSecs = json['duration_secs'] is String
+        ? int.tryParse(json['duration_secs'])
+        : json['duration_secs'];
+    duration = json['duration']?.toString();
     video = json['video'] != null
         ? VideoMetadata.fromJson(json['video'])
         : null;
     audio = json['audio'] != null
         ? AudioMetadata.fromJson(json['audio'])
         : null;
-    bitrate = json['bitrate'];
+    bitrate = json['bitrate'] is String
+        ? int.tryParse(json['bitrate'])
+        : json['bitrate'];
   }
 
   Map<String, dynamic> toJson() {
@@ -344,16 +366,22 @@ class VideoMetadata {
   });
 
   VideoMetadata.fromJson(Map<String, dynamic> json) {
-    index = json['index'];
-    codecName = json['codec_name'];
-    codecLongName = json['codec_long_name'];
-    profile = json['profile'];
-    codecType = json['codec_type'];
-    width = json['width'];
-    height = json['height'];
+    index = json['index'] is String
+        ? int.tryParse(json['index'])
+        : json['index'];
+    codecName = json['codec_name']?.toString();
+    codecLongName = json['codec_long_name']?.toString();
+    profile = json['profile']?.toString();
+    codecType = json['codec_type']?.toString();
+    width = json['width'] is String
+        ? int.tryParse(json['width'])
+        : json['width'];
+    height = json['height'] is String
+        ? int.tryParse(json['height'])
+        : json['height'];
     if (json['tags'] != null) {
-      duration = json['tags']['DURATION'];
-      bitRate = json['tags']['BPS'];
+      duration = json['tags']['DURATION']?.toString();
+      bitRate = json['tags']['BPS']?.toString();
     }
   }
 
@@ -394,16 +422,20 @@ class AudioMetadata {
   });
 
   AudioMetadata.fromJson(Map<String, dynamic> json) {
-    index = json['index'];
-    codecName = json['codec_name'];
-    codecLongName = json['codec_long_name'];
-    codecType = json['codec_type'];
-    sampleFmt = json['sample_fmt'];
-    sampleRate = json['sample_rate'];
-    channels = json['channels'];
-    channelLayout = json['channel_layout'];
+    index = json['index'] is String
+        ? int.tryParse(json['index'])
+        : json['index'];
+    codecName = json['codec_name']?.toString();
+    codecLongName = json['codec_long_name']?.toString();
+    codecType = json['codec_type']?.toString();
+    sampleFmt = json['sample_fmt']?.toString();
+    sampleRate = json['sample_rate']?.toString();
+    channels = json['channels'] is String
+        ? int.tryParse(json['channels'])
+        : json['channels'];
+    channelLayout = json['channel_layout']?.toString();
     if (json['tags'] != null) {
-      language = json['tags']['language'];
+      language = json['tags']['language']?.toString();
     }
   }
 

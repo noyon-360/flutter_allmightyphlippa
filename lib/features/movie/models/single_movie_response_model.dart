@@ -90,13 +90,13 @@ class MovieInfo {
   factory MovieInfo.fromJson(Map<String, dynamic> json) {
     return MovieInfo(
       kinopoiskUrl: json['kinopoisk_url'] ?? '',
-      tmdbId: json['tmdb_id'] ?? 0,
+      tmdbId: _parseInt(json['tmdb_id']),
       name: json['name'] ?? '',
       oName: json['o_name'] ?? '',
       coverBig: json['cover_big'] ?? '',
       movieImage: json['movie_image'] ?? '',
       releaseDate: json['releasedate'] ?? '',
-      episodeRunTime: json['episode_run_time'] ?? 0,
+      episodeRunTime: _parseInt(json['episode_run_time']),
       youtubeTrailer: json['youtube_trailer'],
       director: json['director'] ?? '',
       actors: json['actors'] ?? '',
@@ -105,25 +105,33 @@ class MovieInfo {
       plot: json['plot'] ?? '',
       age: json['age'] ?? '',
       mpaaRating: json['mpaa_rating'] ?? '',
-      ratingCountKinopoisk: json['rating_count_kinopoisk'] ?? 0,
+      ratingCountKinopoisk: _parseInt(json['rating_count_kinopoisk']),
       country: json['country'] ?? '',
       genre: json['genre'] ?? '',
       backdropPath:
           (json['backdrop_path'] as List?)?.map((e) => e.toString()).toList() ??
           [],
-      durationSecs: json['duration_secs'] ?? 0,
+      durationSecs: _parseInt(json['duration_secs']),
       duration: json['duration'] ?? '',
       video: VideoInfo.fromJson(json['video'] ?? {}),
       audio: AudioInfo.fromJson(json['audio'] ?? {}),
-      bitrate: json['bitrate'] ?? 0,
+      bitrate: _parseInt(json['bitrate']),
       rating: _parseDouble(json['rating']),
     );
   }
 
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
-    if (value is int) return value.toDouble();
     if (value is double) return value;
+    if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
   }
@@ -186,15 +194,25 @@ class MovieData {
 
   factory MovieData.fromJson(Map<String, dynamic> json) {
     return MovieData(
-      streamId: json['stream_id'] ?? 0,
+      streamId: _parseInt(json['stream_id']),
       name: json['name'] ?? '',
-      added: json['added'] ?? '',
-      categoryId: json['category_id'] ?? '',
-      categoryIds:
-          (json['category_ids'] as List?)?.map((e) => e as int).toList() ?? [],
+      added: json['added']?.toString() ?? '',
+      categoryId: json['category_id']?.toString() ?? '',
+      categoryIds: (json['category_ids'] as List?)
+              ?.map((e) => _parseInt(e))
+              .toList() ??
+          [],
       containerExtension: json['container_extension'] ?? '',
-      customSid: json['custom_sid'] ?? '',
+      customSid: json['custom_sid']?.toString() ?? '',
       directSource: json['direct_source'] ?? '',
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import 'package:flutter_almightyflippa/features/search/widgets/search_section_widget.dart';
 import '../../genre/controllers/genre_controller.dart';
+import '../../genre/screens/category_selection_screen.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../video/screens/video_play_screen.dart';
 import '../controllers/movie_controller.dart';
@@ -21,7 +22,7 @@ class _MovieScreenState extends State<MovieScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showBackToTop = false;
 
-  final genreCtrl = Get.find<GenreController>();
+  final genreCtrl = Get.find<GenreController>(tag: 'movies');
 
   @override
   void initState() {
@@ -54,6 +55,19 @@ class _MovieScreenState extends State<MovieScreen> {
     }
   }
 
+  void _showAllCategories(BuildContext context) {
+    Get.to(
+      () => CategorySelectionScreen(
+        title: 'Movie Categories',
+        genreTag: 'movies',
+        selectedCategoryId: movieCtrl.selectedCategoryId,
+        onCategorySelected: (categoryId) {
+          movieCtrl.getMovies(categoryId: categoryId);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -77,92 +91,137 @@ class _MovieScreenState extends State<MovieScreen> {
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    // Genres Title
-                    // SliverToBoxAdapter(
-                    //   child: Padding(
-                    //     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    //     child: Row(
-                    //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //       children: [
-                    //         Text(
-                    //           'Genres',
-                    //           style: Theme.of(context).textTheme.titleLarge
-                    //               ?.copyWith(
-                    //                 color: AppColors.primaryWhite,
-                    //                 fontWeight: FontWeight.bold,
-                    //               ),
-                    //         ),
-                    //         Text(
-                    //           'See All',
-                    //           style: Theme.of(context).textTheme.bodyMedium
-                    //               ?.copyWith(color: AppColors.primaryGray),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
                     // ),
+
+                    // Categories Header
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Categories',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: AppColors.primaryWhite,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            if (genreCtrl.genres.length > 8)
+                              GestureDetector(
+                                onTap: () => _showAllCategories(context),
+                                child: const Text(
+                                  'See All',
+                                  style: TextStyle(
+                                    color: AppColors.red,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
 
                     // Genres List
                     SliverToBoxAdapter(
                       child: Container(
-                        height: 140,
+                        height: 35,
                         margin: const EdgeInsets.symmetric(vertical: 16),
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: genreCtrl.genres.length,
+                          itemCount:
+                              (genreCtrl.genres.length > 8
+                                  ? 8
+                                  : genreCtrl.genres.length) +
+                              1,
                           itemBuilder: (context, index) {
-                            return Container(
-                              width: 160,
-                              margin: const EdgeInsets.only(right: 16),
-                              decoration: BoxDecoration(
-                                color: AppColors
-                                    .containerBgColor, // Fallback color
-                                borderRadius: BorderRadius.circular(12),
-                                // Gradient or Image could go here
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Placeholder for genre image/gradient
-                                  Positioned(
-                                    bottom: 10,
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          genreCtrl.genres[index].categoryName,
-                                          style: const TextStyle(
-                                            color: AppColors.primaryWhite,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
+                            final isAll = index == 0;
+                            final genre = isAll
+                                ? null
+                                : genreCtrl.genres[index - 1];
+                            final categoryId = isAll ? '' : genre!.categoryId;
+                            final categoryName = isAll
+                                ? 'All'
+                                : genre!.categoryName;
+
+                            return Obx(() {
+                              final isSelected =
+                                  movieCtrl.selectedCategoryId.value ==
+                                  categoryId;
+
+                              return GestureDetector(
+                                onTap: () {
+                                  movieCtrl.getMovies(categoryId: categoryId);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AppColors.red
+                                        : AppColors.containerBgColor,
+                                    borderRadius: BorderRadius.circular(25),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.red
+                                          : AppColors.primaryWhite.withOpacity(
+                                              0.1,
+                                            ),
                                     ),
                                   ),
-                                ],
-                              ),
-                            );
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    categoryName,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? AppColors.primaryWhite
+                                          : AppColors.primaryGray,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            });
                           },
                         ),
                       ),
                     ),
 
-                    // Top Search Title
+                    // Results Title
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 8.0,
                         ),
-                        child: Text(
-                          'Top Search',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                color: AppColors.primaryWhite,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
+                        child: Obx(() {
+                          String title = 'All Movies';
+                          if (movieCtrl.selectedCategoryId.value.isNotEmpty) {
+                            final genre = genreCtrl.genres.firstWhereOrNull(
+                              (g) =>
+                                  g.categoryId ==
+                                  movieCtrl.selectedCategoryId.value,
+                            );
+                            title = genre?.categoryName ?? 'Movies';
+                          }
+
+                          return Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: AppColors.primaryWhite,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          );
+                        }),
                       ),
                     ),
 
@@ -228,7 +287,7 @@ class _MovieScreenState extends State<MovieScreen> {
                                       const SizedBox(height: 8),
                                       Text(
                                         // Formatting date and duration if available, else placeholder
-                                        '${movie.added} | Movie | 2h 44m 31s',
+                                        '${movie.added} | Movie',
                                         style: const TextStyle(
                                           color: AppColors.primaryGray,
                                           fontSize: 12,

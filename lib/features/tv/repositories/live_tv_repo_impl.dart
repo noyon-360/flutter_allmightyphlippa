@@ -28,8 +28,12 @@ class LiveTvRepoImpl implements LiveTvRepo {
     return _apiClient.post(
       endpoint: ApiConstants.server.connectTv,
       data: requestData.toJson(),
-      fromJsonT: (json) =>
-          (json as List).map((item) => LiveTvModel.fromJson(item)).toList(),
+      fromJsonT: (json) {
+        if (json is List) {
+          return json.map((item) => LiveTvModel.fromJson(item)).toList();
+        }
+        return <LiveTvModel>[];
+      },
     );
   }
 

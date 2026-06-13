@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutx_core/core/debug_print.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'hive_storage_service.dart';
 
 /// Service for handling API response caching with Hive
 class ApiCacheService {
@@ -22,6 +23,11 @@ class ApiCacheService {
     try {
       if (_isInitialized) return;
 
+      if (!HiveStorageService.isInitialized) {
+        DPrint.error('Cannot initialize ApiCacheService: Hive is not initialized');
+        return;
+      }
+
       if (!Hive.isBoxOpen(_cacheBoxName)) {
         _cacheBox = await Hive.openBox(_cacheBoxName);
       } else {
@@ -32,7 +38,8 @@ class ApiCacheService {
       DPrint.info('ApiCacheService initialized successfully');
     } catch (e) {
       DPrint.error('Failed to initialize ApiCacheService: $e');
-      rethrow;
+      // Don't rethrow, just mark as not initialized
+      _isInitialized = false;
     }
   }
 

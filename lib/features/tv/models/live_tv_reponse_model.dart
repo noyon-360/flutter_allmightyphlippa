@@ -33,23 +33,32 @@ class LiveTvModel {
 
   factory LiveTvModel.fromJson(Map<String, dynamic> json) {
     return LiveTvModel(
-      num: json['num'] ?? 0,
+      num: _parseInt(json['num']),
       name: json['name'] ?? '',
       streamType: json['stream_type'] ?? '',
-      streamId: json['stream_id'] ?? 0,
+      streamId: _parseInt(json['stream_id']),
       streamIcon: json['stream_icon'] ?? '',
-      epgChannelId: json['epg_channel_id'] ?? '',
-      added: json['added'] ?? '',
-      isAdult: json['is_adult'] ?? 0,
-      categoryId: json['category_id'] ?? '',
+      epgChannelId: json['epg_channel_id']?.toString() ?? '',
+      added: json['added']?.toString() ?? '',
+      isAdult: _parseInt(json['is_adult']),
+      categoryId: json['category_id']?.toString() ?? '',
       categoryIds: json['category_ids'] != null
-          ? List<int>.from(json['category_ids'])
+          ? List<int>.from(
+              (json['category_ids'] as List).map((e) => _parseInt(e)))
           : [],
       customSid: json['custom_sid'],
-      tvArchive: json['tv_archive'] ?? 0,
+      tvArchive: _parseInt(json['tv_archive']),
       directSource: json['direct_source'] ?? '',
-      tvArchiveDuration: json['tv_archive_duration'] ?? 0,
+      tvArchiveDuration: _parseInt(json['tv_archive_duration']),
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   Map<String, dynamic> toJson() {

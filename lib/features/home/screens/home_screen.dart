@@ -181,6 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   () => VideoPlayScreen(
                     streamId: movie.streamId,
                     type: ServerType.movies,
+                    autoPlay: true,
                   ),
                 );
               },
@@ -260,12 +261,13 @@ class _HomeScreenState extends State<HomeScreen> {
             return TvFocusWrapper(
               onTap: () {
                 if (series.seriesId != null) {
-                  Get.to(
-                    () => VideoPlayScreen(
-                      streamId: series.seriesId!,
-                      type: ServerType.series,
-                    ),
-                  );
+                    Get.to(
+                      () => VideoPlayScreen(
+                        streamId: series.seriesId!,
+                        type: ServerType.series,
+                        autoPlay: false,
+                      ),
+                    );
                 }
               },
               child: Container(

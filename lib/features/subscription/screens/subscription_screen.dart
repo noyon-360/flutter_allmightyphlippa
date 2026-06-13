@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../controllers/subscription_controller.dart';
@@ -9,7 +11,8 @@ class SubscriptionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SubscriptionController());
+    // Use Get.find — SubscriptionController is globally registered in setup_controllers.dart
+    final controller = Get.find<SubscriptionController>();
     final profileController = Get.find<ProfileController>();
 
     return Scaffold(
@@ -24,44 +27,63 @@ class SubscriptionScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
-            const Text(
-              'Subscription',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                'Subscription',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 60),
-            Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
-              }
-
-              if (controller.products.isEmpty) {
-                return _buildEmptyState(controller);
-              }
-
-              return Column(
-                children: controller.products.map((product) {
-                  return _buildSubscriptionCard(
-                    product,
-                    controller,
-                    profileController,
+              const SizedBox(height: 60),
+              Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
                   );
-                }).toList(),
-              );
-            }),
-            const Spacer(),
-            _buildRestoreButton(controller),
-            const SizedBox(height: 20),
-          ],
+                }
+
+                if (controller.products.isEmpty) {
+                  return _buildEmptyState(controller);
+                }
+
+                final order = [
+                  SubscriptionController.monthlyId,
+                  SubscriptionController.quarterlyId,
+                  SubscriptionController.yearlyId,
+                ];
+                final sorted = [...controller.products]
+                  ..sort(
+                    (a, b) =>
+                        order.indexOf(a.id).compareTo(order.indexOf(b.id)),
+                  );
+                return Column(
+                  children: sorted.map((product) {
+                    DPrint.log("product price ${product.price}");
+                    DPrint.log("product description ${product.description}");
+                    DPrint.log("product id ${product.id}");
+                    DPrint.log("product title ${product.title}");
+                    // Wrap each card in an Obx so it rebuilds when the profile
+                    // (subscriptionStatus / subscriptionProductId) changes.
+                    return Obx(
+                      () => _buildSubscriptionCard(
+                        product,
+                        controller,
+                        profileController,
+                      ),
+                    );
+                  }).toList(),
+                );
+              }),
+              _buildRestoreButton(controller),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -87,29 +109,77 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
+  String _periodLabel(String productId) {
+    if (productId == SubscriptionController.yearlyId) return '/year';
+    if (productId == SubscriptionController.quarterlyId) return '/quarter';
+    return '/month';
+  }
+
+  bool _isCurrentPlan(String productId, ProfileController profileController) {
+    final user = profileController.userProfile.value;
+    if (user?.subscriptionStatus != 'active') return false;
+    return user?.subscriptionProductId == productId;
+  }
+
   Widget _buildSubscriptionCard(
-    dynamic product,
+    ProductDetails product,
     SubscriptionController controller,
     ProfileController profileController,
   ) {
-    final bool isActive =
-        profileController.userProfile.value?.subscriptionStatus == 'active';
+    final bool isActive = _isCurrentPlan(product.id, profileController);
 
     return GestureDetector(
-      onTap: isActive ? null : () => controller.subscribe(product),
+      onTap: isActive
+          ? () => Get.snackbar(
+              'Already Subscribed',
+              'You are currently on this plan.',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.white,
+              colorText: Colors.black,
+            )
+          : () => controller.subscribe(product),
       child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(24.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+          color: isActive
+              ? AppColors.red.withAlpha((0.1 * 255).toInt())
+              : Colors.transparent,
+          border: Border.all(
+            color: isActive
+                ? AppColors.red
+                : Colors.white.withAlpha((0.5 * 255).toInt()),
+            width: isActive ? 2 : 1,
+          ),
         ),
         child: Column(
           children: [
+            if (isActive)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.red,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'CURRENT PLAN',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             RichText(
               text: TextSpan(
                 children: [
                   TextSpan(
-                    text: product.price, // Assuming this is "$2.99"
+                    text: product.price,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 36,
@@ -117,9 +187,9 @@ class SubscriptionScreen extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text: ' /month',
+                    text: ' ${_periodLabel(product.id)}',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withAlpha((0.7 * 255).toInt()),
                       fontSize: 18,
                     ),
                   ),
@@ -127,11 +197,19 @@ class SubscriptionScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Divider(color: Colors.white.withOpacity(0.2)),
+            Divider(color: Colors.white.withAlpha((0.2 * 255).toInt())),
             const SizedBox(height: 16),
-            _buildFeatureRow('Watch all you want.'),
+            _buildFeatureRow('Instant sync across devices'),
             const SizedBox(height: 12),
-            _buildFeatureRow('Full Quality for Video Watch'),
+            _buildFeatureRow('Unlimited EPG navigation'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('EPG reminders'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('No watermarks'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('No device limit'),
+            const SizedBox(height: 12),
+            _buildFeatureRow('Offline playback'),
           ],
         ),
       ),
@@ -158,7 +236,10 @@ class SubscriptionScreen extends StatelessWidget {
       onPressed: controller.restorePurchases,
       child: Text(
         'Restore Purchases',
-        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+        style: TextStyle(
+          color: Colors.white.withAlpha((0.5 * 255).toInt()),
+          fontSize: 14,
+        ),
       ),
     );
   }

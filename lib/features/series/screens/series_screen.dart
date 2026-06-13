@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/features/search/widgets/search_section_widget.dart';
+import 'package:flutx_core/flutx_core.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import '../../genre/controllers/genre_controller.dart';
+import '../../genre/screens/category_selection_screen.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../video/screens/video_play_screen.dart';
 import 'package:flutter_almightyflippa/features/series/controllers/series_controller.dart';
@@ -59,6 +62,19 @@ class _SeriesScreenState extends State<SeriesScreen> {
     }
   }
 
+  void _showAllCategories(BuildContext context, GenreController genreCtrl) {
+    Get.to(
+      () => CategorySelectionScreen(
+        title: 'Series Categories',
+        genreTag: 'series',
+        selectedCategoryId: seriesCtrl.selectedCategoryId,
+        onCategorySelected: (categoryId) {
+          seriesCtrl.getSeries(categoryId: categoryId);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -107,73 +123,166 @@ class _SeriesScreenState extends State<SeriesScreen> {
                     //   ),
                     // ),
 
-                    // // Genres List
-                    // SliverToBoxAdapter(
-                    //   child: Container(
-                    //     height: 140,
-                    //     margin: const EdgeInsets.symmetric(vertical: 16),
-                    //     child: ListView.builder(
-                    //       scrollDirection: Axis.horizontal,
-                    //       padding: const EdgeInsets.symmetric(horizontal: 16),
-                    //       itemCount: _genres.length,
-                    //       itemBuilder: (context, index) {
-                    //         return Container(
-                    //           width: 160,
-                    //           margin: const EdgeInsets.only(right: 16),
-                    //           decoration: BoxDecoration(
-                    //             color:
-                    //                 AppColors.containerBgColor, // Fallback color
-                    //             borderRadius: BorderRadius.circular(12),
-                    //             // Gradient or Image could go here
-                    //           ),
-                    //           child: Stack(
-                    //             alignment: Alignment.center,
-                    //             children: [
-                    //               // Placeholder for genre image/gradient
-                    //               Positioned(
-                    //                 bottom: 10,
-                    //                 child: Column(
-                    //                   children: [
-                    //                     Text(
-                    //                       _genres[index]['name']!,
-                    //                       style: const TextStyle(
-                    //                         color: AppColors.primaryWhite,
-                    //                         fontWeight: FontWeight.bold,
-                    //                         fontSize: 16,
-                    //                       ),
-                    //                     ),
-                    //                     const Text(
-                    //                       'Lorem Ipsum',
-                    //                       style: TextStyle(
-                    //                         color: AppColors.primaryGray,
-                    //                         fontSize: 12,
-                    //                       ),
-                    //                     ),
-                    //                   ],
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //         );
-                    //       },
-                    //     ),
-                    //   ),
-                    // ),
+                    // Categories Header
+                    SliverToBoxAdapter(
+                      child: GetBuilder<GenreController>(
+                        init: GenreController(),
+                        tag: 'series',
+                        builder: (genreCtrl) {
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Categories',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        color: AppColors.primaryWhite,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                                if (genreCtrl.genres.length > 8)
+                                  GestureDetector(
+                                    onTap: () =>
+                                        _showAllCategories(context, genreCtrl),
+                                    child: const Text(
+                                      'See All',
+                                      style: TextStyle(
+                                        color: AppColors.red,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
 
-                    // Top Search Title
+                    // Genres List
+                    SliverToBoxAdapter(
+                      child: Container(
+                        height: 35,
+                        margin: const EdgeInsets.symmetric(vertical: 16),
+                        child: GetBuilder<GenreController>(
+                          init: GenreController(),
+                          tag: 'series',
+                          builder: (genreCtrl) {
+                            return Obx(
+                              () => ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                itemCount:
+                                    (genreCtrl.genres.length > 8
+                                        ? 8
+                                        : genreCtrl.genres.length) +
+                                    1,
+                                itemBuilder: (context, index) {
+                                  final isAll = index == 0;
+                                  final genre = isAll
+                                      ? null
+                                      : genreCtrl.genres[index - 1];
+                                  final categoryId = isAll
+                                      ? ''
+                                      : genre!.categoryId;
+                                  final categoryName = isAll
+                                      ? 'All'
+                                      : genre!.categoryName;
+
+                                  return Obx(() {
+                                    final isSelected =
+                                        seriesCtrl.selectedCategoryId.value ==
+                                        categoryId;
+
+                                    return GestureDetector(
+                                      onTap: () {
+                                        seriesCtrl.getSeries(
+                                          categoryId: categoryId,
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        margin: const EdgeInsets.only(
+                                          right: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? AppColors.red
+                                              : AppColors.containerBgColor,
+                                          borderRadius: BorderRadius.circular(
+                                            25,
+                                          ),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.red
+                                                : AppColors.primaryWhite
+                                                      .withOpacity(0.1),
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          categoryName,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? AppColors.primaryWhite
+                                                : AppColors.primaryGray,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  });
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // Results Title
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
                           vertical: 8.0,
                         ),
-                        child: Text(
-                          'Top Search',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                color: AppColors.primaryWhite,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        child: GetBuilder<GenreController>(
+                          tag: 'series',
+                          builder: (genreCtrl) {
+                            return Obx(() {
+                              String title = 'All Series';
+                              if (seriesCtrl
+                                  .selectedCategoryId
+                                  .value
+                                  .isNotEmpty) {
+                                final genre = genreCtrl.genres.firstWhereOrNull(
+                                  (g) =>
+                                      g.categoryId ==
+                                      seriesCtrl.selectedCategoryId.value,
+                                );
+                                title = genre?.categoryName ?? 'Series';
+                              }
+
+                              return Text(
+                                title,
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      color: AppColors.primaryWhite,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              );
+                            });
+                          },
                         ),
                       ),
                     ),
@@ -189,12 +298,13 @@ class _SeriesScreenState extends State<SeriesScreen> {
                           ),
                           child: TvFocusWrapper(
                             onTap: () {
-                              Get.to(
-                                () => VideoPlayScreen(
-                                  streamId: series.seriesId!,
-                                  type: ServerType.series,
-                                ),
-                              );
+                                Get.to(
+                                  () => VideoPlayScreen(
+                                    streamId: series.seriesId!,
+                                    type: ServerType.series,
+                                    autoPlay: false,
+                                  ),
+                                );
                             },
                             child: Row(
                               children: [
@@ -236,15 +346,25 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        // Formatting date and duration if available, else placeholder
-                                        '${series.episodeRunTime} | Movie | 2h 44m 31s',
-                                        style: const TextStyle(
-                                          color: AppColors.primaryGray,
-                                          fontSize: 12,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.star,
+                                            color: AppColors.primaryWhite,
+                                            size: 12,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            // Formatting date and duration if available, else placeholder
+                                            '${series.rating5Based}',
+                                            style: const TextStyle(
+                                              color: AppColors.primaryGray,
+                                              fontSize: 12,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),

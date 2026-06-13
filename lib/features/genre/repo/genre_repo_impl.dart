@@ -24,8 +24,12 @@ class GenreRepoImpl implements GenreRepo {
     return _apiClient.post(
       endpoint: ApiConstants.genre.getCategories,
       data: requestData.toJson(),
-      fromJsonT: (json) =>
-          (json as List).map((item) => GenreModel.fromJson(item)).toList(),
+      fromJsonT: (json) {
+        if (json is List) {
+          return json.map((item) => GenreModel.fromJson(item)).toList();
+        }
+        return <GenreModel>[];
+      },
     );
   }
 
@@ -43,14 +47,20 @@ class GenreRepoImpl implements GenreRepo {
       endpoint: ApiConstants.genre.getCategoriesByType(id),
       data: requestData.toJson(),
       fromJsonT: (json) {
+        if (json is! List) return <T>[];
+        final List list = json;
         if (type == ServerType.series) {
-          return SeriesResponesModel.fromJson(json) as List<T>;
+          return list.map((item) => SeriesResponesModel.fromJson(item)).toList()
+              as List<T>;
         } else if (type == ServerType.movies || type == ServerType.movie) {
-          return MoviesResponseModel.fromJson(json) as List<T>;
+          return list.map((item) => MoviesResponseModel.fromJson(item)).toList()
+              as List<T>;
         } else if (type == ServerType.live || type == ServerType.channels) {
-          return LiveTvModel.fromJson(json) as List<T>;
+          return list.map((item) => LiveTvModel.fromJson(item)).toList()
+              as List<T>;
         }
-        return GenreModel.fromJson(json) as List<T>;
+        return list.map((item) => GenreModel.fromJson(item)).toList()
+            as List<T>;
       },
     );
   }

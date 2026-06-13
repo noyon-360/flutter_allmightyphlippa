@@ -69,7 +69,11 @@ class ApiClient {
     }
 
     _cacheService = ApiCacheService();
-    await _cacheService.initialize();
+    try {
+      await _cacheService.initialize();
+    } catch (e) {
+      DPrint.error("Failed to initialize ApiCacheService, continuing without cache: $e");
+    }
 
     _dio = Dio(
       BaseOptions(

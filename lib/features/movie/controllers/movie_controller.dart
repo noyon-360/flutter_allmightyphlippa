@@ -2,10 +2,12 @@ import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
 import '../../genre/controllers/genre_controller.dart';
+import '../../genre/repo/genre_repo.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../models/movie_response_model.dart';
 import '../models/single_movie_response_model.dart';
 import '../repositories/movie_repo.dart';
+import '../../../core/api/network_result.dart';
 
 class MovieController extends GetxController {
   final _movieRepo = Get.find<MovieRepo>();
@@ -16,6 +18,7 @@ class MovieController extends GetxController {
   final isLoading = false.obs;
   final isMoreLoading = false.obs;
   final hasMore = true.obs;
+  final selectedCategoryId = ''.obs;
   int _currentPage = 1;
   final int _limit = 10;
 
@@ -23,12 +26,16 @@ class MovieController extends GetxController {
   void onInit() {
     super.onInit();
     getMovies();
-    Get.put(GenreController()).getGenres(type: ServerType.movies);
+    Get.put(GenreController(), tag: 'movies').getGenres(type: ServerType.movies);
   }
 
-  Future<void> getMovies({bool isLoadMore = false}) async {
+  Future<void> getMovies({bool isLoadMore = false, String? categoryId}) async {
     if (isLoading.value || isMoreLoading.value) return;
     if (isLoadMore && !hasMore.value) return;
+
+    if (categoryId != null) {
+      selectedCategoryId.value = categoryId;
+    }
 
     if (isLoadMore) {
       isMoreLoading.value = true;
@@ -38,10 +45,17 @@ class MovieController extends GetxController {
       hasMore.value = true;
     }
 
-    final result = await _movieRepo.getMovies(
-      page: _currentPage,
-      limit: _limit,
-    );
+
+
+    final result = await (selectedCategoryId.value.isNotEmpty
+        ? Get.find<GenreRepo>().getGenresById<MoviesResponseModel>(
+            id: selectedCategoryId.value,
+            type: ServerType.movies,
+          )
+        : _movieRepo.getMovies(
+            page: _currentPage,
+            limit: _limit,
+          ));
 
     result.fold(
       (fail) {

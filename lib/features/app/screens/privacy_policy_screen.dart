@@ -46,15 +46,15 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ),
             _buildSection(
               '2. How We Use Information',
-              'We use the information we collect to provide, maintain, and improve our services, develop new ones, and protect Almighty Flippa and our users.',
+              'We use the information we collect to provide, maintain, and improve our services, develop new ones, and protect LABBY TV and our users.',
             ),
             _buildSection(
               '3. Information Sharing',
-              'We do not share your personal information with companies, organizations, or individuals outside of Almighty Flippa except in the following cases: with your consent, for external processing, or for legal reasons.',
+              'We do not share your personal information with companies, organizations, or individuals outside of LABBY TV except in the following cases: with your consent, for external processing, or for legal reasons.',
             ),
             _buildSection(
               '4. Data Security',
-              'We work hard to protect Almighty Flippa and our users from unauthorized access to or unauthorized alteration, disclosure, or destruction of information we hold.',
+              'We work hard to protect LABBY TV and our users from unauthorized access to or unauthorized alteration, disclosure, or destruction of information we hold.',
             ),
             _buildSection(
               '5. Your Choices',

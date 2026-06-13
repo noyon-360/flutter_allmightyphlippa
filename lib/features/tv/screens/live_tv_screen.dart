@@ -3,7 +3,10 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/api/network_result.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import '../../genre/controllers/genre_controller.dart';
+import '../../genre/screens/category_selection_screen.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../search/controllers/search_controller.dart';
 import '../../search/screens/search_screen.dart';
@@ -55,6 +58,17 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
     }
   }
 
+  void _showAllCategories(BuildContext context, GenreController genreCtrl) {
+    Get.to(() => CategorySelectionScreen(
+          title: 'Live TV Categories',
+          genreTag: 'channels',
+          selectedCategoryId: liveTvCtrl.selectedCategoryId,
+          onCategorySelected: (categoryId) {
+            liveTvCtrl.getLiveTvList(categoryId: categoryId);
+          },
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,6 +111,144 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                   ),
                 ),
                 style: const TextStyle(color: AppColors.primaryWhite),
+              ),
+            ),
+
+            // Categories Header
+            GetBuilder<GenreController>(
+              init: GenreController(),
+              tag: 'channels',
+              builder: (genreCtrl) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Categories',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.primaryWhite,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (genreCtrl.genres.length > 8)
+                        GestureDetector(
+                          onTap: () => _showAllCategories(context, genreCtrl),
+                          child: const Text(
+                            'See All',
+                            style: TextStyle(
+                              color: AppColors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            // Categories
+            Container(
+              height: 35,
+              margin: const EdgeInsets.only(bottom: 16),
+              child: GetBuilder<GenreController>(
+                init: GenreController(),
+                tag: 'channels',
+                builder: (genreCtrl) {
+                  return Obx(
+                    () => ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount:
+                          (genreCtrl.genres.length > 8
+                              ? 8
+                              : genreCtrl.genres.length) +
+                          1,
+                      itemBuilder: (context, index) {
+                        final isAll = index == 0;
+                        final genre = isAll
+                            ? null
+                            : genreCtrl.genres[index - 1];
+                        final categoryId = isAll ? '' : genre!.categoryId;
+                        final categoryName = isAll
+                            ? 'All'
+                            : genre!.categoryName;
+
+                        return Obx(() {
+                          final isSelected =
+                              liveTvCtrl.selectedCategoryId.value == categoryId;
+
+                          return GestureDetector(
+                            onTap: () {
+                              liveTvCtrl.getLiveTvList(categoryId: categoryId);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.red
+                                    : AppColors.containerBgColor,
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.red
+                                      : AppColors.primaryWhite.withOpacity(0.1),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                categoryName,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? AppColors.primaryWhite
+                                      : AppColors.primaryGray,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          );
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Results Title
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: GetBuilder<GenreController>(
+                tag: 'channels',
+                builder: (genreCtrl) {
+                  return Obx(() {
+                    String title = 'All Channels';
+                    if (liveTvCtrl.selectedCategoryId.value.isNotEmpty) {
+                      final genre = genreCtrl.genres.firstWhereOrNull(
+                        (g) =>
+                            g.categoryId == liveTvCtrl.selectedCategoryId.value,
+                      );
+                      title = genre?.categoryName ?? 'Channels';
+                    }
+
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.primaryWhite,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  });
+                },
               ),
             ),
             Expanded(

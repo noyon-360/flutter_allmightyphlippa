@@ -37,31 +37,40 @@ class MoviesResponseModel {
 
   factory MoviesResponseModel.fromJson(Map<String, dynamic> json) {
     return MoviesResponseModel(
-      num: json['num'] ?? 0,
+      num: _parseInt(json['num']),
       name: json['name'] ?? '',
       streamType: json['stream_type'] ?? '',
-      streamId: json['stream_id'] ?? 0,
+      streamId: _parseInt(json['stream_id']),
       streamIcon: json['stream_icon'] ?? '',
       rating: json['rating'].toString(),
       rating5Based: _parseDouble(json['rating_5based']),
       tmdb: json['tmdb'].toString(),
       trailer: json['trailer'] ?? '',
-      added: json['added'] ?? '',
-      isAdult: json['is_adult'] ?? 0,
-      categoryId: json['category_id'] ?? '',
+      added: json['added']?.toString() ?? '',
+      isAdult: _parseInt(json['is_adult']),
+      categoryId: json['category_id']?.toString() ?? '',
       categoryIds: json['category_ids'] != null
-          ? List<int>.from(json['category_ids'])
+          ? List<int>.from(
+              (json['category_ids'] as List).map((e) => _parseInt(e)))
           : [],
       containerExtension: json['container_extension'] ?? '',
-      customSid: json['custom_sid'],
+      customSid: json['custom_sid']?.toString(),
       directSource: json['direct_source'] ?? '',
     );
   }
 
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
-    if (value is int) return value.toDouble();
     if (value is double) return value;
+    if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
   }

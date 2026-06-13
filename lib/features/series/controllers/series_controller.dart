@@ -1,9 +1,12 @@
 import 'package:flutter_almightyflippa/features/series/models/series_response_model.dart';
 import 'package:flutter_almightyflippa/features/series/repositories/series_repo.dart';
 import 'package:flutx_core/flutx_core.dart';
-import 'package:get/get_instance/get_instance.dart';
-import 'package:get/state_manager.dart';
+import 'package:get/get.dart';
 
+import '../../../core/api/network_result.dart';
+import '../../genre/controllers/genre_controller.dart';
+import '../../genre/repo/genre_repo.dart';
+import '../../playlist/models/server_request_model.dart';
 import '../models/single_series_response_model.dart';
 
 class SeriesController extends GetxController {
@@ -15,6 +18,7 @@ class SeriesController extends GetxController {
   final isLoading = false.obs;
   final isMoreLoading = false.obs;
   final hasMore = true.obs;
+  final selectedCategoryId = ''.obs;
   int _currentPage = 1;
   final int _limit = 10;
 
@@ -22,11 +26,16 @@ class SeriesController extends GetxController {
   void onInit() {
     super.onInit();
     getSeries();
+    Get.put(GenreController(), tag: 'series').getGenres(type: ServerType.series);
   }
 
-  Future<void> getSeries({bool isLoadMore = false}) async {
+  Future<void> getSeries({bool isLoadMore = false, String? categoryId}) async {
     if (isLoading.value || isMoreLoading.value) return;
     if (isLoadMore && !hasMore.value) return;
+
+    if (categoryId != null) {
+      selectedCategoryId.value = categoryId;
+    }
 
     if (isLoadMore) {
       isMoreLoading.value = true;
@@ -36,14 +45,21 @@ class SeriesController extends GetxController {
       hasMore.value = true;
     }
 
-    final response = await _seriesRepo.getSeries(
-      page: _currentPage,
-      limit: _limit,
-    );
+
+
+    final response = await (selectedCategoryId.value.isNotEmpty
+        ? Get.find<GenreRepo>().getGenresById<SeriesResponesModel>(
+            id: selectedCategoryId.value,
+            type: ServerType.series,
+          )
+        : _seriesRepo.getSeries(
+            page: _currentPage,
+            limit: _limit,
+          ));
 
     response.fold(
       (fail) {
-        DPrint.error('Error fetching movies: ${fail.message}');
+        DPrint.error('Error fetching series: ${fail.message}');
       },
       (success) {
         final data = success.data;

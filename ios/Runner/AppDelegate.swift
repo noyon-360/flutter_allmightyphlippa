@@ -4,26 +4,35 @@ import AVFoundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+
+  private var pipHandler: PiPMethodChannel?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-<<<<<<< HEAD
-=======
-    
-    // Set AVAudioSession category to allow Picture in Picture
-    let audioSession = AVAudioSession.sharedInstance()
     do {
-      try audioSession.setCategory(.playback, mode: .moviePlayback)
+      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+      try AVAudioSession.sharedInstance().setActive(true)
     } catch {
-      print("Setting category to AVAudioSessionCategoryPlayback failed.")
+      print("AVAudioSession setup error: \(error)")
     }
-    
->>>>>>> 92a5b2f5aade74fb3457207ffd678933e0d09555
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // Get the binary messenger from the FlutterViewController — more reliable
+    // than going through the plugin registrar for custom non-plugin channels.
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self,
+            let controller = self.window?.rootViewController as? FlutterViewController
+      else { return }
+
+      let handler = PiPMethodChannel()
+      handler.setup(with: controller.binaryMessenger)
+      self.pipHandler = handler
+    }
   }
 }

@@ -11,6 +11,7 @@ import '../../profile/controller/profile_controller.dart';
 import '../../series/controllers/series_controller.dart';
 import '../../series/models/single_series_response_model.dart';
 import '../../../core/services/auth_storage_service.dart';
+import '../../../core/services/watch_history_service.dart';
 import '../repositories/video_status_repo.dart';
 import '../models/video_status_request_model.dart';
 
@@ -24,6 +25,7 @@ class VideoPlayController extends GetxController {
   late final VideoController videoController;
 
   final isVideoInitialized = false.obs;
+  final hasStartedPlaying = false.obs;
   final currentType = Rxn<ServerType>();
   final isLoading = false.obs;
 
@@ -47,6 +49,14 @@ class VideoPlayController extends GetxController {
   final _updateInterval = const Duration(seconds: 10);
   String? _currentVideoId;
   String? _currentVideoType;
+  String? _currentPlayUrl;
+
+  /// The URL currently loaded into the player — used by iOS PiP fallback.
+  String? get currentPlayUrl => _currentPlayUrl;
+
+  /// Current playback position in seconds — used by iOS PiP to seek on resume.
+  double get currentPositionSeconds =>
+      player.state.position.inMilliseconds / 1000.0;
 
   bool get isSubscribed {
     final user = profileCtrl.userProfile.value;
@@ -160,7 +170,12 @@ class VideoPlayController extends GetxController {
   void onClose() {
     _positionSubscription?.cancel();
     _tracksSubscription?.cancel();
-    _syncVideoStatus(); // Sync one last time
+    _syncVideoStatus().then((_) {
+      // Refresh the watch history globally after the final sync
+      if (Get.isRegistered<WatchHistoryService>()) {
+        Get.find<WatchHistoryService>().refreshList();
+      }
+    });
     player.dispose();
     super.onClose();
   }
@@ -168,33 +183,34 @@ class VideoPlayController extends GetxController {
   Future<void> initializeVideo({
     required ServerType type,
     required int streamId,
+    bool autoPlay = true,
   }) async {
     // Reset previous state
     isVideoInitialized.value = false;
-    isLoading.value = true;
     currentType.value = type;
     currentEpisode.value = null;
+    hasStartedPlaying.value = autoPlay;
 
     // Reset settings
     playbackSpeed.value = 1.0;
     currentVideoTrack.value = null;
-    availableVideoTracks.clear();
+    availableVideoTracks.value = [];
     currentSubtitleTrack.value = null;
-    availableSubtitleTracks.clear();
+    availableSubtitleTracks.value = [];
     isSubtitleEnabled.value = true;
 
     try {
       if (type == ServerType.movies) {
-        await _loadMovie(streamId);
+        await _loadMovie(streamId, autoPlay: autoPlay);
       } else if (type == ServerType.series) {
-        await _loadSeries(streamId);
+        await _loadSeries(streamId, autoPlay: autoPlay);
       }
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _loadMovie(int streamId) async {
+  Future<void> _loadMovie(int streamId, {bool autoPlay = true}) async {
     // Fetch details
     await movieCtrl.getMovieDetails(streamId: streamId);
 
@@ -203,13 +219,15 @@ class VideoPlayController extends GetxController {
     if (movie != null && movie.playUrl.isNotEmpty) {
       _currentVideoId = streamId.toString();
       _currentVideoType = 'movie';
-      await _initializePlayer(movie.playUrl);
+      await _initializePlayer(movie.playUrl, autoPlay: autoPlay);
     }
   }
 
-  Future<void> _loadSeries(int streamId) async {
+  Future<void> _loadSeries(int streamId, {bool autoPlay = true}) async {
     // Fetch details
     await seriesCtrl.getSeriesDetails(streamId: streamId);
+
+    if (!autoPlay) return;
 
     final series = seriesCtrl.singleSeries.value;
     if (series != null) {
@@ -225,43 +243,42 @@ class VideoPlayController extends GetxController {
     }
   }
 
-  Future<void> playEpisode(Episode episode) async {
+  Future<void> playEpisode(Episode episode, {bool autoPlay = true}) async {
+    hasStartedPlaying.value = true;
     currentEpisode.value = episode;
     isVideoInitialized.value = false;
 
     // Reset settings
     playbackSpeed.value = 1.0;
     currentVideoTrack.value = null;
-    availableVideoTracks.clear();
+    availableVideoTracks.value = [];
     currentSubtitleTrack.value = null;
-    availableSubtitleTracks.clear();
+    availableSubtitleTracks.value = [];
     isSubtitleEnabled.value = true;
 
     try {
       final storage = AuthStorageService();
       final playlistData = await storage.getPlaylistData();
       final urlObject = Uri.parse(playlistData.url);
-      final host = urlObject.host;
-      final port = urlObject.port == 0 ? 80 : urlObject.port;
-      final fileExt = episode.containerExtension ?? 'mkv';
+      final fileExt = episode.containerExtension != null && episode.containerExtension!.isNotEmpty 
+          ? episode.containerExtension 
+          : 'mkv'; // fallback to mkv if the server doesn't provide the format
 
-      // Reconstruct play URL for the specific episode
-      // http://${host}:${port}/series/${username}/${password}/${episodeId}.${fileExt}
-      // Reconstruct play URL for the specific episode
-      // http://${host}:${port}/series/${username}/${password}/${episodeId}.${fileExt}
-      final playUrl =
-          'http://$host:$port/series/${playlistData.username}/${playlistData.password}/${episode.id}.$fileExt';
+      final playUrl = urlObject.replace(
+        path: '/series/${playlistData.username}/${playlistData.password}/${episode.id}.$fileExt'
+      ).toString();
 
       _currentVideoId = episode.id.toString();
       _currentVideoType = 'series';
-      await _initializePlayer(playUrl);
+      await _initializePlayer(playUrl, autoPlay: autoPlay);
     } catch (e) {
       debugPrint('Error playing episode: $e');
       // Get.snackbar('Error', 'Failed to play episode');
     }
   }
 
-  Future<void> _initializePlayer(String videoUrl) async {
+  Future<void> _initializePlayer(String videoUrl, {bool autoPlay = true}) async {
+    _currentPlayUrl = videoUrl;
     try {
       // 1. Fetch resume position if we have video info
       Duration startPosition = Duration.zero;
@@ -351,7 +368,9 @@ class VideoPlayController extends GetxController {
       }
 
       // 3. Start playback
-      await player.play();
+      if (autoPlay) {
+        await player.play();
+      }
 
       isVideoInitialized.value = true;
       _startPositionListener();
@@ -374,6 +393,9 @@ class VideoPlayController extends GetxController {
     );
     if (result.isRight()) {
       isLoved.value = !isLoved.value;
+      if (Get.isRegistered<WatchHistoryService>()) {
+        Get.find<WatchHistoryService>().refreshList();
+      }
     }
   }
 
@@ -394,14 +416,26 @@ class VideoPlayController extends GetxController {
     final duration = player.state.duration;
 
     if (duration == Duration.zero) return;
+    
+    final currentTimeSec = position.inSeconds.toDouble();
+    final durationSec = duration.inSeconds.toDouble();
+
+    // Optimistically update progress in UI immediately
+    if (Get.isRegistered<WatchHistoryService>()) {
+      Get.find<WatchHistoryService>().updateProgressGlobally(
+        videoId: _currentVideoId!,
+        newTime: currentTimeSec,
+        duration: durationSec,
+      );
+    }
 
     await videoStatusRepo.updateVideoStatus(
       UpdateVideoStatusRequest(
         title: title,
         videoId: _currentVideoId!,
         videoType: _currentVideoType!,
-        currentTime: position.inSeconds.toDouble(),
-        duration: duration.inSeconds.toDouble(),
+        currentTime: currentTimeSec,
+        duration: durationSec,
         seasonNumber: currentEpisode.value?.season,
         episodeNumber: currentEpisode.value?.episodeNum,
         thumbnail: _getThumbnail(),

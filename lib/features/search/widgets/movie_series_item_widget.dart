@@ -42,7 +42,11 @@ class MovieSeriesItemWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TvFocusWrapper(
         onTap: () {
-          Get.to(() => VideoPlayScreen(streamId: streamId, type: type));
+          Get.to(() => VideoPlayScreen(
+                streamId: streamId,
+                type: type,
+                autoPlay: type == ServerType.series ? false : true,
+              ));
         },
         child: Row(
           children: [

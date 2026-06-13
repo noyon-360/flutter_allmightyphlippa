@@ -28,9 +28,12 @@ class SeriesRepoImpl implements SeriesRepo {
     return _apiClient.post(
       endpoint: ApiConstants.server.connectTv,
       data: requestData.toJson(),
-      fromJsonT: (json) => (json as List)
-          .map((item) => SeriesResponesModel.fromJson(item))
-          .toList(),
+      fromJsonT: (json) {
+        if (json is List) {
+          return json.map((item) => SeriesResponesModel.fromJson(item)).toList();
+        }
+        return <SeriesResponesModel>[];
+      },
     );
   }
 
