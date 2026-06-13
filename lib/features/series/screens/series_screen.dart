@@ -63,14 +63,16 @@ class _SeriesScreenState extends State<SeriesScreen> {
   }
 
   void _showAllCategories(BuildContext context, GenreController genreCtrl) {
-    Get.to(() => CategorySelectionScreen(
-          title: 'Series Categories',
-          genreTag: 'series',
-          selectedCategoryId: seriesCtrl.selectedCategoryId,
-          onCategorySelected: (categoryId) {
-            seriesCtrl.getSeries(categoryId: categoryId);
-          },
-        ));
+    Get.to(
+      () => CategorySelectionScreen(
+        title: 'Series Categories',
+        genreTag: 'series',
+        selectedCategoryId: seriesCtrl.selectedCategoryId,
+        onCategorySelected: (categoryId) {
+          seriesCtrl.getSeries(categoryId: categoryId);
+        },
+      ),
+    );
   }
 
   @override
@@ -343,15 +345,25 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        // Formatting date and duration if available, else placeholder
-                                        '${series.episodeRunTime} | Movie | 2h 44m 31s',
-                                        style: const TextStyle(
-                                          color: AppColors.primaryGray,
-                                          fontSize: 12,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.star,
+                                            color: AppColors.primaryWhite,
+                                            size: 12,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            // Formatting date and duration if available, else placeholder
+                                            '${series.rating5Based}',
+                                            style: const TextStyle(
+                                              color: AppColors.primaryGray,
+                                              fontSize: 12,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),

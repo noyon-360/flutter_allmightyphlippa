@@ -249,16 +249,13 @@ class VideoPlayController extends GetxController {
       final storage = AuthStorageService();
       final playlistData = await storage.getPlaylistData();
       final urlObject = Uri.parse(playlistData.url);
-      final host = urlObject.host;
-      final port = urlObject.port == 0 ? 80 : urlObject.port;
-      final fileExt = episode.containerExtension ?? 'mkv';
+      final fileExt = episode.containerExtension != null && episode.containerExtension!.isNotEmpty 
+          ? episode.containerExtension 
+          : 'mp4'; // most common for series episodes if not specified
 
-      // Reconstruct play URL for the specific episode
-      // http://${host}:${port}/series/${username}/${password}/${episodeId}.${fileExt}
-      // Reconstruct play URL for the specific episode
-      // http://${host}:${port}/series/${username}/${password}/${episodeId}.${fileExt}
-      final playUrl =
-          'http://$host:$port/series/${playlistData.username}/${playlistData.password}/${episode.id}.$fileExt';
+      final playUrl = urlObject.replace(
+        path: '/series/${playlistData.username}/${playlistData.password}/${episode.id}.$fileExt'
+      ).toString();
 
       _currentVideoId = episode.id.toString();
       _currentVideoType = 'series';
