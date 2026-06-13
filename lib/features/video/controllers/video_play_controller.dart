@@ -11,6 +11,7 @@ import '../../profile/controller/profile_controller.dart';
 import '../../series/controllers/series_controller.dart';
 import '../../series/models/single_series_response_model.dart';
 import '../../../core/services/auth_storage_service.dart';
+import '../../../core/services/watch_history_service.dart';
 import '../repositories/video_status_repo.dart';
 import '../models/video_status_request_model.dart';
 
@@ -168,7 +169,12 @@ class VideoPlayController extends GetxController {
   void onClose() {
     _positionSubscription?.cancel();
     _tracksSubscription?.cancel();
-    _syncVideoStatus(); // Sync one last time
+    _syncVideoStatus().then((_) {
+      // Refresh the watch history globally after the final sync
+      if (Get.isRegistered<WatchHistoryService>()) {
+        Get.find<WatchHistoryService>().refreshList();
+      }
+    });
     player.dispose();
     super.onClose();
   }
@@ -380,6 +386,9 @@ class VideoPlayController extends GetxController {
     );
     if (result.isRight()) {
       isLoved.value = !isLoved.value;
+      if (Get.isRegistered<WatchHistoryService>()) {
+        Get.find<WatchHistoryService>().refreshList();
+      }
     }
   }
 
@@ -400,14 +409,26 @@ class VideoPlayController extends GetxController {
     final duration = player.state.duration;
 
     if (duration == Duration.zero) return;
+    
+    final currentTimeSec = position.inSeconds.toDouble();
+    final durationSec = duration.inSeconds.toDouble();
+
+    // Optimistically update progress in UI immediately
+    if (Get.isRegistered<WatchHistoryService>()) {
+      Get.find<WatchHistoryService>().updateProgressGlobally(
+        videoId: _currentVideoId!,
+        newTime: currentTimeSec,
+        duration: durationSec,
+      );
+    }
 
     await videoStatusRepo.updateVideoStatus(
       UpdateVideoStatusRequest(
         title: title,
         videoId: _currentVideoId!,
         videoType: _currentVideoType!,
-        currentTime: position.inSeconds.toDouble(),
-        duration: duration.inSeconds.toDouble(),
+        currentTime: currentTimeSec,
+        duration: durationSec,
         seasonNumber: currentEpisode.value?.season,
         episodeNumber: currentEpisode.value?.episodeNum,
         thumbnail: _getThumbnail(),

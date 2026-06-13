@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
 import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.dart';
+import '../../../core/services/watch_history_service.dart';
 
 import '../../../core/common/widgets/app_cached_image.dart';
 import '../../../core/common/widgets/button_widgets.dart';
@@ -30,6 +31,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profileCtrl = Get.put(ProfileController());
+    final watchHistoryService = Get.find<WatchHistoryService>();
 
     return RefreshIndicator.adaptive(
       onRefresh: () => profileCtrl.refreshProfile(),
@@ -126,7 +128,7 @@ class ProfileScreen extends StatelessWidget {
 
               // History Section
               Obx(() {
-                if (profileCtrl.watchHistory.isEmpty) {
+                if (watchHistoryService.watchHistory.isEmpty) {
                   return const SizedBox.shrink();
                 }
 
@@ -158,10 +160,10 @@ class ProfileScreen extends StatelessWidget {
                       height: 220,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: profileCtrl.watchHistory.length,
+                        itemCount: watchHistoryService.watchHistory.length,
                         separatorBuilder: (context, index) => Gap.w12,
                         itemBuilder: (context, index) {
-                          final history = profileCtrl.watchHistory[index];
+                          final history = watchHistoryService.watchHistory[index];
                           return TvFocusWrapper(
                             onTap: () {
                               final streamId = int.tryParse(history.videoId);
