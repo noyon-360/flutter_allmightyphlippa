@@ -54,10 +54,23 @@ class AddPlaylistScreen extends StatelessWidget {
                       Gap.h12,
                       Obx(
                         () => playlistCtrl.playlistErrorMessage.value.isNotEmpty
-                            ? Center(
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.red.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 child: Text(
                                   playlistCtrl.playlistErrorMessage.value,
-                                  style: TextStyle(color: AppColors.red),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.red,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               )
                             : const SizedBox.shrink(),

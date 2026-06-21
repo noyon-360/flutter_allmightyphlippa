@@ -29,13 +29,15 @@ class MovieSeriesItemWidget extends StatelessWidget {
       final movie = item as MoviesResponseModel;
       name = movie.name;
       image = movie.streamIcon;
-      subtitle = '${movie.added} | Movie | 2h 44m 31s';
+      subtitle =
+          'Movie${movie.rating.isNotEmpty && movie.rating != '0' ? ' | ⭐ ${movie.rating}' : ''}';
       streamId = movie.streamId;
     } else if (item is SeriesResponesModel) {
       final series = item as SeriesResponesModel;
       name = series.name ?? "";
       image = series.cover;
-      subtitle = '${series.episodeRunTime} | Series | 2h 44m 31s';
+      subtitle =
+          'Series${series.episodeRunTime != null && series.episodeRunTime! > 0 ? ' | ~${series.episodeRunTime} min/ep' : ''}';
       streamId = series.seriesId ?? 0;
     } else if (item is LiveTvModel) {
       final channel = item as LiveTvModel;
@@ -49,11 +51,13 @@ class MovieSeriesItemWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TvFocusWrapper(
         onTap: () {
-          Get.to(() => VideoPlayScreen(
-                streamId: streamId,
-                type: type,
-                autoPlay: type == ServerType.series ? false : true,
-              ));
+          Get.to(
+            () => VideoPlayScreen(
+              streamId: streamId,
+              type: type,
+              autoPlay: type == ServerType.series ? false : true,
+            ),
+          );
         },
         child: Row(
           children: [
