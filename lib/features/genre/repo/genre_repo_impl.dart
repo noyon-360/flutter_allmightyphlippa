@@ -4,6 +4,7 @@ import 'package:flutter_almightyflippa/core/constants/api_constants.dart';
 import 'package:flutter_almightyflippa/features/genre/models/genre_model.dart';
 import 'package:flutter_almightyflippa/features/genre/repo/genre_repo.dart';
 import 'package:flutter_almightyflippa/features/series/models/series_response_model.dart';
+import 'package:flutx_core/flutx_core.dart';
 
 import '../../../core/services/auth_storage_service.dart';
 import '../../movie/models/movie_response_model.dart';
@@ -47,6 +48,7 @@ class GenreRepoImpl implements GenreRepo {
       endpoint: ApiConstants.genre.getCategoriesByType(id),
       data: requestData.toJson(),
       fromJsonT: (json) {
+        DPrint.log('json: $json');
         if (json is! List) return <T>[];
         final List list = json;
         if (type == ServerType.series) {

@@ -27,7 +27,7 @@ class LiveTvController extends GetxController {
     super.onInit();
     getLiveTvList();
     Get.put(GenreController(), tag: 'channels')
-        .getGenres(type: ServerType.channels);
+        .getGenres(type: ServerType.live);
   }
 
   Future<void> getLiveTvList({bool isLoadMore = false, String? categoryId}) async {
@@ -51,7 +51,7 @@ class LiveTvController extends GetxController {
     final result = await (selectedCategoryId.value.isNotEmpty
         ? Get.find<GenreRepo>().getGenresById<LiveTvModel>(
             id: selectedCategoryId.value,
-            type: ServerType.channels,
+            type: ServerType.live,
           )
         : _liveTvRepo.getLiveTVList(
             page: _currentPage,
