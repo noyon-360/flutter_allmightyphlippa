@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../movie/models/movie_response_model.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../series/models/series_response_model.dart';
+import '../../tv/models/live_tv_reponse_model.dart';
 import '../../video/screens/video_play_screen.dart';
 
 class MovieSeriesItemWidget extends StatelessWidget {
@@ -36,6 +37,12 @@ class MovieSeriesItemWidget extends StatelessWidget {
       image = series.cover;
       subtitle = '${series.episodeRunTime} | Series | 2h 44m 31s';
       streamId = series.seriesId ?? 0;
+    } else if (item is LiveTvModel) {
+      final channel = item as LiveTvModel;
+      name = channel.name;
+      image = channel.streamIcon;
+      subtitle = 'Live TV';
+      streamId = channel.streamId;
     }
 
     return Padding(
