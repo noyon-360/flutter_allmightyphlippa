@@ -44,6 +44,9 @@ dependencies:
   media_kit_libs_video: ^1.0.4
   floating: ^6.0.0
 
+  # Casting (Google Chromecast via Default Media Receiver — custom TLS impl)
+  multicast_dns: ^0.3.2+2
+
   # Icons for app
   flutter_launcher_icons: ^0.14.4
   in_app_purchase: ^3.2.3

@@ -31,6 +31,12 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app uses your local network to discover and connect to Chromecast devices for casting video.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_googlecast._tcp</string>
+	</array>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app requires access to your photo library to save your edited photos and videos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

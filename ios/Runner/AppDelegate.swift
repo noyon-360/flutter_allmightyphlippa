@@ -6,6 +6,7 @@ import AVFoundation
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
 
   private var pipHandler: PiPMethodChannel?
+  private var airPlayHandler: AirPlayHandler?
 
   override func application(
     _ application: UIApplication,
@@ -33,6 +34,10 @@ import AVFoundation
       let handler = PiPMethodChannel()
       handler.setup(with: controller.binaryMessenger)
       self.pipHandler = handler
+
+      let airPlay = AirPlayHandler()
+      airPlay.setup(with: controller.binaryMessenger)
+      self.airPlayHandler = airPlay
     }
   }
 }

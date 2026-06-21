@@ -1,6 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- ===== Chromecast device discovery (mDNS) ===== -->
+    <!-- The `cast` package discovers devices over the local network via mDNS
+         and connects to them with raw TCP sockets, so it needs the WiFi /
+         multicast / network-state permissions below. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <!-- ===== Android TV Requirements ===== -->
     <!-- Declare Leanback support (required for TV launcher visibility) -->
     <uses-feature

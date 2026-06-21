@@ -16,6 +16,10 @@ class LiveVideoPlayController extends GetxController {
   final isVideoInitialized = false.obs;
   final isLoading = false.obs;
 
+  /// The URL of the stream currently being played (used for casting).
+  String? _currentPlayUrl;
+  String? get currentPlayUrl => _currentPlayUrl;
+
   bool get isSubscribed {
     final user = _profileCtrl.userProfile.value;
     return user?.subscriptionStatus == 'active' || user?.plan == 'premium';
@@ -57,6 +61,7 @@ class LiveVideoPlayController extends GetxController {
           }
 
           debugPrint('Live TV Play URL: $playUrl');
+          _currentPlayUrl = playUrl;
 
           if (playUrl.isNotEmpty) {
             videoPlayerController = VideoPlayerController.networkUrl(

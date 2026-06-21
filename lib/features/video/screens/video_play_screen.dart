@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/cast_airplay_buttons.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
+import 'package:flutter_almightyflippa/core/services/cast_service.dart';
 import 'package:flutter_almightyflippa/core/services/pip_service.dart';
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
 import 'package:floating/floating.dart';
@@ -29,6 +31,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     with WidgetsBindingObserver {
   final controller = Get.put(VideoPlayController());
   final ScrollController _scrollController = ScrollController();
+  final CastService _castService = Get.find<CastService>();
 
   late final PiPService _pipService;
   PiPStatus _pipStatus = PiPStatus.disabled;
@@ -46,6 +49,15 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     _pipService.initialize().then((_) {
       if (mounted) setState(() {});
     });
+    // Pause local playback while casting, resume when the cast ends.
+    _castService.onCastStarted = () {
+      if (controller.isVideoInitialized.value) controller.player.pause();
+    };
+    _castService.onCastStopped = () {
+      if (mounted && controller.isVideoInitialized.value) {
+        controller.player.play();
+      }
+    };
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeVideo(
         type: widget.type,
@@ -83,6 +95,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   void dispose() {
     _scrollController.dispose();
     _pipService.dispose();
+    _castService.onCastStarted = null;
+    _castService.onCastStopped = null;
     WidgetsBinding.instance.removeObserver(this);
     Get.delete<VideoPlayController>();
     super.dispose();
@@ -245,6 +259,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   right: 10,
                                   child: Row(
                                     children: [
+                                      CastAirPlayButtons(
+                                        currentUrl: () =>
+                                            controller.currentPlayUrl,
+                                        title: () => controller.title,
+                                      ),
                                       if (_pipService.isAvailable)
                                         TvFocusWrapper(
                                           onTap: () => _pipService.enable(
