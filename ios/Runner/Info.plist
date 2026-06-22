@@ -37,6 +37,10 @@
 	<array>
 		<string>_googlecast._tcp</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to your camera to scan QR codes and capture photos or videos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app uses your location to provide localized content and improve your experience.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app requires access to your photo library to save your edited photos and videos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -85,7 +89,6 @@
 	<array>
 		<string>audio</string>
 		<string>fetch</string>
-		<string>video-picture-in-picture</string>
 	</array>
 </dict>
 </plist>
