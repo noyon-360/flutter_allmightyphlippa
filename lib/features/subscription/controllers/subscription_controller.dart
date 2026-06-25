@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../profile/controller/profile_controller.dart';
 import '../models/subscription_history_model.dart';
@@ -22,6 +24,9 @@ class SubscriptionController extends GetxController {
   final isStoreAvailable = false.obs;
   final purchaseHistory = <SubscriptionHistoryModel>[].obs;
   final isHistoryLoading = false.obs;
+
+  // Tracks the active Android purchase so plan changes can pass the old token
+  GooglePlayPurchaseDetails? _activeAndroidPurchase;
 
   // Product IDs from App Store Connect
   static const String monthlyId = 'month_subscription';
@@ -90,8 +95,21 @@ class SubscriptionController extends GetxController {
   }
 
   Future<void> subscribe(ProductDetails product) async {
-    final purchaseParam = PurchaseParam(productDetails: product);
     try {
+      PurchaseParam purchaseParam;
+
+      if (Platform.isAndroid && _activeAndroidPurchase != null) {
+        purchaseParam = GooglePlayPurchaseParam(
+          productDetails: product,
+          changeSubscriptionParam: ChangeSubscriptionParam(
+            oldPurchaseDetails: _activeAndroidPurchase!,
+            replacementMode: ReplacementMode.withTimeProration,
+          ),
+        );
+      } else {
+        purchaseParam = PurchaseParam(productDetails: product);
+      }
+
       await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
       debugPrint('Purchase initiation failed: $e');
@@ -103,6 +121,19 @@ class SubscriptionController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+    }
+  }
+
+  Future<void> requestRefund() async {
+    final Uri uri = Platform.isIOS
+        ? Uri.parse('https://reportaproblem.apple.com')
+        : Uri.parse('https://play.google.com/store/account/subscriptions');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('Could not open refund page: $e');
     }
   }
 
@@ -142,24 +173,24 @@ class SubscriptionController extends GetxController {
           bool verified = await _verifyPurchase(purchaseDetails);
 
           if (verified) {
-            Get.snackbar(
-              'Success',
-              'Subscription active!',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.green,
-              colorText: Colors.white,
-            );
+            // Get.snackbar(
+            //   'Success',
+            //   'Subscription active!',
+            //   snackPosition: SnackPosition.BOTTOM,
+            //   backgroundColor: Colors.green,
+            //   colorText: Colors.white,
+            // );
             // Refresh profile to update UI with new subscription status
             Get.find<ProfileController>().refreshProfile();
             loadPurchaseHistory();
           } else {
-            Get.snackbar(
-              'Verification Failed',
-              'We could not verify your purchase. Please contact support.',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.orange,
-              colorText: Colors.white,
-            );
+            // Get.snackbar(
+            //   'Verification Failed',
+            //   'We could not verify your purchase. Please contact support.',
+            //   snackPosition: SnackPosition.BOTTOM,
+            //   backgroundColor: Colors.orange,
+            //   colorText: Colors.white,
+            // );
           }
         }
 
@@ -211,8 +242,7 @@ class SubscriptionController extends GetxController {
 
     if (Platform.isAndroid) {
       final androidDetails = purchaseDetails as GooglePlayPurchaseDetails;
-      final purchaseToken =
-          androidDetails.billingClientPurchase.purchaseToken;
+      final purchaseToken = androidDetails.billingClientPurchase.purchaseToken;
 
       const packageName = 'com.almightyflippa.labbytv';
 
@@ -274,7 +304,9 @@ class SubscriptionController extends GetxController {
       var payload = parts[1];
       // base64url has no padding — add it back before decoding
       final remainder = payload.length % 4;
-      if (remainder != 0) payload = payload.padRight(payload.length + (4 - remainder), '=');
+      if (remainder != 0) {
+        payload = payload.padRight(payload.length + (4 - remainder), '=');
+      }
       final decoded = utf8.decode(base64Url.decode(payload));
       final map = jsonDecode(decoded) as Map<String, dynamic>;
       return map['originalTransactionId']?.toString();

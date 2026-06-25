@@ -87,6 +87,7 @@ class SubscriptionScreen extends StatelessWidget {
               }),
 
               _buildRestoreButton(controller),
+              _buildRefundButton(controller),
               const SizedBox(height: 32),
               _buildPurchaseHistory(controller),
               const SizedBox(height: 20),
@@ -359,6 +360,19 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildRefundButton(SubscriptionController controller) {
+    return TextButton(
+      onPressed: controller.requestRefund,
+      child: Text(
+        'Request a Refund',
+        style: TextStyle(
+          color: Colors.white.withAlpha((0.35 * 255).toInt()),
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
   // ── Purchase History ────────────────────────────────────────────────────────
 
   Widget _buildPurchaseHistory(SubscriptionController controller) {
@@ -403,7 +417,23 @@ class SubscriptionScreen extends StatelessWidget {
   }
 
   Widget _buildHistoryCard(SubscriptionHistoryModel item) {
-    final bool active = item.isActive;
+    final Color statusColor;
+    final String statusLabel;
+
+    switch (item.status) {
+      case 'active':
+        statusColor = Colors.green;
+        statusLabel = 'Active';
+        break;
+      case 'refunded':
+        statusColor = Colors.orange;
+        statusLabel = 'Refunded';
+        break;
+      default:
+        statusColor = Colors.white54;
+        statusLabel = 'Expired';
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -417,14 +447,12 @@ class SubscriptionScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: active
-                  ? AppColors.red.withAlpha((0.15 * 255).toInt())
-                  : Colors.white.withAlpha((0.08 * 255).toInt()),
+              color: statusColor.withAlpha((0.15 * 255).toInt()),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.workspace_premium,
-              color: active ? AppColors.red : Colors.white54,
+              color: statusColor,
               size: 22,
             ),
           ),
@@ -457,16 +485,14 @@ class SubscriptionScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: active
-                  ? Colors.green.withAlpha((0.15 * 255).toInt())
-                  : Colors.white.withAlpha((0.08 * 255).toInt()),
+              color: statusColor.withAlpha((0.15 * 255).toInt()),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: active ? Colors.green : Colors.white24),
+              border: Border.all(color: statusColor.withAlpha((0.5 * 255).toInt())),
             ),
             child: Text(
-              active ? 'Active' : 'Expired',
+              statusLabel,
               style: TextStyle(
-                color: active ? Colors.green : Colors.white54,
+                color: statusColor,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
