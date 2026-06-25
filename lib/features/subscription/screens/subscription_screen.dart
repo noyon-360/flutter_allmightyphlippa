@@ -3,15 +3,16 @@ import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../auth/models/user_response_model.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../controllers/subscription_controller.dart';
+import '../models/subscription_history_model.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Use Get.find — SubscriptionController is globally registered in setup_controllers.dart
     final controller = Get.find<SubscriptionController>();
     final profileController = Get.find<ProfileController>();
 
@@ -40,7 +41,13 @@ class SubscriptionScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 24),
+
+              // Always-visible current plan banner (profile-driven, no store dependency)
+              // Obx(() => _buildCurrentPlanBanner(profileController.userProfile.value)),
+              const SizedBox(height: 32),
+
+              // Store plan cards
               Obx(() {
                 if (controller.isLoading.value) {
                   return const Center(
@@ -68,8 +75,6 @@ class SubscriptionScreen extends StatelessWidget {
                     DPrint.log("product description ${product.description}");
                     DPrint.log("product id ${product.id}");
                     DPrint.log("product title ${product.title}");
-                    // Wrap each card in an Obx so it rebuilds when the profile
-                    // (subscriptionStatus / subscriptionProductId) changes.
                     return Obx(
                       () => _buildSubscriptionCard(
                         product,
@@ -80,7 +85,10 @@ class SubscriptionScreen extends StatelessWidget {
                   }).toList(),
                 );
               }),
+
               _buildRestoreButton(controller),
+              const SizedBox(height: 32),
+              _buildPurchaseHistory(controller),
               const SizedBox(height: 20),
             ],
           ),
@@ -88,6 +96,82 @@ class SubscriptionScreen extends StatelessWidget {
       ),
     );
   }
+
+  // ── Current Plan Banner ─────────────────────────────────────────────────────
+
+  Widget _buildCurrentPlanBanner(UserModel? user) {
+    final isActive = user?.subscriptionStatus == 'active';
+    if (!isActive) return const SizedBox.shrink();
+
+    final planName = _planNameFromProductId(user?.subscriptionProductId);
+    final expiresAt = user?.subscriptionExpiresAt;
+    final startDate = user?.subscriptionStartDate;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.red.withAlpha((0.85 * 255).toInt()),
+            AppColors.red.withAlpha((0.55 * 255).toInt()),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            planName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (startDate != null || expiresAt != null) ...[
+            const SizedBox(height: 8),
+            if (startDate != null)
+              Text(
+                'Started: ${_fmtDate(startDate)}',
+                style: TextStyle(
+                  color: Colors.white.withAlpha((0.8 * 255).toInt()),
+                  fontSize: 13,
+                ),
+              ),
+            if (expiresAt != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                'Renews: ${_fmtDate(expiresAt)}',
+                style: TextStyle(
+                  color: Colors.white.withAlpha((0.8 * 255).toInt()),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _planNameFromProductId(String? productId) {
+    switch (productId) {
+      case SubscriptionController.monthlyId:
+        return 'Monthly Plan';
+      case SubscriptionController.quarterlyId:
+        return 'Quarterly Plan';
+      case SubscriptionController.yearlyId:
+        return 'Yearly Plan';
+      default:
+        return 'Premium Plan';
+    }
+  }
+
+  // ── Empty State ─────────────────────────────────────────────────────────────
 
   Widget _buildEmptyState(SubscriptionController controller) {
     return Column(
@@ -109,6 +193,8 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
+  // ── Plan Cards ──────────────────────────────────────────────────────────────
+
   String _periodLabel(String productId) {
     if (productId == SubscriptionController.yearlyId) return '/year';
     if (productId == SubscriptionController.quarterlyId) return '/quarter';
@@ -128,6 +214,11 @@ class SubscriptionScreen extends StatelessWidget {
   ) {
     final bool isActive = _isCurrentPlan(product.id, profileController);
 
+    DPrint.log("isActive id $isActive");
+    DPrint.log("product title ${product.title}");
+    DPrint.log("product description ${product.description}");
+    DPrint.log("product price ${product.price}");
+
     return GestureDetector(
       onTap: isActive
           ? () => Get.snackbar(
@@ -140,76 +231,98 @@ class SubscriptionScreen extends StatelessWidget {
           : () => controller.subscribe(product),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(24.0),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           color: isActive
-              ? AppColors.red.withAlpha((0.1 * 255).toInt())
-              : Colors.transparent,
+              ? AppColors.red.withAlpha((0.12 * 255).toInt())
+              : Colors.white.withAlpha((0.04 * 255).toInt()),
           border: Border.all(
             color: isActive
                 ? AppColors.red
-                : Colors.white.withAlpha((0.5 * 255).toInt()),
+                : Colors.white.withAlpha((0.15 * 255).toInt()),
             width: isActive ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
-            if (isActive)
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.red,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'CURRENT PLAN',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            RichText(
-              text: TextSpan(
+            // Header row: plan label on left, check indicator on right
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: Row(
                 children: [
-                  TextSpan(
-                    text: product.price,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
+                  Text(
+                    _planNameFromProductId(product.id),
+                    style: TextStyle(
+                      color: isActive ? AppColors.red : Colors.white70,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 0.4,
                     ),
                   ),
-                  TextSpan(
-                    text: ' ${_periodLabel(product.id)}',
-                    style: TextStyle(
-                      color: Colors.white.withAlpha((0.7 * 255).toInt()),
-                      fontSize: 18,
+                  const Spacer(),
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isActive ? AppColors.red : Colors.transparent,
+                      border: Border.all(
+                        color: isActive
+                            ? AppColors.red
+                            : Colors.white.withAlpha((0.3 * 255).toInt()),
+                        width: 2,
+                      ),
                     ),
+                    child: isActive
+                        ? const Icon(Icons.check, color: Colors.white, size: 14)
+                        : null,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            Divider(color: Colors.white.withAlpha((0.2 * 255).toInt())),
-            const SizedBox(height: 16),
-            _buildFeatureRow('Instant sync across devices'),
-            const SizedBox(height: 12),
-            _buildFeatureRow('Unlimited EPG navigation'),
-            const SizedBox(height: 12),
-            _buildFeatureRow('EPG reminders'),
-            const SizedBox(height: 12),
-            _buildFeatureRow('No watermarks'),
-            const SizedBox(height: 12),
-            _buildFeatureRow('No device limit'),
-            const SizedBox(height: 12),
-            _buildFeatureRow('Offline playback'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: product.price,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' ${_periodLabel(product.id)}',
+                          style: TextStyle(
+                            color: Colors.white.withAlpha((0.7 * 255).toInt()),
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(color: Colors.white.withAlpha((0.2 * 255).toInt())),
+                  const SizedBox(height: 16),
+                  _buildFeatureRow('Instant sync across devices'),
+                  const SizedBox(height: 12),
+                  _buildFeatureRow('Unlimited EPG navigation'),
+                  const SizedBox(height: 12),
+                  _buildFeatureRow('EPG reminders'),
+                  const SizedBox(height: 12),
+                  _buildFeatureRow('No watermarks'),
+                  const SizedBox(height: 12),
+                  _buildFeatureRow('No device limit'),
+                  const SizedBox(height: 12),
+                  _buildFeatureRow('Offline playback'),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -231,6 +344,8 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
+  // ── Restore ─────────────────────────────────────────────────────────────────
+
   Widget _buildRestoreButton(SubscriptionController controller) {
     return TextButton(
       onPressed: controller.restorePurchases,
@@ -243,4 +358,150 @@ class SubscriptionScreen extends StatelessWidget {
       ),
     );
   }
+
+  // ── Purchase History ────────────────────────────────────────────────────────
+
+  Widget _buildPurchaseHistory(SubscriptionController controller) {
+    return Obx(() {
+      if (controller.isHistoryLoading.value) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Center(child: CircularProgressIndicator(color: Colors.white)),
+        );
+      }
+
+      final history = controller.purchaseHistory;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Purchase History',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (history.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'No purchase history found.',
+                style: TextStyle(
+                  color: Colors.white.withAlpha((0.5 * 255).toInt()),
+                  fontSize: 14,
+                ),
+              ),
+            )
+          else
+            ...history.map(_buildHistoryCard),
+        ],
+      );
+    });
+  }
+
+  Widget _buildHistoryCard(SubscriptionHistoryModel item) {
+    final bool active = item.isActive;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withAlpha((0.05 * 255).toInt()),
+        border: Border.all(color: Colors.white.withAlpha((0.15 * 255).toInt())),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: active
+                  ? AppColors.red.withAlpha((0.15 * 255).toInt())
+                  : Colors.white.withAlpha((0.08 * 255).toInt()),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.workspace_premium,
+              color: active ? AppColors.red : Colors.white54,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.planLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (item.startDate != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDateRange(item.startDate, item.endDate),
+                    style: TextStyle(
+                      color: Colors.white.withAlpha((0.55 * 255).toInt()),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: active
+                  ? Colors.green.withAlpha((0.15 * 255).toInt())
+                  : Colors.white.withAlpha((0.08 * 255).toInt()),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: active ? Colors.green : Colors.white24),
+            ),
+            child: Text(
+              active ? 'Active' : 'Expired',
+              style: TextStyle(
+                color: active ? Colors.green : Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  String _fmtDate(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
+
+  String _formatDateRange(DateTime? start, DateTime? end) {
+    if (start != null && end != null) {
+      return '${_fmtDate(start)} – ${_fmtDate(end)}';
+    }
+    if (start != null) return 'Since ${_fmtDate(start)}';
+    return '';
+  }
+
+  String _month(int m) => const [
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][m];
 }

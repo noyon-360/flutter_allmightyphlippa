@@ -1,10 +1,10 @@
 class ApiConstants {
   /// [Base Configuration]
   // static const String baseDomain = 'http://10.10.26.115:5001'; // Noyon Office
-  // static const String baseDomain = 'http://192.168.0.218:5000'; // Noyon Home
-  // static const String baseDomain = 'http://192.168.10.89:5001'; // Noyon Home
+  // static const String baseDomain = 'http://192.168.0.218:5001'; // Noyon Home
+  static const String baseDomain = 'http://192.168.10.143:5001'; // Noyon Home
 
-  static const String baseDomain = 'https://api.labbytv.com'; // PRODUCTION
+  // static const String baseDomain = 'https://api.labbytv.com'; // PRODUCTION
 
   static const String baseUrl = '$baseDomain/api/v1';
 
@@ -101,6 +101,7 @@ class PaymentEndpoints {
   static const String _base = '${ApiConstants.baseUrl}/payment';
 
   final String getMySubscription = '$_base/my-subscription';
+  final String getSubscriptionHistory = '$_base/subscription-history';
   final String verifyApplePurchase = '$_base/verify-apple-purchase';
   final String verifyGooglePurchase = '$_base/verify-google-purchase';
 }

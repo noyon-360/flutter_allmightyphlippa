@@ -8,6 +8,7 @@ import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
 import '../../profile/controller/profile_controller.dart';
+import '../models/subscription_history_model.dart';
 import '../repositories/subscription_repo.dart';
 
 class SubscriptionController extends GetxController {
@@ -19,6 +20,8 @@ class SubscriptionController extends GetxController {
   final products = <ProductDetails>[].obs;
   final isLoading = false.obs;
   final isStoreAvailable = false.obs;
+  final purchaseHistory = <SubscriptionHistoryModel>[].obs;
+  final isHistoryLoading = false.obs;
 
   // Product IDs from App Store Connect
   static const String monthlyId = 'month_subscription';
@@ -38,6 +41,7 @@ class SubscriptionController extends GetxController {
     // Refresh profile so subscriptionStatus/subscriptionProductId are current
     // when the screen opens, which drives the "CURRENT PLAN" badge visibility.
     Get.find<ProfileController>().refreshProfile();
+    loadPurchaseHistory();
     final purchaseUpdated = _inAppPurchase.purchaseStream;
     _subscription = purchaseUpdated.listen(
       _listenToPurchaseUpdated,
@@ -86,17 +90,19 @@ class SubscriptionController extends GetxController {
   }
 
   Future<void> subscribe(ProductDetails product) async {
-    late PurchaseParam purchaseParam;
-
-    if (Platform.isIOS) {
-      // For Apple, we might need to handle transition from another subscription
-      // but for now simple purchase
-      purchaseParam = PurchaseParam(productDetails: product);
-      _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
-    } else if (Platform.isAndroid) {
-      // Future Android implementation
-      purchaseParam = PurchaseParam(productDetails: product);
-      _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+    final purchaseParam = PurchaseParam(productDetails: product);
+    try {
+      await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+    } catch (e) {
+      debugPrint('Purchase initiation failed: $e');
+      isLoading.value = false;
+      Get.snackbar(
+        'Purchase Failed',
+        'Could not initiate purchase. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -145,6 +151,7 @@ class SubscriptionController extends GetxController {
             );
             // Refresh profile to update UI with new subscription status
             Get.find<ProfileController>().refreshProfile();
+            loadPurchaseHistory();
           } else {
             Get.snackbar(
               'Verification Failed',
@@ -246,6 +253,16 @@ class SubscriptionController extends GetxController {
     } catch (e) {
       debugPrint('Restore failed: $e');
     }
+  }
+
+  Future<void> loadPurchaseHistory() async {
+    isHistoryLoading.value = true;
+    final result = await _subscriptionRepo.getSubscriptionHistory();
+    result.fold(
+      (failure) => debugPrint('History load failed: ${failure.message}'),
+      (success) => purchaseHistory.assignAll(success.data),
+    );
+    isHistoryLoading.value = false;
   }
 
   // Decodes the middle (payload) segment of a JWS token and returns the

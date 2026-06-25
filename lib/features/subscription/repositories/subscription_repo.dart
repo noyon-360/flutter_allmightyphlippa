@@ -2,6 +2,7 @@ import 'package:flutter_almightyflippa/core/constants/api_constants.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/network_result.dart';
+import '../models/subscription_history_model.dart';
 
 class SubscriptionRepo {
   final ApiClient _apiClient = ApiClient();
@@ -36,6 +37,21 @@ class SubscriptionRepo {
     return await _apiClient.get(
       endpoint: ApiConstants.payment.getMySubscription,
       fromJsonT: (json) => json,
+    );
+  }
+
+  NetworkResult<List<SubscriptionHistoryModel>> getSubscriptionHistory() async {
+    return await _apiClient.get(
+      endpoint: ApiConstants.payment.getSubscriptionHistory,
+      fromJsonT: (json) {
+        if (json is List) {
+          return json
+              .whereType<Map<String, dynamic>>()
+              .map(SubscriptionHistoryModel.fromJson)
+              .toList();
+        }
+        return <SubscriptionHistoryModel>[];
+      },
     );
   }
 }
