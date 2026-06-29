@@ -4,7 +4,7 @@ publish_to: "none"
 
 # version: 1.0.19+19 # Android
 # version: 1.0.0+1 # Android TV
-version: 1.0.4+1 # IOS
+version: 1.0.5+1 # IOS
 
 environment:
   sdk: ^3.9.2
@@ -49,11 +49,12 @@ dependencies:
 
   # Icons for app
   flutter_launcher_icons: ^0.14.4
-  in_app_purchase: ^3.2.3
-  in_app_purchase_storekit: ^0.4.8
-  in_app_purchase_android: ^0.4.0
+  # in_app_purchase: ^3.2.3
+  # in_app_purchase_storekit: ^0.4.8
+  # in_app_purchase_android: ^0.4.0
   collection: ^1.19.1
   url_launcher: ^6.3.2
+  purchases_flutter: ^10.3.0
 
 dev_dependencies:
   flutter_test:

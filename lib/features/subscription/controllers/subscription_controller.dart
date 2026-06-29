@@ -1,129 +1,132 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase_android/in_app_purchase_android.dart';
-import 'package:in_app_purchase_android/billing_client_wrappers.dart';
-import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/services/revenuecat_service.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../models/subscription_history_model.dart';
 import '../repositories/subscription_repo.dart';
 
 class SubscriptionController extends GetxController {
+  RevenueCatService get _service => Get.find<RevenueCatService>();
   final _subscriptionRepo = Get.find<SubscriptionRepo>();
-  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
 
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
+  // Product ID constants matching App Store Connect / Google Play Console.
+  static const String monthlyId = RevenueCatService.monthlyProductId;
+  static const String quarterlyId = RevenueCatService.quarterlyProductId;
+  static const String yearlyId = RevenueCatService.yearlyProductId;
 
-  final products = <ProductDetails>[].obs;
+  // ── Observable State ────────────────────────────────────────────────────────
   final isLoading = false.obs;
-  final isStoreAvailable = false.obs;
   final purchaseHistory = <SubscriptionHistoryModel>[].obs;
   final isHistoryLoading = false.obs;
-
-  // Tracks the active Android purchase so plan changes can pass the old token
-  GooglePlayPurchaseDetails? _activeAndroidPurchase;
-
-  // Product IDs from App Store Connect
-  static const String monthlyId = 'month_subscription';
-  static const String quarterlyId = 'premium_quarterly';
-  static const String yearlyId = 'premium_t_yearly';
-
-  // Keep private aliases for internal use
-  static const String _monthlySubscriptionId = monthlyId;
-  static const String _weeklySubscriptionId = quarterlyId;
-  static const String _yearlySubscriptionId = yearlyId;
-
   final selectedProductId = monthlyId.obs;
 
+  // ── Forwarded from RevenueCatService ────────────────────────────────────────
+  Rxn<CustomerInfo> get customerInfo => _service.customerInfo;
+  Rxn<Offerings> get offerings => _service.offerings;
+  RxBool get isOfferingsLoading => _service.isOfferingsLoading;
+  bool get hasActiveSubscription => _service.hasActiveSubscription;
+  EntitlementInfo? get activeEntitlement => _service.activeEntitlement;
+  DateTime? get expirationDate => _service.expirationDate;
+  String? get activeProductIdentifier => _service.activeProductIdentifier;
+
+  List<Package> get availablePackages => _service.availablePackages;
+
+  // ── Lifecycle ───────────────────────────────────────────────────────────────
   @override
   void onInit() {
     super.onInit();
-    // Refresh profile so subscriptionStatus/subscriptionProductId are current
-    // when the screen opens, which drives the "CURRENT PLAN" badge visibility.
-    Get.find<ProfileController>().refreshProfile();
-    loadPurchaseHistory();
-    final purchaseUpdated = _inAppPurchase.purchaseStream;
-    _subscription = purchaseUpdated.listen(
-      _listenToPurchaseUpdated,
-      onDone: () => _subscription.cancel(),
-      onError: (error) => debugPrint('Purchase Stream Error: $error'),
-    );
-    initStore();
-  }
-
-  @override
-  void onClose() {
-    _subscription.cancel();
-    super.onClose();
-  }
-
-  Future<void> initStore() async {
-    final bool available = await _inAppPurchase.isAvailable();
-    isStoreAvailable.value = available;
-
-    if (available) {
-      await fetchProducts();
+    if (Get.isRegistered<ProfileController>()) {
+      Get.find<ProfileController>().refreshProfile();
     }
+    loadPurchaseHistory();
   }
 
-  Future<void> fetchProducts() async {
+  // ── Actions ─────────────────────────────────────────────────────────────────
+
+  /// Subscribe to a [Package] from the RevenueCat offering.
+  Future<void> subscribe(Package package) async {
     isLoading.value = true;
     try {
-      const Set<String> kIds = <String>{
-        _monthlySubscriptionId,
-        _weeklySubscriptionId,
-        _yearlySubscriptionId,
-      };
-      final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails(kIds);
-
-      if (response.notFoundIDs.isNotEmpty) {
-        debugPrint('Products not found: ${response.notFoundIDs}');
+      final outcome = await _service.purchasePackage(package);
+      DPrint.log("Subscription button -> $outcome");
+      switch (outcome) {
+        case PurchaseOutcome.success:
+          Get.snackbar(
+            'Subscribed',
+            'Your subscription is now active. Enjoy!',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+          await loadPurchaseHistory();
+        case PurchaseOutcome.cancelled:
+          break;
+        case PurchaseOutcome.notEntitled:
+          Get.snackbar(
+            'Payment Processed',
+            'Purchase completed but entitlement not found. Please contact support.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+        case PurchaseOutcome.error:
+          Get.snackbar(
+            'Purchase Failed',
+            'Could not complete the purchase. Please try again.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
       }
-
-      products.assignAll(response.productDetails);
-    } catch (e) {
-      debugPrint('Error fetching products: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> subscribe(ProductDetails product) async {
+  /// Restore previously purchased subscriptions.
+  Future<void> restorePurchases() async {
+    isLoading.value = true;
     try {
-      PurchaseParam purchaseParam;
-
-      if (Platform.isAndroid && _activeAndroidPurchase != null) {
-        purchaseParam = GooglePlayPurchaseParam(
-          productDetails: product,
-          changeSubscriptionParam: ChangeSubscriptionParam(
-            oldPurchaseDetails: _activeAndroidPurchase!,
-            replacementMode: ReplacementMode.withTimeProration,
-          ),
-        );
-      } else {
-        purchaseParam = PurchaseParam(productDetails: product);
+      final outcome = await _service.restorePurchases();
+      switch (outcome) {
+        case PurchaseOutcome.success:
+          Get.snackbar(
+            'Restored',
+            'Your subscription has been restored.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+          await loadPurchaseHistory();
+        case PurchaseOutcome.notEntitled:
+          Get.snackbar(
+            'No Subscription Found',
+            'No active subscription to restore.',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        case PurchaseOutcome.error:
+          Get.snackbar(
+            'Restore Failed',
+            'Could not restore purchases. Please try again.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        case PurchaseOutcome.cancelled:
+          break;
       }
-
-      await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
-    } catch (e) {
-      debugPrint('Purchase initiation failed: $e');
+    } finally {
       isLoading.value = false;
-      Get.snackbar(
-        'Purchase Failed',
-        'Could not initiate purchase. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
     }
   }
 
+  /// Open the platform refund page.
   Future<void> requestRefund() async {
     final Uri uri = Platform.isIOS
         ? Uri.parse('https://reportaproblem.apple.com')
@@ -133,186 +136,57 @@ class SubscriptionController extends GetxController {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      debugPrint('Could not open refund page: $e');
+      debugPrint('[Subscription] Could not open refund page: $e');
     }
   }
 
-  Future<void> _listenToPurchaseUpdated(
-    List<PurchaseDetails> purchaseDetailsList,
-  ) async {
-    for (var purchaseDetails in purchaseDetailsList) {
-      debugPrint(
-        'Purchase Update: ID=${purchaseDetails.productID}, Status=${purchaseDetails.status}',
-      );
-
-      if (purchaseDetails.status == PurchaseStatus.pending) {
-        isLoading.value = true;
-      } else {
-        if (purchaseDetails.status == PurchaseStatus.error) {
-          debugPrint('Purchase Error: ${purchaseDetails.error}');
-          isLoading.value = false;
-          Get.snackbar(
-            'Error',
-            'Purchase failed: ${purchaseDetails.error?.message ?? "Unknown error"}',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-          );
-        } else if (purchaseDetails.status == PurchaseStatus.canceled) {
-          debugPrint('Purchase Canceled by User');
-          isLoading.value = false;
-          Get.snackbar(
-            'Canceled',
-            'Payment was canceled.',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-            purchaseDetails.status == PurchaseStatus.restored) {
-          debugPrint('Purchase Success/Restored. Verifying...');
-          // Verify with backend
-          bool verified = await _verifyPurchase(purchaseDetails);
-
-          if (verified) {
-            // Get.snackbar(
-            //   'Success',
-            //   'Subscription active!',
-            //   snackPosition: SnackPosition.BOTTOM,
-            //   backgroundColor: Colors.green,
-            //   colorText: Colors.white,
-            // );
-            // Refresh profile to update UI with new subscription status
-            Get.find<ProfileController>().refreshProfile();
-            loadPurchaseHistory();
-          } else {
-            // Get.snackbar(
-            //   'Verification Failed',
-            //   'We could not verify your purchase. Please contact support.',
-            //   snackPosition: SnackPosition.BOTTOM,
-            //   backgroundColor: Colors.orange,
-            //   colorText: Colors.white,
-            // );
-          }
-        }
-
-        if (purchaseDetails.pendingCompletePurchase) {
-          debugPrint('Completing purchase for ${purchaseDetails.productID}');
-          await _inAppPurchase.completePurchase(purchaseDetails);
-        }
-        isLoading.value = false;
+  /// Opens the platform subscription management page where users can cancel.
+  /// iOS → Apple Settings subscriptions page
+  /// Android → Google Play subscriptions page
+  Future<void> manageSubscription() async {
+    final Uri uri = Platform.isIOS
+        ? Uri.parse('https://apps.apple.com/account/subscriptions')
+        : Uri.parse('https://play.google.com/store/account/subscriptions');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
+    } catch (e) {
+      debugPrint('[Subscription] Could not open manage page: $e');
     }
   }
 
-  Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
-    if (Platform.isIOS) {
-      String? originalTransactionId;
-
-      if (purchaseDetails is SK2PurchaseDetails) {
-        // StoreKit 2 (iOS 15+): extract from the JWS payload
-        final jws = purchaseDetails.verificationData.serverVerificationData;
-        originalTransactionId = _decodeJWSOriginalTransactionId(jws);
-      } else if (purchaseDetails is AppStorePurchaseDetails) {
-        // StoreKit 1 (legacy): use the payment transaction directly
-        originalTransactionId = purchaseDetails
-            .skPaymentTransaction
-            .originalTransaction
-            ?.transactionIdentifier;
-      }
-
-      if (originalTransactionId == null) {
-        debugPrint('iOS: could not extract originalTransactionId');
-        return false;
-      }
-
-      final result = await _subscriptionRepo.verifyApplePurchase(
-        originalTransactionId,
-      );
-      return result.fold(
-        (failure) {
-          debugPrint('Backend Verification Failed: ${failure.message}');
-          Get.snackbar('Verification Failed', failure.message);
-          return false;
-        },
-        (success) {
-          debugPrint('Backend Verification Success');
-          return true;
-        },
-      );
-    }
-
-    if (Platform.isAndroid) {
-      final androidDetails = purchaseDetails as GooglePlayPurchaseDetails;
-      final purchaseToken = androidDetails.billingClientPurchase.purchaseToken;
-
-      const packageName = 'com.almightyflippa.labbytv';
-
-      final result = await _subscriptionRepo.verifyGooglePurchase(
-        purchaseToken: purchaseToken,
-        subscriptionId: purchaseDetails.productID,
-        packageName: packageName,
-      );
-      return result.fold(
-        (failure) {
-          debugPrint('Backend Verification Failed: ${failure.message}');
-          Get.snackbar('Verification Failed', failure.message);
-          return false;
-        },
-        (success) {
-          debugPrint('Backend Verification Success');
-          return true;
-        },
-      );
-    }
-
-    return false;
+  /// Retry loading offerings if they failed on init.
+  Future<void> retryFetchOfferings() async {
+    isLoading.value = true;
+    await _service.fetchOfferings();
+    isLoading.value = false;
   }
 
+  // ── Selection ────────────────────────────────────────────────────────────────
   void selectProduct(String id) => selectedProductId.value = id;
 
-  ProductDetails? getProductById(String id) {
-    try {
-      return products.firstWhere((p) => p.id == id);
-    } catch (_) {
-      return null;
-    }
+  /// Returns the [Package] for a given product ID, or null if not loaded yet.
+  Package? getPackageByProductId(String productId) =>
+      _service.getPackageByProductId(productId);
+
+  /// True if [productId] is the user's currently active subscription.
+  bool isCurrentPlan(String productId) {
+    final user = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>().userProfile.value
+        : null;
+    if (user?.subscriptionStatus != 'active') return false;
+    return user?.subscriptionProductId == productId;
   }
 
-  Future<void> restorePurchases() async {
-    try {
-      await _inAppPurchase.restorePurchases();
-    } catch (e) {
-      debugPrint('Restore failed: $e');
-    }
-  }
-
+  // ── Purchase History ─────────────────────────────────────────────────────────
   Future<void> loadPurchaseHistory() async {
     isHistoryLoading.value = true;
     final result = await _subscriptionRepo.getSubscriptionHistory();
     result.fold(
-      (failure) => debugPrint('History load failed: ${failure.message}'),
+      (f) => debugPrint('[Subscription] history load failed: ${f.message}'),
       (success) => purchaseHistory.assignAll(success.data),
     );
     isHistoryLoading.value = false;
-  }
-
-  // Decodes the middle (payload) segment of a JWS token and returns the
-  // originalTransactionId field, which the backend verification endpoint expects.
-  String? _decodeJWSOriginalTransactionId(String jws) {
-    try {
-      final parts = jws.split('.');
-      if (parts.length < 2) return null;
-      var payload = parts[1];
-      // base64url has no padding — add it back before decoding
-      final remainder = payload.length % 4;
-      if (remainder != 0) {
-        payload = payload.padRight(payload.length + (4 - remainder), '=');
-      }
-      final decoded = utf8.decode(base64Url.decode(payload));
-      final map = jsonDecode(decoded) as Map<String, dynamic>;
-      return map['originalTransactionId']?.toString();
-    } catch (e) {
-      debugPrint('JWS decode error: $e');
-      return null;
-    }
   }
 }

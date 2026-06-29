@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../auth/models/user_response_model.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../controllers/subscription_controller.dart';
-import '../models/subscription_history_model.dart';
+import 'subscription_history_screen.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({super.key});
@@ -25,6 +25,13 @@ class SubscriptionScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Get.back(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            tooltip: 'Purchase History',
+            onPressed: () => Get.to(() => const SubscriptionHistoryScreen()),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -43,54 +50,68 @@ class SubscriptionScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Always-visible current plan banner (profile-driven, no store dependency)
-              // Obx(() => _buildCurrentPlanBanner(profileController.userProfile.value)),
+              // Current plan banner driven by profile (no store dependency)
+              Obx(
+                () => _buildCurrentPlanBanner(
+                  profileController.userProfile.value,
+                ),
+              ),
               const SizedBox(height: 32),
 
-              // Store plan cards
+              // Plan cards
               Obx(() {
-                if (controller.isLoading.value) {
+                final isOfferingsLoading = controller.isOfferingsLoading.value;
+                final packages = controller.availablePackages;
+
+                if (isOfferingsLoading) {
                   return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32),
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
                   );
                 }
 
-                if (controller.products.isEmpty) {
+                if (packages.isEmpty) {
                   return _buildEmptyState(controller);
                 }
 
-                final order = [
+                const order = [
                   SubscriptionController.monthlyId,
                   SubscriptionController.quarterlyId,
                   SubscriptionController.yearlyId,
                 ];
-                final sorted = [...controller.products]
+                final sorted = [...packages]
                   ..sort(
-                    (a, b) =>
-                        order.indexOf(a.id).compareTo(order.indexOf(b.id)),
+                    (a, b) => order
+                        .indexOf(a.storeProduct.identifier)
+                        .compareTo(order.indexOf(b.storeProduct.identifier)),
                   );
+
                 return Column(
-                  children: sorted.map((product) {
-                    DPrint.log("product price ${product.price}");
-                    DPrint.log("product description ${product.description}");
-                    DPrint.log("product id ${product.id}");
-                    DPrint.log("product title ${product.title}");
-                    return Obx(
-                      () => _buildSubscriptionCard(
-                        product,
-                        controller,
-                        profileController,
-                      ),
-                    );
-                  }).toList(),
+                  children: sorted
+                      .map(
+                        (pkg) =>
+                            Obx(() => _buildSubscriptionCard(pkg, controller)),
+                      )
+                      .toList(),
                 );
               }),
 
+              const SizedBox(height: 8),
+              _buildSubscribeButton(controller),
+              const SizedBox(height: 8),
+
               _buildRestoreButton(controller),
+              Obx(() {
+                final isActive =
+                    profileController.userProfile.value?.subscriptionStatus ==
+                    'active';
+                if (!isActive) return const SizedBox.shrink();
+                return _buildManageButton(controller);
+              }),
               _buildRefundButton(controller),
               const SizedBox(height: 32),
-              _buildPurchaseHistory(controller),
-              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -159,19 +180,6 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
-  String _planNameFromProductId(String? productId) {
-    switch (productId) {
-      case SubscriptionController.monthlyId:
-        return 'Monthly Plan';
-      case SubscriptionController.quarterlyId:
-        return 'Quarterly Plan';
-      case SubscriptionController.yearlyId:
-        return 'Yearly Plan';
-      default:
-        return 'Premium Plan';
-    }
-  }
-
   // ── Empty State ─────────────────────────────────────────────────────────────
 
   Widget _buildEmptyState(SubscriptionController controller) {
@@ -184,7 +192,7 @@ class SubscriptionScreen extends StatelessWidget {
           style: TextStyle(color: Colors.white),
         ),
         TextButton(
-          onPressed: controller.fetchProducts,
+          onPressed: controller.retryFetchOfferings,
           child: const Text(
             'Try Again',
             style: TextStyle(color: AppColors.red),
@@ -196,85 +204,82 @@ class SubscriptionScreen extends StatelessWidget {
 
   // ── Plan Cards ──────────────────────────────────────────────────────────────
 
-  String _periodLabel(String productId) {
-    if (productId == SubscriptionController.yearlyId) return '/year';
-    if (productId == SubscriptionController.quarterlyId) return '/quarter';
-    return '/month';
-  }
-
-  bool _isCurrentPlan(String productId, ProfileController profileController) {
-    final user = profileController.userProfile.value;
-    if (user?.subscriptionStatus != 'active') return false;
-    return user?.subscriptionProductId == productId;
-  }
-
   Widget _buildSubscriptionCard(
-    ProductDetails product,
+    Package package,
     SubscriptionController controller,
-    ProfileController profileController,
   ) {
-    final bool isActive = _isCurrentPlan(product.id, profileController);
-
-    DPrint.log("isActive id $isActive");
-    DPrint.log("product title ${product.title}");
-    DPrint.log("product description ${product.description}");
-    DPrint.log("product price ${product.price}");
+    final productId = package.storeProduct.identifier;
+    final isSelected = controller.selectedProductId.value == productId;
+    final isCurrentPlan = controller.isCurrentPlan(productId);
+    final isPurchasing = controller.isLoading.value;
 
     return GestureDetector(
-      onTap: isActive
-          ? () => Get.snackbar(
-              'Already Subscribed',
-              'You are currently on this plan.',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.white,
-              colorText: Colors.black,
-            )
-          : () => controller.subscribe(product),
+      onTap: isPurchasing ? null : () => controller.selectProduct(productId),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: isActive
+          color: isSelected
               ? AppColors.red.withAlpha((0.12 * 255).toInt())
               : Colors.white.withAlpha((0.04 * 255).toInt()),
           border: Border.all(
-            color: isActive
+            color: isSelected
                 ? AppColors.red
                 : Colors.white.withAlpha((0.15 * 255).toInt()),
-            width: isActive ? 2 : 1,
+            width: isSelected ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
-            // Header row: plan label on left, check indicator on right
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: Row(
                 children: [
                   Text(
-                    _planNameFromProductId(product.id),
+                    _planNameFromProductId(productId),
                     style: TextStyle(
-                      color: isActive ? AppColors.red : Colors.white70,
+                      color: isSelected ? AppColors.red : Colors.white70,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.4,
                     ),
                   ),
+                  if (isCurrentPlan) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.red.withAlpha((0.2 * 255).toInt()),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Current',
+                        style: TextStyle(
+                          color: AppColors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   Container(
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isActive ? AppColors.red : Colors.transparent,
+                      color: isSelected ? AppColors.red : Colors.transparent,
                       border: Border.all(
-                        color: isActive
+                        color: isSelected
                             ? AppColors.red
                             : Colors.white.withAlpha((0.3 * 255).toInt()),
                         width: 2,
                       ),
                     ),
-                    child: isActive
+                    child: isSelected
                         ? const Icon(Icons.check, color: Colors.white, size: 14)
                         : null,
                   ),
@@ -290,7 +295,7 @@ class SubscriptionScreen extends StatelessWidget {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: product.price,
+                          text: package.storeProduct.priceString,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 36,
@@ -298,7 +303,7 @@ class SubscriptionScreen extends StatelessWidget {
                           ),
                         ),
                         TextSpan(
-                          text: ' ${_periodLabel(product.id)}',
+                          text: ' ${_periodLabel(productId)}',
                           style: TextStyle(
                             color: Colors.white.withAlpha((0.7 * 255).toInt()),
                             fontSize: 18,
@@ -345,7 +350,70 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
-  // ── Restore ─────────────────────────────────────────────────────────────────
+  // ── Subscribe Button ────────────────────────────────────────────────────────
+
+  Widget _buildSubscribeButton(SubscriptionController controller) {
+    return Obx(() {
+      final selectedId = controller.selectedProductId.value;
+      final isCurrentPlan = controller.isCurrentPlan(selectedId);
+      final isPurchasing = controller.isLoading.value;
+      final selectedPackage = controller.getPackageByProductId(selectedId);
+
+      final bool disabled =
+          isCurrentPlan || isPurchasing || selectedPackage == null;
+
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: disabled
+              ? null
+              : () => controller.subscribe(selectedPackage),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.red,
+            disabledBackgroundColor: Colors.white.withAlpha(
+              (0.1 * 255).toInt(),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: isPurchasing
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  isCurrentPlan ? 'Current Plan' : 'Subscribe',
+                  style: TextStyle(
+                    color: disabled ? Colors.white38 : Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
+      );
+    });
+  }
+
+  // ── Restore / Refund ────────────────────────────────────────────────────────
+
+  Widget _buildManageButton(SubscriptionController controller) {
+    return TextButton(
+      onPressed: controller.manageSubscription,
+      child: Text(
+        'Manage Subscription',
+        style: TextStyle(
+          color: Colors.white.withAlpha((0.6 * 255).toInt()),
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
 
   Widget _buildRestoreButton(SubscriptionController controller) {
     return TextButton(
@@ -373,147 +441,22 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
-  // ── Purchase History ────────────────────────────────────────────────────────
-
-  Widget _buildPurchaseHistory(SubscriptionController controller) {
-    return Obx(() {
-      if (controller.isHistoryLoading.value) {
-        return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
-          child: Center(child: CircularProgressIndicator(color: Colors.white)),
-        );
-      }
-
-      final history = controller.purchaseHistory;
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Purchase History',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (history.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'No purchase history found.',
-                style: TextStyle(
-                  color: Colors.white.withAlpha((0.5 * 255).toInt()),
-                  fontSize: 14,
-                ),
-              ),
-            )
-          else
-            ...history.map(_buildHistoryCard),
-        ],
-      );
-    });
-  }
-
-  Widget _buildHistoryCard(SubscriptionHistoryModel item) {
-    final Color statusColor;
-    final String statusLabel;
-
-    switch (item.status) {
-      case 'active':
-        statusColor = Colors.green;
-        statusLabel = 'Active';
-        break;
-      case 'refunded':
-        statusColor = Colors.orange;
-        statusLabel = 'Refunded';
-        break;
-      default:
-        statusColor = Colors.white54;
-        statusLabel = 'Expired';
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white.withAlpha((0.05 * 255).toInt()),
-        border: Border.all(color: Colors.white.withAlpha((0.15 * 255).toInt())),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: statusColor.withAlpha((0.15 * 255).toInt()),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.workspace_premium,
-              color: statusColor,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.planLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (item.startDate != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatDateRange(item.startDate, item.endDate),
-                    style: TextStyle(
-                      color: Colors.white.withAlpha((0.55 * 255).toInt()),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withAlpha((0.15 * 255).toInt()),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: statusColor.withAlpha((0.5 * 255).toInt())),
-            ),
-            child: Text(
-              statusLabel,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  String _fmtDate(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
+  String _planNameFromProductId(String? productId) => switch (productId) {
+    SubscriptionController.monthlyId => 'Monthly Plan',
+    SubscriptionController.quarterlyId => 'Quarterly Plan',
+    SubscriptionController.yearlyId => 'Yearly Plan',
+    _ => 'Premium Plan',
+  };
 
-  String _formatDateRange(DateTime? start, DateTime? end) {
-    if (start != null && end != null) {
-      return '${_fmtDate(start)} – ${_fmtDate(end)}';
-    }
-    if (start != null) return 'Since ${_fmtDate(start)}';
-    return '';
-  }
+  String _periodLabel(String productId) => switch (productId) {
+    SubscriptionController.yearlyId => '/year',
+    SubscriptionController.quarterlyId => '/quarter',
+    _ => '/month',
+  };
+
+  String _fmtDate(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
 
   String _month(int m) => const [
     '',
