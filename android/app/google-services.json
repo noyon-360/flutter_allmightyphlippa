@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "388967030869",
+    "project_id": "labby-tv623",
+    "storage_bucket": "labby-tv623.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:388967030869:android:c316c5649cbac1bc0d74dc",
+        "android_client_info": {
+          "package_name": "com.almightyflippa.labbytv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfRrMmfX2qY59hT6LwQ8sVdzeuyFg81cQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

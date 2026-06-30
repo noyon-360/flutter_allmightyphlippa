@@ -1,11 +1,14 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/config/app_theme.dart';
 import 'package:flutter_almightyflippa/features/app/screens/app_decision_screen.dart';
 import 'package:get/get.dart';
 import 'core/init/app_initializer.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await AppInitializer.initializeApp();
   runApp(const MyApp());
 }
