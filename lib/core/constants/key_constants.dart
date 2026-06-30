@@ -17,4 +17,6 @@ class KeyConstants {
   static const String playlistPassword = 'playlist_password';
   static const String playlistsList = 'playlists_list';
   static const String playlistData = 'playlist_data';
+
+  static const String deviceId = 'device_id';
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../features/playlist/models/playlist_data.dart';
 
@@ -209,5 +210,20 @@ class AuthStorageService {
   Future<bool> hasUserId() async {
     final userId = await getUserId();
     return userId != null && userId.isNotEmpty;
+  }
+
+  /// Returns a stable device identifier, generating and persisting one on first call.
+  /// This survives app updates and user logouts — it identifies the physical device.
+  Future<String> getOrCreateDeviceId() async {
+    final existing = await _secureStorage.read(key: KeyConstants.deviceId);
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    final random = Random.secure();
+    final id = List<int>.generate(16, (_) => random.nextInt(256))
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+
+    await _secureStorage.write(key: KeyConstants.deviceId, value: id);
+    return id;
   }
 }

@@ -56,6 +56,8 @@ dependencies:
   url_launcher: ^6.3.2
   purchases_flutter: ^10.3.0
   firebase_core: ^4.11.0
+  firebase_messaging: ^16.4.1
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:

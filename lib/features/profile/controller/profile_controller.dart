@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/api/network_stream.dart';
 import '../../../core/services/auth_storage_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../auth/models/user_response_model.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../../core/services/watch_history_service.dart';
@@ -60,6 +61,9 @@ class ProfileController extends GetxController {
   }
 
   Future<void> logout() async {
+    if (Get.isRegistered<NotificationService>()) {
+      await Get.find<NotificationService>().onUserLogout();
+    }
     await _authStorageService.clearAuthData();
     Get.offAll(() => const LoginScreen());
   }
