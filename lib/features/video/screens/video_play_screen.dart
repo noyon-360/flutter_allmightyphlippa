@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/services/premium_service.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/cast_airplay_buttons.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:flutter_almightyflippa/core/services/cast_service.dart';
@@ -246,6 +247,27 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   ),
                                 ),
                               if (_pipStatus != PiPStatus.enabled) ...[
+                                Obx(() {
+                                  if (PremiumService.to.isPremium.value) return const SizedBox.shrink();
+                                  return const Positioned(
+                                    bottom: 56,
+                                    right: 12,
+                                    child: IgnorePointer(
+                                      child: Opacity(
+                                        opacity: 0.5,
+                                        child: Text(
+                                          'LabbyTV',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
                                 Positioned(
                                   top: 10,
                                   left: 10,

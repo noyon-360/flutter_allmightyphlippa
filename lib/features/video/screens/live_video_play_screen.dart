@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:chewie/chewie.dart';
+import '../../../core/services/premium_service.dart';
 
 import '../../../core/common/widgets/cast_airplay_buttons.dart';
 import '../../../core/constants/app_colors.dart';
@@ -122,9 +123,34 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                 controller.chewieController != null) {
               return AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Chewie(
-                  controller: controller.chewieController!,
-                  key: ValueKey('live_video_${widget.streamId}'),
+                child: Stack(
+                  children: [
+                    Chewie(
+                      controller: controller.chewieController!,
+                      key: ValueKey('live_video_${widget.streamId}'),
+                    ),
+                    Obx(() {
+                      if (PremiumService.to.isPremium.value) return const SizedBox.shrink();
+                      return const Positioned(
+                        bottom: 56,
+                        right: 12,
+                        child: IgnorePointer(
+                          child: Opacity(
+                            opacity: 0.5,
+                            child: Text(
+                              'LabbyTV',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
                 ),
               );
             }
