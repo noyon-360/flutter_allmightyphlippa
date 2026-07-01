@@ -305,6 +305,20 @@ class ApiClient {
           _pendingRequests.clear();
         }
       }
+
+      // Device session kicked: another device logged in on this account
+      if (error.response?.statusCode == 403) {
+        final msg = (error.response?.data as Map<String, dynamic>?)?['message'] as String? ?? '';
+        if (msg.toLowerCase().contains('device')) {
+          Get.snackbar(
+            'Session Ended',
+            'Your account is now active on another device.',
+            duration: const Duration(seconds: 4),
+          );
+          await _logout();
+        }
+      }
+
       return Left(_handleDioError(error));
     } catch (e) {
       DPrint.log("Unexpected error: $e");
@@ -642,13 +656,16 @@ class ApiClient {
     options ??= Options();
 
     final accessToken = await _authStorageService.getAccessToken();
+    final deviceId = await _authStorageService.getOrCreateDeviceId();
 
     if (kDebugMode) DPrint.log("Current Access Token: $accessToken");
 
+    options.headers ??= {};
     if (accessToken != null) {
-      options.headers ??= {};
       options.headers!['Authorization'] = 'Bearer $accessToken';
     }
+    options.headers!['X-Device-ID'] = deviceId;
+
     if (kDebugMode) DPrint.log("Authorization header : ${options.headers}");
     return options;
   }

@@ -44,9 +44,11 @@ class LoginController extends GetxController {
     if (loginFormKey.currentState?.validate() ?? false) {
       loginErrorMessage.value = "";
 
+      final deviceId = await _authStorageService.getOrCreateDeviceId();
       final request = LoginRequestModel(
         email: emailController.text.trim(),
         password: passwordController.text,
+        deviceId: deviceId,
       );
 
       final result = await _authRepo.login(request);
