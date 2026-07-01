@@ -22,6 +22,7 @@ import '../../app/screens/about_app_screen.dart';
 import '../../app/screens/privacy_policy_screen.dart';
 import '../../app/screens/terms_condition_screen.dart';
 import '../../auth/screens/change_password_screen.dart';
+import '../../downloads/screens/downloads_screen.dart';
 import '../../subscription/screens/subscription_screen.dart';
 import 'profile_update_screen.dart';
 
@@ -307,6 +308,19 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () {
                   Get.to(
                     () => const SubscriptionScreen(),
+                    transition: Transition.rightToLeft,
+                  );
+                },
+              ),
+              _buildMenuItem(
+                iconAsset: '',
+                isSvg: false,
+                iconData: Icons.download_for_offline_outlined,
+                iconColor: Colors.blueAccent,
+                title: "Downloads",
+                onTap: () {
+                  Get.to(
+                    () => const DownloadsScreen(),
                     transition: Transition.rightToLeft,
                   );
                 },

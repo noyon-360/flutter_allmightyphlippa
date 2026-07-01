@@ -6,6 +6,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import 'dart:async';
+import '../../downloads/controllers/download_controller.dart';
 import '../../movie/controllers/movie_controller.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../../series/controllers/series_controller.dart';
@@ -53,6 +54,25 @@ class VideoPlayController extends GetxController {
 
   /// The URL currently loaded into the player — used by iOS PiP fallback.
   String? get currentPlayUrl => _currentPlayUrl;
+
+  String? get currentVideoId => _currentVideoId;
+  String? get currentVideoType => _currentVideoType;
+
+  String get currentExt {
+    if (_currentPlayUrl == null) return 'mkv';
+    final path = Uri.tryParse(_currentPlayUrl!)?.path ?? '';
+    final dot = path.lastIndexOf('.');
+    return (dot >= 0 && dot < path.length - 1) ? path.substring(dot + 1) : 'mkv';
+  }
+
+  String? get currentThumbnail {
+    if (_currentVideoType == 'movie') {
+      return movieCtrl.movie.value?.streamData.info.movieImage;
+    } else if (_currentVideoType == 'series') {
+      return seriesCtrl.singleSeries.value?.data?.info?.cover;
+    }
+    return null;
+  }
 
   /// Current playback position in seconds — used by iOS PiP to seek on resume.
   double get currentPositionSeconds =>
@@ -184,6 +204,7 @@ class VideoPlayController extends GetxController {
     required ServerType type,
     required int streamId,
     bool autoPlay = true,
+    String? localPath,
   }) async {
     // Reset previous state
     isVideoInitialized.value = false;
@@ -201,7 +222,7 @@ class VideoPlayController extends GetxController {
 
     try {
       if (type == ServerType.movies) {
-        await _loadMovie(streamId, autoPlay: autoPlay);
+        await _loadMovie(streamId, autoPlay: autoPlay, localPath: localPath);
       } else if (type == ServerType.series) {
         await _loadSeries(streamId, autoPlay: autoPlay);
       }
@@ -210,15 +231,19 @@ class VideoPlayController extends GetxController {
     }
   }
 
-  Future<void> _loadMovie(int streamId, {bool autoPlay = true}) async {
-    // Fetch details
-    await movieCtrl.getMovieDetails(streamId: streamId);
+  Future<void> _loadMovie(int streamId, {bool autoPlay = true, String? localPath}) async {
+    _currentVideoId = streamId.toString();
+    _currentVideoType = 'movie';
 
-    // Initialize video if URL is available
+    // Play from local file if available (offline download)
+    if (localPath != null) {
+      await _initializePlayer(localPath, autoPlay: autoPlay);
+      return;
+    }
+
+    await movieCtrl.getMovieDetails(streamId: streamId);
     final movie = movieCtrl.movie.value;
     if (movie != null && movie.playUrl.isNotEmpty) {
-      _currentVideoId = streamId.toString();
-      _currentVideoType = 'movie';
       await _initializePlayer(movie.playUrl, autoPlay: autoPlay);
     }
   }
@@ -257,19 +282,29 @@ class VideoPlayController extends GetxController {
     isSubtitleEnabled.value = true;
 
     try {
+      _currentVideoId = episode.id.toString();
+      _currentVideoType = 'series';
+
+      // Play from local file if downloaded
+      if (Get.isRegistered<DownloadController>()) {
+        final localFile = DownloadController.to.localPath(_currentVideoId!, 'series');
+        if (localFile != null) {
+          await _initializePlayer(localFile, autoPlay: autoPlay);
+          return;
+        }
+      }
+
       final storage = AuthStorageService();
       final playlistData = await storage.getPlaylistData();
       final urlObject = Uri.parse(playlistData.url);
-      final fileExt = episode.containerExtension != null && episode.containerExtension!.isNotEmpty 
-          ? episode.containerExtension 
-          : 'mkv'; // fallback to mkv if the server doesn't provide the format
+      final fileExt = episode.containerExtension != null && episode.containerExtension!.isNotEmpty
+          ? episode.containerExtension
+          : 'mkv';
 
       final playUrl = urlObject.replace(
         path: '/series/${playlistData.username}/${playlistData.password}/${episode.id}.$fileExt'
       ).toString();
 
-      _currentVideoId = episode.id.toString();
-      _currentVideoType = 'series';
       await _initializePlayer(playUrl, autoPlay: autoPlay);
     } catch (e) {
       debugPrint('Error playing episode: $e');

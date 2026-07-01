@@ -4,6 +4,7 @@ import 'package:flutter_almightyflippa/core/common/widgets/cast_airplay_buttons.
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:flutter_almightyflippa/core/services/cast_service.dart';
 import 'package:flutter_almightyflippa/core/services/pip_service.dart';
+import 'package:flutter_almightyflippa/features/downloads/widgets/download_button.dart';
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
 import 'package:floating/floating.dart';
 import 'package:media_kit/media_kit.dart';
@@ -17,11 +18,13 @@ class VideoPlayScreen extends StatefulWidget {
   final int streamId;
   final ServerType type;
   final bool autoPlay;
+  final String? localPath;
   const VideoPlayScreen({
     super.key,
     required this.streamId,
     required this.type,
     this.autoPlay = true,
+    this.localPath,
   });
 
   @override
@@ -64,6 +67,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
         type: widget.type,
         streamId: widget.streamId,
         autoPlay: widget.autoPlay,
+        localPath: widget.localPath,
       );
     });
   }
@@ -145,10 +149,24 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                         aspectRatio: 16 / 9,
                         child: Obx(() {
                           if (!controller.hasStartedPlaying.value) {
-                            final imageUrl = controller.currentType.value == ServerType.movies
-                                ? controller.movieCtrl.movie.value?.streamData.info.movieImage
-                                : controller.seriesCtrl.singleSeries.value?.data?.info?.cover;
-                            
+                            final imageUrl =
+                                controller.currentType.value ==
+                                    ServerType.movies
+                                ? controller
+                                      .movieCtrl
+                                      .movie
+                                      .value
+                                      ?.streamData
+                                      .info
+                                      .movieImage
+                                : controller
+                                      .seriesCtrl
+                                      .singleSeries
+                                      .value
+                                      ?.data
+                                      ?.info
+                                      ?.cover;
+
                             return Stack(
                               children: [
                                 if (imageUrl != null && imageUrl.isNotEmpty)
@@ -156,7 +174,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                     child: Image.network(
                                       imageUrl,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const SizedBox(),
+                                      errorBuilder: (_, __, ___) =>
+                                          const SizedBox(),
                                     ),
                                   ),
                                 Positioned.fill(
@@ -176,13 +195,23 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 Center(
                                   child: TvFocusWrapper(
                                     onTap: () {
-                                      if (controller.currentType.value == ServerType.series) {
-                                        final firstEpisode = controller.seriesCtrl.singleSeries.value?.data?.episodes?.values.firstOrNull?.firstOrNull;
+                                      if (controller.currentType.value ==
+                                          ServerType.series) {
+                                        final firstEpisode = controller
+                                            .seriesCtrl
+                                            .singleSeries
+                                            .value
+                                            ?.data
+                                            ?.episodes
+                                            ?.values
+                                            .firstOrNull
+                                            ?.firstOrNull;
                                         if (firstEpisode != null) {
                                           controller.playEpisode(firstEpisode);
                                         }
                                       } else {
-                                        controller.hasStartedPlaying.value = true;
+                                        controller.hasStartedPlaying.value =
+                                            true;
                                         controller.player.play();
                                       }
                                     },
@@ -206,7 +235,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   left: 10,
                                   child: TvFocusWrapper(
                                     onTap: () => Navigator.pop(context),
-                                    child: const BackButton(color: Colors.white),
+                                    child: const BackButton(
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -216,23 +247,26 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                           return Stack(
                             children: [
                               MaterialVideoControlsTheme(
-                              normal: const MaterialVideoControlsThemeData(
-                                buttonBarHeight: 48.0,
-                                controlsHoverDuration: Duration(seconds: 10),
-                              ),
-                              fullscreen: const MaterialVideoControlsThemeData(
-                                controlsHoverDuration: Duration(seconds: 10),
-                              ),
-                              child: Focus(
-                                autofocus: true,
-                                child: Video(
-                                  controller: controller.videoController,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
+                                normal: const MaterialVideoControlsThemeData(
+                                  buttonBarHeight: 48.0,
+                                  controlsHoverDuration: Duration(seconds: 10),
+                                ),
+                                fullscreen:
+                                    const MaterialVideoControlsThemeData(
+                                      controlsHoverDuration: Duration(
+                                        seconds: 10,
+                                      ),
+                                    ),
+                                child: Focus(
+                                  autofocus: true,
+                                  child: Video(
+                                    controller: controller.videoController,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
                                 ),
                               ),
-                            ),
                               if (!controller.isVideoInitialized.value)
                                 const Positioned.fill(
                                   child: Center(
@@ -248,7 +282,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 ),
                               if (_pipStatus != PiPStatus.enabled) ...[
                                 Obx(() {
-                                  if (PremiumService.to.isPremium.value) return const SizedBox.shrink();
+                                  if (PremiumService.to.isPremium.value)
+                                    return const SizedBox.shrink();
                                   return const Positioned(
                                     bottom: 56,
                                     right: 12,
@@ -261,7 +296,12 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                             color: Colors.white,
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                                            shadows: [
+                                              Shadow(
+                                                color: Colors.black,
+                                                blurRadius: 4,
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ),
@@ -273,7 +313,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   left: 10,
                                   child: TvFocusWrapper(
                                     onTap: () => Navigator.pop(context),
-                                    child: const BackButton(color: Colors.white),
+                                    child: const BackButton(
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                                 Positioned(
@@ -290,8 +332,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                         TvFocusWrapper(
                                           onTap: () => _pipService.enable(
                                             videoUrl: controller.currentPlayUrl,
-                                            positionSeconds:
-                                                controller.currentPositionSeconds,
+                                            positionSeconds: controller
+                                                .currentPositionSeconds,
                                           ),
                                           child: const Padding(
                                             padding: EdgeInsets.all(8.0),
@@ -369,26 +411,47 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                       return Center(
                                         child: TvFocusWrapper(
                                           onTap: () {
-                                            if (controller.currentType.value == ServerType.series) {
-                                              final firstEpisode = controller.seriesCtrl.singleSeries.value?.data?.episodes?.values.firstOrNull?.firstOrNull;
+                                            if (controller.currentType.value ==
+                                                ServerType.series) {
+                                              final firstEpisode = controller
+                                                  .seriesCtrl
+                                                  .singleSeries
+                                                  .value
+                                                  ?.data
+                                                  ?.episodes
+                                                  ?.values
+                                                  .firstOrNull
+                                                  ?.firstOrNull;
                                               if (firstEpisode != null) {
-                                                controller.playEpisode(firstEpisode);
+                                                controller.playEpisode(
+                                                  firstEpisode,
+                                                );
                                               }
                                             } else {
-                                              controller.hasStartedPlaying.value = true;
+                                              controller
+                                                      .hasStartedPlaying
+                                                      .value =
+                                                  true;
                                               controller.player.play();
                                             }
                                           },
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 32,
+                                              vertical: 12,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: AppColors.red,
-                                              borderRadius: BorderRadius.circular(30),
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
                                             ),
                                             child: const Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Icon(Icons.play_arrow, color: Colors.white),
+                                                Icon(
+                                                  Icons.play_arrow,
+                                                  color: Colors.white,
+                                                ),
                                                 SizedBox(width: 8),
                                                 Text(
                                                   "WATCH NOW",
@@ -407,33 +470,95 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                     return const SizedBox.shrink();
                                   }),
                                   const SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      TvFocusWrapper(
-                                        onTap: () =>
-                                            controller.toggleFavorite(),
-                                        child: Column(
-                                          children: [
-                                            Obx(() {
-                                              return Icon(
-                                                controller.isLoved.value
-                                                    ? Icons.favorite
-                                                    : Icons.favorite_border,
-                                                color: Colors.white,
-                                                size: 30,
-                                              );
-                                            }),
-                                            const Text(
-                                              "Favourite",
-                                              style: TextStyle(
-                                                color: Colors.white,
+                                  Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        TvFocusWrapper(
+                                          onTap: () =>
+                                              controller.toggleFavorite(),
+                                          child: SizedBox(
+                                            width: 72,
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Obx(
+                                                  () => Icon(
+                                                    controller.isLoved.value
+                                                        ? Icons.favorite
+                                                        : Icons.favorite_border,
+                                                    color: Colors.white,
+                                                    size: 28,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                const Text(
+                                                  "Favourite",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Obx(() {
+                                          if (!controller
+                                              .isVideoInitialized
+                                              .value) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          final vid = controller.currentVideoId;
+                                          final vtype =
+                                              controller.currentVideoType;
+                                          final url = controller.currentPlayUrl;
+                                          if (vid == null ||
+                                              vtype == null ||
+                                              url == null) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 24,
+                                            ),
+                                            child: SizedBox(
+                                              width: 72,
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                children: [
+                                                  DownloadButton(
+                                                    videoId: vid,
+                                                    videoType: vtype,
+                                                    title: controller.title,
+                                                    url: url,
+                                                    ext: controller.currentExt,
+                                                    thumbnail: controller
+                                                        .currentThumbnail,
+                                                    iconSize: 28,
+                                                  ),
+                                                  const Text(
+                                                    'Download',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                          );
+                                        }),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
