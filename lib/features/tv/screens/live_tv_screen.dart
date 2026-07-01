@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/api/network_result.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import '../../../core/services/premium_service.dart';
+import '../../epg/controllers/epg_controller.dart';
+import '../../epg/models/epg_program_model.dart';
 import '../../genre/controllers/genre_controller.dart';
 import '../../genre/screens/category_selection_screen.dart';
 import '../../playlist/models/server_request_model.dart';
@@ -59,14 +62,112 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
   }
 
   void _showAllCategories(BuildContext context, GenreController genreCtrl) {
-    Get.to(() => CategorySelectionScreen(
-          title: 'Live TV Categories',
-          genreTag: 'channels',
-          selectedCategoryId: liveTvCtrl.selectedCategoryId,
-          onCategorySelected: (categoryId) {
-            liveTvCtrl.getLiveTvList(categoryId: categoryId);
-          },
-        ));
+    Get.to(
+      () => CategorySelectionScreen(
+        title: 'Live TV Categories',
+        genreTag: 'channels',
+        selectedCategoryId: liveTvCtrl.selectedCategoryId,
+        onCategorySelected: (categoryId) {
+          liveTvCtrl.getLiveTvList(categoryId: categoryId);
+        },
+      ),
+    );
+  }
+
+  void _showEpgSheet(BuildContext context, int streamId, String channelName) {
+    final epgCtrl = EpgController.to;
+    epgCtrl.fetchEpg(streamId);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        minChildSize: 0.35,
+        maxChildSize: 0.9,
+        builder: (ctx, scrollCtrl) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.containerBgColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.tv, color: AppColors.red, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        channelName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const Text(
+                      'Upcoming Programs',
+                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(color: Colors.white12),
+              Expanded(
+                child: Obx(() {
+                  if (epgCtrl.isLoadingEpg.value) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.red),
+                    );
+                  }
+                  if (epgCtrl.programs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No EPG data available for this channel.',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    controller: scrollCtrl,
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    itemCount: epgCtrl.programs.length,
+                    separatorBuilder: (_, i) =>
+                        const Divider(color: Colors.white12, height: 1),
+                    itemBuilder: (_, index) {
+                      final program = epgCtrl.programs[index];
+                      return _EpgProgramTile(
+                        program: program,
+                        channelId: streamId.toString(),
+                        channelName: channelName,
+                        epgCtrl: epgCtrl,
+                      );
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -334,7 +435,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                     begin: Alignment.bottomCenter,
                                     end: Alignment.topCenter,
                                     colors: [
-                                      Colors.black.withOpacity(0.8),
+                                      Colors.black.withValues(alpha: 0.8),
                                       Colors.transparent,
                                     ],
                                   ),
@@ -352,6 +453,38 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                   textAlign: TextAlign.center,
                                 ),
                               ),
+                            ),
+
+                            // EPG bell — premium only
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Obx(() {
+                                if (!PremiumService.to.isPremium.value) {
+                                  return const SizedBox.shrink();
+                                }
+                                return GestureDetector(
+                                  onTap: () => _showEpgSheet(
+                                    context,
+                                    channel.streamId,
+                                    channel.name,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.55,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.notifications_none,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                );
+                              }),
                             ),
                           ],
                         ),
@@ -414,12 +547,112 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
   Widget _buildSingleShimmerItem() {
     return Shimmer.fromColors(
       baseColor: AppColors.containerBgColor,
-      highlightColor: AppColors.primaryWhite.withOpacity(0.1),
+      highlightColor: AppColors.primaryWhite.withValues(alpha: 0.1),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.containerBgColor,
           borderRadius: BorderRadius.circular(12),
         ),
+      ),
+    );
+  }
+}
+
+class _EpgProgramTile extends StatelessWidget {
+  final EpgProgramModel program;
+  final String channelId;
+  final String channelName;
+  final EpgController epgCtrl;
+
+  const _EpgProgramTile({
+    required this.program,
+    required this.channelId,
+    required this.channelName,
+    required this.epgCtrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final timeStr = DateFormat('HH:mm').format(program.startTime);
+    final isNow =
+        program.isNowPlaying ||
+        (program.startTime.isBefore(DateTime.now()) &&
+            program.endTime.isAfter(DateTime.now()));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 44,
+            child: Text(
+              timeStr,
+              style: TextStyle(
+                color: isNow ? AppColors.red : Colors.white54,
+                fontSize: 12,
+                fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+          if (isNow)
+            Container(
+              width: 3,
+              height: 36,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                color: AppColors.red,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            )
+          else
+            const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  program.title,
+                  style: TextStyle(
+                    color: isNow ? Colors.white : Colors.white70,
+                    fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (isNow)
+                  const Text(
+                    'Now Playing',
+                    style: TextStyle(color: AppColors.red, fontSize: 11),
+                  ),
+              ],
+            ),
+          ),
+          if (program.isFuture)
+            Obx(() {
+              final hasReminder = epgCtrl.hasReminder(program, channelId);
+              return GestureDetector(
+                onTap: hasReminder
+                    ? null
+                    : () => epgCtrl.setReminder(
+                        channelId: channelId,
+                        channelName: channelName,
+                        program: program,
+                      ),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Icon(
+                    hasReminder
+                        ? Icons.notifications_active
+                        : Icons.notifications_none,
+                    color: hasReminder ? AppColors.red : Colors.white38,
+                    size: 20,
+                  ),
+                ),
+              );
+            }),
+        ],
       ),
     );
   }

@@ -2,9 +2,10 @@ class ApiConstants {
   /// [Base Configuration]
   // static const String baseDomain = 'http://10.10.26.115:5001'; // Noyon Office
   // static const String baseDomain = 'http://192.168.0.218:5001'; // Noyon Home
-  // static const String baseDomain = 'http://192.168.10.143:5001'; // Noyon Home wifi
+  static const String baseDomain =
+      'http://192.168.10.143:5001'; // Noyon Home wifi
 
-  static const String baseDomain = 'https://api.labbytv.com'; // PRODUCTION
+  // static const String baseDomain = 'https://api.labbytv.com'; // PRODUCTION
 
   static const String baseUrl = '$baseDomain/api/v1';
 
@@ -46,6 +47,7 @@ class ApiConstants {
 
   static PaymentEndpoints get payment => PaymentEndpoints();
   static GenreEndpoints get genre => GenreEndpoints();
+  static EpgEndpoints get epg => EpgEndpoints();
 }
 
 /// [Authentication Endpoints]
@@ -114,4 +116,13 @@ class GenreEndpoints {
   final String getCategories = _base;
 
   String getCategoriesByType(String id) => '$_base/$id';
+}
+
+class EpgEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/epg';
+
+  final String schedule = '$_base/schedule';
+  final String createReminder = '$_base/reminder';
+  final String reminders = '$_base/reminders';
+  String deleteReminder(String id) => '$_base/reminder/$id';
 }
