@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:intl/intl.dart';
@@ -183,10 +184,6 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           crossAxisCount = 3;
         }
 
-        if (liveTvCtrl.isLoading.value && liveTvCtrl.liveTvList.isEmpty) {
-          return _buildShimmerContent(crossAxisCount);
-        }
-
         return Column(
           children: [
             // Search Bar
@@ -232,6 +229,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      Gap(h: 10),
                       if (genreCtrl.genres.length > 8)
                         GestureDetector(
                           onTap: () => _showAllCategories(context, genreCtrl),
@@ -353,7 +351,9 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
               ),
             ),
             Expanded(
-              child: RefreshIndicator.adaptive(
+              child: liveTvCtrl.isLoading.value
+                  ? _buildShimmerGrid(crossAxisCount)
+                  : RefreshIndicator.adaptive(
                 onRefresh: () async {
                   await liveTvCtrl.getLiveTvList();
                 },
@@ -514,33 +514,17 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
     );
   }
 
-  Widget _buildShimmerContent(int crossAxisCount) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Container(
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: GridView.builder(
-              itemCount: crossAxisCount * 4, // Show 4 rows of shimmer
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemBuilder: (context, index) => _buildSingleShimmerItem(),
-            ),
-          ),
-        ],
+  Widget _buildShimmerGrid(int crossAxisCount) {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: crossAxisCount * 4,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: 1.5,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
+      itemBuilder: (context, index) => _buildSingleShimmerItem(),
     );
   }
 

@@ -41,6 +41,7 @@ class LiveTvController extends GetxController {
     if (isLoadMore) {
       isMoreLoading.value = true;
     } else {
+      liveTvList.clear();
       isLoading.value = true;
       _currentPage = 1;
       hasMore.value = true;
