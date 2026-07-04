@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/services/airplay_service.dart';
 import 'package:flutter_almightyflippa/core/services/premium_service.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/cast_airplay_buttons.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
@@ -323,11 +326,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   right: 10,
                                   child: Row(
                                     children: [
-                                      CastAirPlayButtons(
-                                        currentUrl: () =>
-                                            controller.currentPlayUrl,
-                                        title: () => controller.title,
-                                      ),
+                                      // CastAirPlayButtons(
+                                      //   currentUrl: () =>
+                                      //       controller.currentPlayUrl,
+                                      //   title: () => controller.title,
+                                      // ),
                                       if (_pipService.isAvailable)
                                         TvFocusWrapper(
                                           onTap: () => _pipService.enable(
@@ -909,6 +912,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   }
 
   void _showSettingsDialog(BuildContext context) {
+    final outerContext = context;
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -1013,6 +1017,42 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                             _showSpeedDialog(context);
                           },
                         ),
+                        const SizedBox(height: 16),
+                        // Google Cast
+                        _buildSettingRow(
+                          label: "Google Cast",
+                          value: Obx(
+                            () => Text(
+                              _castService.isCasting.value
+                                  ? "Connected"
+                                  : "Off",
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          onTap: () {
+                            if (_castService.isCasting.value) {
+                              _castService.stopCasting();
+                              Navigator.pop(context);
+                            } else {
+                              Navigator.pop(context);
+                              _showCastPickerDialog(outerContext);
+                            }
+                          },
+                        ),
+                        if (Platform.isIOS) ...[
+                          const SizedBox(height: 16),
+                          _buildSettingRow(
+                            label: "AirPlay",
+                            value: const Text(
+                              "Available",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              AirPlayService.instance.showAirPlayPicker();
+                            },
+                          ),
+                        ],
                         // const SizedBox(height: 16),
                         // // Subtitle/CC
                         // Row(
@@ -1186,6 +1226,238 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   //     },
   //   );
   // }
+
+  void _showCastPickerDialog(BuildContext context) {
+    _castService.startScan();
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cast',
+      pageBuilder: (ctx, _, _) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(ctx).size.width * 0.8,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.containerBgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF3D3D3D),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.cast, color: Colors.white, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              "Cast to device",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        TvFocusWrapper(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Flexible(
+                    child: Obx(() {
+                      if (_castService.isScanning.value &&
+                          _castService.availableDevices.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.red,
+                                  strokeWidth: 3,
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                "Searching for devices...",
+                                style: TextStyle(color: AppColors.primaryGray),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (_castService.availableDevices.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.cast,
+                                color: AppColors.primaryGray,
+                                size: 36,
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                "No Chromecast devices found nearby. "
+                                "Make sure your device is on the same WiFi network.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.primaryGray,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TvFocusWrapper(
+                                onTap: () => _castService.startScan(),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.red,
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: const Text(
+                                    "Retry",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _castService.availableDevices.length,
+                        itemBuilder: (context, index) {
+                          final device = _castService.availableDevices[index];
+                          return TvFocusWrapper(
+                            onTap: () async {
+                              final url = controller.currentPlayUrl;
+                              if (url == null || url.isEmpty) {
+                                Get.snackbar(
+                                  'Cast',
+                                  'No video is currently playing.',
+                                );
+                                return;
+                              }
+                              try {
+                                await _castService.connectToDevice(
+                                  device,
+                                  url: url,
+                                  title: controller.title,
+                                  imageUrl: controller.currentThumbnail,
+                                );
+                                if (ctx.mounted) Navigator.pop(ctx);
+                              } catch (_) {
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                Get.snackbar(
+                                  'Cast',
+                                  'Failed to connect to ${device.name}.',
+                                );
+                              }
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.tv,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Text(
+                                      device.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Obx(() {
+                                    if (_castService.isConnecting.value &&
+                                        _castService.connectedDevice.value ==
+                                            device) {
+                                      return const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.red,
+                                          strokeWidth: 2,
+                                        ),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  }),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _showSpeedDialog(BuildContext context) {
     showGeneralDialog(
