@@ -6,6 +6,7 @@ import '../../movie/models/movie_response_model.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../series/models/series_response_model.dart';
 import '../../tv/models/live_tv_reponse_model.dart';
+import '../../video/screens/live_video_play_screen.dart';
 import '../../video/screens/video_play_screen.dart';
 
 class MovieSeriesItemWidget extends StatelessWidget {
@@ -51,13 +52,22 @@ class MovieSeriesItemWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TvFocusWrapper(
         onTap: () {
-          Get.to(
-            () => VideoPlayScreen(
-              streamId: streamId,
-              type: type,
-              autoPlay: type == ServerType.series ? false : true,
-            ),
-          );
+          if (item is LiveTvModel) {
+            Get.to(
+              () => LiveVideoPlayScreen(
+                streamId: streamId,
+                channelName: name,
+              ),
+            );
+          } else {
+            Get.to(
+              () => VideoPlayScreen(
+                streamId: streamId,
+                type: type,
+                autoPlay: type == ServerType.series ? false : true,
+              ),
+            );
+          }
         },
         child: Row(
           children: [

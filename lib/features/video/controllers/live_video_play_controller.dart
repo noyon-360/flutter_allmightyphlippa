@@ -15,6 +15,7 @@ class LiveVideoPlayController extends GetxController {
 
   final isVideoInitialized = false.obs;
   final isLoading = false.obs;
+  final errorMessage = Rxn<String>();
 
   /// The URL of the stream currently being played (used for casting).
   String? _currentPlayUrl;
@@ -34,6 +35,7 @@ class LiveVideoPlayController extends GetxController {
 
   Future<void> initializeLiveVideo({required int streamId}) async {
     isVideoInitialized.value = false;
+    errorMessage.value = null;
     isLoading.value = true;
 
     // Dispose old controllers if they exist
@@ -48,13 +50,12 @@ class LiveVideoPlayController extends GetxController {
       await result.fold(
         (fail) async {
           debugPrint('Error fetching live TV URL: ${fail.message}');
+          errorMessage.value = 'Could not reach the server.\nPlease check your connection and try again.';
         },
         (success) async {
           String playUrl = success.data.playUrl;
-          
+
           if (!isSubscribed && playUrl.isNotEmpty) {
-            // Append quality parameter for non-subscribed users
-            // Note: This parameter name might depend on the IPTV server
             final separator = playUrl.contains('?') ? '&' : '?';
             playUrl = '$playUrl${separator}quality=low';
             debugPrint('Non-subscribed user: requesting low quality stream');
@@ -63,40 +64,48 @@ class LiveVideoPlayController extends GetxController {
           debugPrint('Live TV Play URL: $playUrl');
           _currentPlayUrl = playUrl;
 
-          if (playUrl.isNotEmpty) {
-            videoPlayerController = VideoPlayerController.networkUrl(
-              Uri.parse(playUrl),
-              // Uri.parse(
-              //   "http://proxpanel.pro/live/tes83747/tes736836/748395.m3u8",
-              // ),
-            );
-
-            await videoPlayerController!.initialize();
-
-            chewieController = ChewieController(
-              videoPlayerController: videoPlayerController!,
-              autoPlay: true,
-              isLive: true,
-              looping: false,
-              aspectRatio: 16 / 9,
-              errorBuilder: (context, errorMessage) {
-                return Center(
-                  child: Text(
-                    errorMessage,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                );
-              },
-            );
-
-            isVideoInitialized.value = true;
-          } else {
-            Get.snackbar('Error', 'Stream URL is empty');
+          if (playUrl.isEmpty) {
+            errorMessage.value = 'Stream URL is unavailable for this channel.';
+            return;
           }
+
+          videoPlayerController = VideoPlayerController.networkUrl(
+            Uri.parse(playUrl),
+          );
+
+          await videoPlayerController!.initialize();
+
+          chewieController = ChewieController(
+            videoPlayerController: videoPlayerController!,
+            autoPlay: true,
+            isLive: true,
+            looping: false,
+            aspectRatio: 16 / 9,
+            errorBuilder: (context, errorMessage) {
+              return Center(
+                child: Text(
+                  errorMessage,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            },
+          );
+
+          isVideoInitialized.value = true;
         },
       );
     } catch (e) {
       debugPrint('Error initializing live video: $e');
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('socketexception') || msg.contains('failed host lookup') || msg.contains('network')) {
+        errorMessage.value = 'No internet connection.\nPlease check your network and try again.';
+      } else if (msg.contains('404') || msg.contains('not found')) {
+        errorMessage.value = 'Channel stream not found.\nThe channel may be temporarily unavailable.';
+      } else if (msg.contains('521') || msg.contains('522') || msg.contains('520') || msg.contains('connection refused')) {
+        errorMessage.value = 'The stream server is currently down.\nPlease try again later.';
+      } else {
+        errorMessage.value = 'Failed to load stream.\nThe server may be temporarily unavailable.';
+      }
     } finally {
       isLoading.value = false;
     }

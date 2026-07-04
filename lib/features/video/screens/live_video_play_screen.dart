@@ -155,14 +155,24 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
               );
             }
 
-            return const Column(
+            return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, color: Colors.white, size: 48),
-                SizedBox(height: 16),
-                Text(
-                  'Failed to load stream',
-                  style: TextStyle(color: Colors.white),
+                const Icon(Icons.signal_wifi_connected_no_internet_4_rounded, color: Colors.redAccent, size: 56),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    controller.errorMessage.value ?? 'Failed to load stream.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.5),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextButton.icon(
+                  onPressed: () => controller.initializeLiveVideo(streamId: widget.streamId),
+                  icon: const Icon(Icons.refresh, color: AppColors.red),
+                  label: const Text('Try Again', style: TextStyle(color: AppColors.red, fontSize: 15)),
                 ),
               ],
             );
