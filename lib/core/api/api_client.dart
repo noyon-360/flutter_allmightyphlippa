@@ -112,6 +112,7 @@ class ApiClient {
       DPrint.info("Refreshing ...");
 
       if (refreshToken == null) {
+        await _logout();
         return false;
       }
 
@@ -130,8 +131,13 @@ class ApiClient {
       );
 
       if (baseResponse.success && baseResponse.data != null) {
-        final newAccessToken = baseResponse.data!['accessToken'] as String;
-        final newRefreshToken = baseResponse.data!['refreshToken'] as String;
+        final newAccessToken = baseResponse.data!['accessToken'] as String?;
+        final newRefreshToken = baseResponse.data!['refreshToken'] as String?;
+
+        if (newAccessToken == null || newRefreshToken == null) {
+          DPrint.error("Refresh token response missing accessToken or refreshToken");
+          return false;
+        }
 
         await _authStorageService.storeAccessToken(accessToken: newAccessToken);
         await _authStorageService.storeRefreshToken(
@@ -141,12 +147,21 @@ class ApiClient {
         return true;
       }
 
-      // Navigate to login screen - you'll need to implement this based on your navigation
+      // success == false means the refresh token itself is rejected by the server
       await _logout();
       return false;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      DPrint.error("Refresh token DioException: $e | status: $status");
+      // Only logout when the server explicitly rejects the refresh token
+      if (status == 401 || status == 403) {
+        await _logout();
+      }
+      // For 500s, timeouts, or network errors — don't logout, just fail
+      return false;
     } catch (e) {
-      DPrint.log("Refresh token error: $e");
-      await _logout();
+      // Unexpected errors (e.g. JSON parse) — don't logout, just fail silently
+      DPrint.error("Refresh token unexpected error: $e");
       return false;
     }
   }
