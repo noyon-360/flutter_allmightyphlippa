@@ -26,7 +26,8 @@ class ApiClient {
   late final ApiCacheService _cacheService;
 
   bool _isRefreshing = false;
-  final List<Completer<void>> _pendingRequests = [];
+  bool _isLoggingOut = false;
+  final List<Completer<bool>> _pendingRequests = [];
   final Completer<void> _initCompleter = Completer<void>();
 
   // Singleton instance
@@ -167,16 +168,24 @@ class ApiClient {
   }
 
   Future<void> _logout() async {
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
     try {
-      // Clear stored tokens
       await _authStorageService.clearAuthData();
-
-      // Delay navigation slightly to ensure UI is ready
       await Future.delayed(Duration.zero);
       Get.offAll(() => LoginScreen(), transition: Transition.leftToRight);
+      // Intentionally NOT resetting _isLoggingOut here — guard stays active
+      // until the user successfully logs in via resetLogoutState(), preventing
+      // duplicate navigations from concurrent in-flight 403 responses.
     } catch (e) {
       DPrint.error("Logout error: $e");
+      _isLoggingOut = false;
     }
+  }
+
+  /// Call this after a successful login so the 403 guard is re-armed.
+  void resetLogoutState() {
+    _isLoggingOut = false;
   }
 
   /// Main request method using Either
@@ -222,9 +231,12 @@ class ApiClient {
 
     try {
       if (_isRefreshing) {
-        final completer = Completer<void>();
+        final completer = Completer<bool>();
         _pendingRequests.add(completer);
-        await completer.future;
+        final refreshed = await completer.future;
+        if (!refreshed) {
+          return const Left(UnauthorizedFailure(message: 'Session expired', statusCode: 401));
+        }
       }
 
       options = await _addAuthHeader(options);
@@ -298,8 +310,10 @@ class ApiClient {
       // DPrint.error("Api DioException : $error");
       if (error.response?.statusCode == 401 && !_isRefreshing) {
         _isRefreshing = true;
+        bool refreshed = false;
         try {
-          if (await _refreshToken()) {
+          refreshed = await _refreshToken();
+          if (refreshed) {
             return _request<T>(
               method: method,
               endpoint: endpoint,
@@ -315,7 +329,7 @@ class ApiClient {
         } finally {
           _isRefreshing = false;
           for (var completer in _pendingRequests) {
-            completer.complete();
+            completer.complete(refreshed);
           }
           _pendingRequests.clear();
         }
@@ -325,11 +339,13 @@ class ApiClient {
       if (error.response?.statusCode == 403) {
         final msg = (error.response?.data as Map<String, dynamic>?)?['message'] as String? ?? '';
         if (msg.toLowerCase().contains('device')) {
-          Get.snackbar(
-            'Session Ended',
-            'Your account is now active on another device.',
-            duration: const Duration(seconds: 4),
-          );
+          if (!_isLoggingOut) {
+            Get.snackbar(
+              'Session Ended',
+              'Your account is now active on another device.',
+              duration: const Duration(seconds: 4),
+            );
+          }
           await _logout();
         }
       }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/features/playlist/screens/playlist_list_screen.dart';
+import '/core/api/api_client.dart';
 import '/core/services/auth_storage_service.dart';
 import '/features/auth/models/login_request_model.dart';
 import '/features/auth/repo/auth_repo.dart';
@@ -59,6 +60,7 @@ class LoginController extends GetxController {
           DPrint.log("Login Fail : ${fail.message}");
         },
         (success) async {
+          Get.find<ApiClient>().resetLogoutState();
           final data = success.data;
           await _authStorageService.storeAuthData(
             accessToken: data.accessToken,
