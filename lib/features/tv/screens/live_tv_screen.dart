@@ -384,6 +384,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                           () => LiveVideoPlayScreen(
                             streamId: channel.streamId,
                             channelName: channel.name,
+                            channelLogo: channel.streamIcon,
                           ),
                         );
                       },
