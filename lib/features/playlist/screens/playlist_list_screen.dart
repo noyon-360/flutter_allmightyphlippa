@@ -86,13 +86,18 @@ class PlaylistListScreen extends StatelessWidget {
                   separatorBuilder: (context, index) => const Gap(h: 12),
                   itemBuilder: (context, index) {
                     final playlist = playlistCtrl.playlists[index];
+                    final isActive = playlistCtrl.isActivePlaylist(playlist);
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryBlack.withOpacity(0.5),
+                        color: isActive
+                            ? AppColors.red.withOpacity(0.08)
+                            : AppColors.primaryBlack.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppColors.primaryWhite.withOpacity(0.1),
+                          color: isActive
+                              ? AppColors.red.withOpacity(0.6)
+                              : AppColors.primaryWhite.withOpacity(0.1),
                         ),
                       ),
                       child: Row(
@@ -101,13 +106,54 @@ class PlaylistListScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  playlist.name ?? "Unnamed",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        playlist.name ?? "Unnamed",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isActive) ...[
+                                      const Gap(w: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.red,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.check,
+                                              color: Colors.white,
+                                              size: 12,
+                                            ),
+                                            SizedBox(width: 2),
+                                            Text(
+                                              "Active",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                                 const Gap(h: 4),
                                 Text(
@@ -135,8 +181,8 @@ class PlaylistListScreen extends StatelessWidget {
                             ),
                           ),
                           SecondaryButton(
-                            text: "Select",
-                            width: 80,
+                            text: isActive ? "Selected" : "Select",
+                            width: 90,
                             height: 40,
                             onSimplePressed: () =>
                                 playlistCtrl.selectPlaylist(playlist),

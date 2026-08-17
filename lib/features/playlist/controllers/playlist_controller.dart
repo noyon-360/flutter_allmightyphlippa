@@ -33,11 +33,26 @@ class PlaylistController extends GetxController {
   final RxString playlistErrorMessage = "".obs;
   final RxList<PlaylistModel> playlists = <PlaylistModel>[].obs;
   final RxBool isFetchingList = false.obs;
+  final Rxn<PlaylistData> activePlaylistData = Rxn<PlaylistData>();
 
   @override
   void onInit() {
     super.onInit();
     fetchPlaylists();
+  }
+
+  Future<void> _loadActivePlaylistData() async {
+    activePlaylistData.value = await _authStorageService.getPlaylistData();
+  }
+
+  /// Whether [playlist] is the credentials currently in use by the app,
+  /// so the playlist list can show which one is active.
+  bool isActivePlaylist(PlaylistModel playlist) {
+    final active = activePlaylistData.value;
+    if (active == null || active.isEmpty) return false;
+    return playlist.url == active.url &&
+        playlist.userName == active.username &&
+        playlist.password == active.password;
   }
 
   @override
@@ -62,6 +77,7 @@ class PlaylistController extends GetxController {
 
   Future<void> fetchPlaylists() async {
     isFetchingList.value = true;
+    await _loadActivePlaylistData();
 
     // First, try to load from local storage
     final localPlaylists = await _authStorageService.getPlaylists();
@@ -197,6 +213,7 @@ class PlaylistController extends GetxController {
       password: playlist.password ?? '',
     );
     await _authStorageService.savePlaylistData(playlistData);
+    await _loadActivePlaylistData();
 
     updateControllers();
 
