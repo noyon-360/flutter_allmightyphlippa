@@ -9,6 +9,9 @@ import 'package:get/get.dart';
 import '../models/playlist_data.dart';
 import '../models/playlist_model.dart';
 import '../repositories/playlist_repo.dart';
+import '../widgets/playlist_sync_dialog.dart';
+
+enum PlaylistSyncStatus { idle, updating, completed, failed }
 
 class PlaylistController extends GetxController {
   final _playlistRepo = Get.find<PlaylistRepo>();
@@ -34,6 +37,7 @@ class PlaylistController extends GetxController {
   final RxList<PlaylistModel> playlists = <PlaylistModel>[].obs;
   final RxBool isFetchingList = false.obs;
   final Rxn<PlaylistData> activePlaylistData = Rxn<PlaylistData>();
+  final syncStatus = PlaylistSyncStatus.idle.obs;
 
   @override
   void onInit() {
@@ -68,11 +72,44 @@ class PlaylistController extends GetxController {
     super.onClose();
   }
 
-  void updateControllers() {
-    Get.put(MovieController()).onInit();
-    Get.put(SeriesController()).onInit();
-    Get.put(LiveTvController()).onInit();
+  /// Fires off the initial movies/series/live TV/profile fetches for a
+  /// newly added or switched playlist, and shows a blocking status dialog
+  /// (Updating -> Completed/Failed) so the user isn't dropped onto a
+  /// silently-loading Home screen with no feedback on whether setup
+  /// actually worked.
+  Future<void> updateControllers() async {
+    syncStatus.value = PlaylistSyncStatus.updating;
+    Get.dialog(const PlaylistSyncDialog(), barrierDismissible: false);
+
+    final movieCtrl = Get.put(MovieController());
+    final seriesCtrl = Get.put(SeriesController());
+    final liveTvCtrl = Get.put(LiveTvController());
+    movieCtrl.onInit();
+    seriesCtrl.onInit();
+    liveTvCtrl.onInit();
     Get.put(ProfileController()).onInit();
+
+    const timeout = Duration(seconds: 20);
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      final stillLoading = movieCtrl.isLoading.value ||
+          seriesCtrl.isLoading.value ||
+          liveTvCtrl.isLoading.value;
+      if (!stillLoading) break;
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    final hasAnyData = movieCtrl.movies.isNotEmpty ||
+        seriesCtrl.series.isNotEmpty ||
+        liveTvCtrl.liveTvList.isNotEmpty;
+
+    syncStatus.value =
+        hasAnyData ? PlaylistSyncStatus.completed : PlaylistSyncStatus.failed;
+
+    // Let the user see the final state briefly before dismissing.
+    await Future.delayed(const Duration(milliseconds: 700));
+    if (Get.isDialogOpen ?? false) Get.back();
+    syncStatus.value = PlaylistSyncStatus.idle;
   }
 
   Future<void> fetchPlaylists() async {
@@ -140,7 +177,7 @@ class PlaylistController extends GetxController {
           passwordController.clear();
           urlController.clear();
 
-          updateControllers();
+          await updateControllers();
 
           Get.to(() => BottomNavScreen());
         },
@@ -215,7 +252,7 @@ class PlaylistController extends GetxController {
     await _authStorageService.savePlaylistData(playlistData);
     await _loadActivePlaylistData();
 
-    updateControllers();
+    await updateControllers();
 
     Get.offAll(() => BottomNavScreen());
   }
