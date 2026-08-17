@@ -70,7 +70,12 @@ class MovieController extends GetxController {
         }
 
         if (isLoadMore) {
-          movies.addAll(data);
+          // Xtream's catalog ordering isn't guaranteed stable across
+          // separate paginated requests, so a later page can return an
+          // item already present from an earlier one. Drop repeats instead
+          // of rendering the same movie twice in the list.
+          final existingIds = movies.map((m) => m.streamId).toSet();
+          movies.addAll(data.where((m) => !existingIds.contains(m.streamId)));
         } else {
           movies.assignAll(data);
         }

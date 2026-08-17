@@ -70,7 +70,12 @@ class SeriesController extends GetxController {
           hasMore.value = false;
         }
         if (isLoadMore) {
-          series.addAll(data);
+          // Xtream's catalog ordering isn't guaranteed stable across
+          // separate paginated requests, so a later page can return an
+          // item already present from an earlier one. Drop repeats instead
+          // of rendering the same series twice in the list.
+          final existingIds = series.map((s) => s.seriesId).toSet();
+          series.addAll(data.where((s) => !existingIds.contains(s.seriesId)));
         } else {
           series.assignAll(data);
         }

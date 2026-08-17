@@ -227,6 +227,7 @@ class VideoPlayController extends GetxController {
     String? localPath,
   }) async {
     // Reset previous state
+    isLoading.value = true;
     isVideoInitialized.value = false;
     currentType.value = type;
     currentEpisode.value = null;
@@ -256,6 +257,11 @@ class VideoPlayController extends GetxController {
   Future<void> _loadMovie(int streamId, {bool autoPlay = true, String? localPath}) async {
     _currentVideoId = streamId.toString();
     _currentVideoType = 'movie';
+
+    // Clear the previously loaded movie's detail state so the UI can't show
+    // stale title/description/etc. while the new movie's data is in flight,
+    // or indefinitely if this fetch fails.
+    movieCtrl.movie.value = null;
 
     // Play from local file if available (offline download)
     if (localPath != null) {
@@ -313,6 +319,12 @@ class VideoPlayController extends GetxController {
   }
 
   Future<void> _loadSeries(int streamId, {bool autoPlay = true}) async {
+    // Clear the previously loaded series' detail state so the UI can't show
+    // stale title/description/episodes while the new series' data is in
+    // flight, or indefinitely if this fetch fails.
+    seriesCtrl.singleSeries.value = null;
+    selectedSeason.value = null;
+
     // Fetch details
     await seriesCtrl.getSeriesDetails(streamId: streamId);
 

@@ -72,7 +72,14 @@ class LiveTvController extends GetxController {
         }
 
         if (isLoadMore) {
-          liveTvList.addAll(data);
+          // Xtream's catalog ordering isn't guaranteed stable across
+          // separate paginated requests, so a later page can return a
+          // channel already present from an earlier one. Drop repeats
+          // instead of rendering the same channel twice in the list.
+          final existingIds = liveTvList.map((c) => c.streamId).toSet();
+          liveTvList.addAll(
+            data.where((c) => !existingIds.contains(c.streamId)),
+          );
         } else {
           liveTvList.assignAll(data);
         }
