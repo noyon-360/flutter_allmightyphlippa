@@ -9,6 +9,7 @@ import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
 import 'package:flutter_almightyflippa/features/playlist/models/server_request_model.dart';
+import 'package:flutter_almightyflippa/features/video/screens/live_video_play_screen.dart';
 import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.dart';
 import '../../../core/services/watch_history_service.dart';
 
@@ -168,13 +169,26 @@ class ProfileScreen extends StatelessWidget {
                           return TvFocusWrapper(
                             onTap: () {
                               final streamId = int.tryParse(history.videoId);
+                              if (streamId == null) return;
+
+                              if (history.videoType == 'live') {
+                                Get.to(
+                                  () => LiveVideoPlayScreen(
+                                    streamId: streamId,
+                                    channelName: history.name ?? 'Live TV',
+                                    channelLogo: history.thumbnail,
+                                  ),
+                                );
+                                return;
+                              }
+
                               final type = history.videoType == 'movie'
                                   ? ServerType.movies
                                   : history.videoType == 'series'
                                   ? ServerType.series
                                   : null;
 
-                              if (streamId != null && type != null) {
+                              if (type != null) {
                                 Get.to(
                                   () => VideoPlayScreen(
                                     streamId: streamId,
@@ -280,6 +294,8 @@ class ProfileScreen extends StatelessWidget {
                                   Text(
                                     history.videoType == 'movie'
                                         ? 'Movie'
+                                        : history.videoType == 'live'
+                                        ? 'Live TV'
                                         : 'Series',
                                     style: const TextStyle(
                                       color: AppColors.primaryGray,

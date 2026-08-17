@@ -3,6 +3,7 @@ import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../playlist/models/server_request_model.dart';
+import '../../video/screens/live_video_play_screen.dart';
 import '../../video/screens/video_play_screen.dart';
 import '../controllers/history_controller.dart';
 
@@ -102,7 +103,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         onTap: () {
                           // Try to parse streamId, default to 0 if fails
                           final streamId = int.tryParse(item.videoId) ?? 0;
-                          final type = item.videoType.toLowerCase() == 'series'
+                          final videoType = item.videoType.toLowerCase();
+
+                          if (videoType == 'live') {
+                            Get.to(
+                              () => LiveVideoPlayScreen(
+                                streamId: streamId,
+                                channelName: item.name ?? 'Live TV',
+                                channelLogo: item.thumbnail,
+                              ),
+                            );
+                            return;
+                          }
+
+                          final type = videoType == 'series'
                               ? ServerType.series
                               : ServerType.movies;
 
@@ -213,7 +227,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ? '${item.lastWatchedAt!.day} ${_getMonth(item.lastWatchedAt!.month)} ${item.lastWatchedAt!.year}'
         : '';
 
-    final type = item.videoType.isNotEmpty ? item.videoType : 'Video';
+    final type = item.videoType.toLowerCase() == 'live'
+        ? 'Live TV'
+        : (item.videoType.isNotEmpty ? item.videoType : 'Video');
     final duration = _formatDuration(item.duration);
 
     // Filter out empty parts

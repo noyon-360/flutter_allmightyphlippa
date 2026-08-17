@@ -3,12 +3,16 @@ import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 
+import '../../../core/services/watch_history_service.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../../tv/repositories/live_tv_repo.dart';
+import '../models/video_status_request_model.dart';
+import '../repositories/video_status_repo.dart';
 
 class LiveVideoPlayController extends GetxController {
   final _liveTvRepo = Get.find<LiveTvRepo>();
   final _profileCtrl = Get.find<ProfileController>();
+  final _videoStatusRepo = Get.find<VideoStatusRepo>();
 
   VideoPlayerController? videoPlayerController;
   ChewieController? chewieController;
@@ -33,7 +37,11 @@ class LiveVideoPlayController extends GetxController {
     super.onClose();
   }
 
-  Future<void> initializeLiveVideo({required int streamId}) async {
+  Future<void> initializeLiveVideo({
+    required int streamId,
+    String channelName = '',
+    String channelLogo = '',
+  }) async {
     isVideoInitialized.value = false;
     errorMessage.value = null;
     isLoading.value = true;
@@ -92,6 +100,25 @@ class LiveVideoPlayController extends GetxController {
           );
 
           isVideoInitialized.value = true;
+
+          // Record this channel in watch history so it can show up under
+          // "Live TV History" — there's no meaningful resume position for a
+          // live stream, so this is purely a "recently watched" marker.
+          _videoStatusRepo
+              .updateVideoStatus(
+                UpdateVideoStatusRequest(
+                  title: channelName.isNotEmpty ? channelName : 'Live TV',
+                  videoId: streamId.toString(),
+                  videoType: 'live',
+                  thumbnail: channelLogo.isNotEmpty ? channelLogo : null,
+                ),
+              )
+              .then((result) {
+                if (result.isRight() &&
+                    Get.isRegistered<WatchHistoryService>()) {
+                  Get.find<WatchHistoryService>().refreshList();
+                }
+              });
         },
       );
     } catch (e) {

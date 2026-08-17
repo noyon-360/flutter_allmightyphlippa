@@ -57,6 +57,7 @@ class MovieSeriesItemWidget extends StatelessWidget {
               () => LiveVideoPlayScreen(
                 streamId: streamId,
                 channelName: name,
+                channelLogo: image,
               ),
             );
           } else {

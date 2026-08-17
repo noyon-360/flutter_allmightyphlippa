@@ -4,10 +4,13 @@ import 'package:flutter_almightyflippa/features/bottom_nav/controllers/bottom_na
 import 'package:flutter_almightyflippa/features/home/controllers/home_controller.dart';
 import 'package:flutter_almightyflippa/features/movie/controllers/movie_controller.dart';
 import 'package:flutter_almightyflippa/features/series/controllers/series_controller.dart';
+import 'package:flutter_almightyflippa/features/video/screens/live_video_play_screen.dart';
 import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.dart';
 import 'package:get/get.dart';
 
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import '../../../core/services/watch_history_service.dart';
+import '../../history/screens/history_screen.dart';
 import '../../playlist/models/server_request_model.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
     hide Icons;
@@ -26,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final movieCtrl = Get.find<MovieController>();
   final seriesCtrl = Get.find<SeriesController>();
   final profileCtrl = Get.put(ProfileController());
+  final watchHistoryService = Get.find<WatchHistoryService>();
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Get.find<BottomNavController>().changeIndex(3);
               }),
               _buildSeriesList(),
+              _buildLiveTvHistorySection(),
               const SizedBox(height: 40),
             ],
           ),
@@ -313,6 +318,91 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
+      );
+    });
+  }
+
+  Widget _buildLiveTvHistorySection() {
+    return Obx(() {
+      final liveHistory = watchHistoryService.watchHistory
+          .where((item) => item.videoType.toLowerCase() == 'live')
+          .toList();
+
+      // Purely a "recently watched" convenience shelf — hide it entirely
+      // rather than showing an empty section for users with no live history.
+      if (liveHistory.isEmpty) return const SizedBox.shrink();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          _buildSectionHeader(context, 'Live TV History', () {
+            Get.to(() => const HistoryScreen());
+          }),
+          SizedBox(
+            height: 150,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: liveHistory.length,
+              itemBuilder: (context, index) {
+                final channel = liveHistory[index];
+                final streamId = int.tryParse(channel.videoId) ?? 0;
+                return TvFocusWrapper(
+                  onTap: () {
+                    Get.to(
+                      () => LiveVideoPlayScreen(
+                        streamId: streamId,
+                        channelName: channel.name ?? 'Live TV',
+                        channelLogo: channel.thumbnail,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 140,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: channel.thumbnail.isNotEmpty
+                                ? Image.network(
+                                    channel.thumbnail,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        _buildPlaceholder(),
+                                  )
+                                : _buildPlaceholder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          channel.name ?? 'Live TV',
+                          style: const TextStyle(
+                            color: AppColors.primaryWhite,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const Text(
+                          'Live TV',
+                          style: TextStyle(
+                            color: AppColors.primaryGray,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       );
     });
   }

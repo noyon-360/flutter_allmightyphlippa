@@ -16,11 +16,13 @@ import '../controllers/live_video_play_controller.dart';
 class LiveVideoPlayScreen extends StatefulWidget {
   final int streamId;
   final String channelName;
+  final String channelLogo;
 
   const LiveVideoPlayScreen({
     super.key,
     required this.streamId,
     required this.channelName,
+    this.channelLogo = '',
   });
 
   @override
@@ -48,7 +50,11 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
       if (mounted) controller.videoPlayerController?.play();
     };
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.initializeLiveVideo(streamId: widget.streamId);
+      controller.initializeLiveVideo(
+        streamId: widget.streamId,
+        channelName: widget.channelName,
+        channelLogo: widget.channelLogo,
+      );
     });
   }
 
