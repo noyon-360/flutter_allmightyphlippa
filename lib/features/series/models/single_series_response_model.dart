@@ -29,21 +29,28 @@ class SeriesDataContent {
   SeriesDataContent({this.seasons, this.info, this.episodes});
 
   SeriesDataContent.fromJson(Map<String, dynamic> json) {
-    if (json['seasons'] != null) {
-      seasons = <Season>[];
-      json['seasons'].forEach((v) {
-        seasons!.add(Season.fromJson(v));
-      });
+    // Xtream/PHP APIs sometimes serialize an empty collection as `{}`
+    // instead of `[]` (empty associative vs indexed array in PHP), so
+    // `seasons`/`episodes` can arrive as either a List or a Map depending
+    // on whether the provider actually has data for them. Handle both
+    // shapes defensively instead of assuming one.
+    final seasonsJson = json['seasons'];
+    if (seasonsJson is List) {
+      seasons = seasonsJson.map((v) => Season.fromJson(v)).toList();
+    } else if (seasonsJson is Map) {
+      seasons = seasonsJson.values
+          .map((v) => Season.fromJson(v as Map<String, dynamic>))
+          .toList();
     }
+
     info = json['info'] != null ? SeriesInfo.fromJson(json['info']) : null;
-    if (json['episodes'] != null) {
+
+    final episodesJson = json['episodes'];
+    if (episodesJson is Map) {
       episodes = {};
-      json['episodes'].forEach((key, value) {
-        if (value != null) {
-          episodes![key] = <Episode>[];
-          value.forEach((v) {
-            episodes![key]!.add(Episode.fromJson(v));
-          });
+      episodesJson.forEach((key, value) {
+        if (value is List) {
+          episodes![key] = value.map((v) => Episode.fromJson(v)).toList();
         }
       });
     }

@@ -14,7 +14,6 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '/core/constants/app_colors.dart';
 import 'package:get/get.dart';
-import 'package:collection/collection.dart';
 import '../controllers/video_play_controller.dart';
 
 class VideoPlayScreen extends StatefulWidget {
@@ -200,18 +199,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                     onTap: () {
                                       if (controller.currentType.value ==
                                           ServerType.series) {
-                                        final firstEpisode = controller
-                                            .seriesCtrl
-                                            .singleSeries
-                                            .value
-                                            ?.data
-                                            ?.episodes
-                                            ?.values
-                                            .firstOrNull
-                                            ?.firstOrNull;
-                                        if (firstEpisode != null) {
-                                          controller.playEpisode(firstEpisode);
-                                        }
+                                        controller.playFirstAvailableEpisode();
                                       } else {
                                         controller.hasStartedPlaying.value =
                                             true;
@@ -416,20 +404,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                           onTap: () {
                                             if (controller.currentType.value ==
                                                 ServerType.series) {
-                                              final firstEpisode = controller
-                                                  .seriesCtrl
-                                                  .singleSeries
-                                                  .value
-                                                  ?.data
-                                                  ?.episodes
-                                                  ?.values
-                                                  .firstOrNull
-                                                  ?.firstOrNull;
-                                              if (firstEpisode != null) {
-                                                controller.playEpisode(
-                                                  firstEpisode,
-                                                );
-                                              }
+                                              controller
+                                                  .playFirstAvailableEpisode();
                                             } else {
                                               controller
                                                       .hasStartedPlaying
@@ -588,6 +564,10 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                       ),
                                 ),
                               ),
+                            ),
+                            _buildSeasonSelector(context, singleSeries),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 8),
                             ),
                             _buildEpisodeList(context, singleSeries),
                             SliverToBoxAdapter(
@@ -789,6 +769,56 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     );
   }
 
+  Widget _buildSeasonSelector(BuildContext context, dynamic singleSeries) {
+    final episodesMap = singleSeries?.data?.episodes;
+    final seasonKeys = controller.sortedSeasonKeys(
+      episodesMap?.cast<String, List<dynamic>>(),
+    );
+    if (seasonKeys.length <= 1) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: 44,
+        child: Obx(() {
+          final selected = controller.selectedSeason.value;
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            itemCount: seasonKeys.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final seasonKey = seasonKeys[index];
+              final isSelected = seasonKey == selected;
+              return TvFocusWrapper(
+                onTap: () => controller.changeSeason(seasonKey),
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.red
+                        : AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Season $seasonKey',
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.primaryGray,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }),
+      ),
+    );
+  }
+
   Widget _buildEpisodeList(BuildContext context, dynamic singleSeries) {
     final episodesMap = singleSeries?.data?.episodes;
     if (episodesMap == null || episodesMap.isEmpty) {
@@ -803,25 +833,35 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       );
     }
 
-    final List<dynamic> allEpisodes = [];
-    episodesMap.forEach((season, episodes) {
-      allEpisodes.addAll(episodes);
-    });
+    return SliverToBoxAdapter(
+      child: Obx(() {
+        final seasonKeys = controller.sortedSeasonKeys(
+          episodesMap.cast<String, List<dynamic>>(),
+        );
+        final seasonKey = controller.selectedSeason.value ?? seasonKeys.first;
+        final seasonEpisodes = episodesMap[seasonKey] ?? const [];
 
-    return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final episode = allEpisodes[index];
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: seasonEpisodes.length,
+          itemBuilder: (context, index) {
+            final episode = seasonEpisodes[index];
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Obx(() {
-            final isPlaying = controller.currentEpisode.value?.id == episode.id;
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: Obx(() {
+                final isPlaying =
+                    controller.currentEpisode.value?.id == episode.id;
 
-            return TvFocusWrapper(
-              onTap: () {
-                controller.playEpisode(episode);
-              },
-              child: Container(
+                return TvFocusWrapper(
+                  onTap: () {
+                    controller.playEpisode(episode);
+                  },
+                  child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isPlaying
@@ -907,7 +947,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
             );
           }),
         );
-      }, childCount: allEpisodes.length),
+          },
+        );
+      }),
     );
   }
 

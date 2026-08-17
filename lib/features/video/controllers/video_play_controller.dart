@@ -32,6 +32,8 @@ class VideoPlayController extends GetxController {
 
   // Track the current episode for series
   final currentEpisode = Rxn<Episode>();
+  // Track which season's episode folder is currently open in the episode list
+  final selectedSeason = Rxn<String>();
   final isLoved = false.obs;
 
   final playbackSpeed = 1.0.obs;
@@ -92,7 +94,7 @@ class VideoPlayController extends GetxController {
     _setupTracksListener();
     _errorSubscription = player.stream.error.listen((error) {
       DPrint.error("Player error for url $_currentPlayUrl: $error");
-      Get.snackbar('Playback Error', 'Failed to play this video. Please try again later.');
+      // Get.snackbar('Playback Error', 'Failed to play this video. Please try again later.');
     });
   }
 
@@ -257,22 +259,62 @@ class VideoPlayController extends GetxController {
     }
   }
 
+  /// Season keys ("1", "2", ...) sorted numerically rather than by JSON/insertion order.
+  List<String> sortedSeasonKeys(Map<String, List<dynamic>>? episodesMap) {
+    if (episodesMap == null) return [];
+    final keys = episodesMap.keys.toList();
+    keys.sort((a, b) {
+      final aNum = int.tryParse(a);
+      final bNum = int.tryParse(b);
+      if (aNum != null && bNum != null) return aNum.compareTo(bNum);
+      return a.compareTo(b);
+    });
+    return keys;
+  }
+
+  /// Used by the "Watch Now" button and the play overlay to start a series
+  /// from its first episode. Surfaces feedback instead of silently doing
+  /// nothing when a series has no playable episode data.
+  void playFirstAvailableEpisode() {
+    final firstEpisode = seriesCtrl
+        .singleSeries
+        .value
+        ?.data
+        ?.episodes
+        ?.values
+        .firstOrNull
+        ?.firstOrNull;
+    if (firstEpisode != null) {
+      playEpisode(firstEpisode);
+    } else {
+      Get.snackbar(
+        'No Episodes Available',
+        'This series has no playable episodes right now.',
+      );
+    }
+  }
+
+  void changeSeason(String seasonKey) {
+    selectedSeason.value = seasonKey;
+  }
+
   Future<void> _loadSeries(int streamId, {bool autoPlay = true}) async {
     // Fetch details
     await seriesCtrl.getSeriesDetails(streamId: streamId);
 
+    final series = seriesCtrl.singleSeries.value;
+    final episodesMap = series?.data?.episodes;
+    final seasonKeys = sortedSeasonKeys(episodesMap);
+    if (seasonKeys.isNotEmpty) {
+      selectedSeason.value = seasonKeys.first;
+    }
+
     if (!autoPlay) return;
 
-    final series = seriesCtrl.singleSeries.value;
-    if (series != null) {
-      // Find the first available episode
-      final episodesMap = series.data?.episodes;
-      if (episodesMap != null && episodesMap.isNotEmpty) {
-        final firstSeasonKey = episodesMap.keys.first;
-        final firstSeasonEpisodes = episodesMap[firstSeasonKey];
-        if (firstSeasonEpisodes != null && firstSeasonEpisodes.isNotEmpty) {
-          playEpisode(firstSeasonEpisodes.first);
-        }
+    if (episodesMap != null && seasonKeys.isNotEmpty) {
+      final firstSeasonEpisodes = episodesMap[seasonKeys.first];
+      if (firstSeasonEpisodes != null && firstSeasonEpisodes.isNotEmpty) {
+        playEpisode(firstSeasonEpisodes.first);
       }
     }
   }
