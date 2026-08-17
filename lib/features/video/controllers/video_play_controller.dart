@@ -42,6 +42,9 @@ class VideoPlayController extends GetxController {
   final currentVideoTrack = Rxn<VideoTrack>();
   final availableVideoTracks = <VideoTrack>[].obs;
 
+  final currentAudioTrack = Rxn<AudioTrack>();
+  final availableAudioTracks = <AudioTrack>[].obs;
+
   final currentSubtitleTrack = Rxn<SubtitleTrack>();
   final availableSubtitleTracks = <SubtitleTrack>[].obs;
   final isSubtitleEnabled = true.obs;
@@ -101,11 +104,15 @@ class VideoPlayController extends GetxController {
   void _setupTracksListener() {
     _tracksSubscription = player.stream.tracks.listen((tracks) {
       availableVideoTracks.value = tracks.video;
+      availableAudioTracks.value = tracks.audio;
       availableSubtitleTracks.value = tracks.subtitle;
 
       // Initialize current tracks if not set
       if (currentVideoTrack.value == null && tracks.video.isNotEmpty) {
         currentVideoTrack.value = player.state.track.video;
+      }
+      if (currentAudioTrack.value == null && tracks.audio.isNotEmpty) {
+        currentAudioTrack.value = player.state.track.audio;
       }
       if (currentSubtitleTrack.value == null && tracks.subtitle.isNotEmpty) {
         currentSubtitleTrack.value = player.state.track.subtitle;
@@ -121,6 +128,11 @@ class VideoPlayController extends GetxController {
   void setVideoTrack(VideoTrack track) {
     player.setVideoTrack(track);
     currentVideoTrack.value = track;
+  }
+
+  void setAudioTrack(AudioTrack track) {
+    player.setAudioTrack(track);
+    currentAudioTrack.value = track;
   }
 
   void setSubtitleTrack(SubtitleTrack track) {
@@ -224,6 +236,8 @@ class VideoPlayController extends GetxController {
     playbackSpeed.value = 1.0;
     currentVideoTrack.value = null;
     availableVideoTracks.value = [];
+    currentAudioTrack.value = null;
+    availableAudioTracks.value = [];
     currentSubtitleTrack.value = null;
     availableSubtitleTracks.value = [];
     isSubtitleEnabled.value = true;
@@ -328,6 +342,8 @@ class VideoPlayController extends GetxController {
     playbackSpeed.value = 1.0;
     currentVideoTrack.value = null;
     availableVideoTracks.value = [];
+    currentAudioTrack.value = null;
+    availableAudioTracks.value = [];
     currentSubtitleTrack.value = null;
     availableSubtitleTracks.value = [];
     isSubtitleEnabled.value = true;

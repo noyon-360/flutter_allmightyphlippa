@@ -341,7 +341,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                         child: const Padding(
                                           padding: EdgeInsets.all(8.0),
                                           child: Icon(
-                                            Icons.settings,
+                                            Icons.info_outline,
                                             color: Colors.white,
                                           ),
                                         ),
@@ -989,7 +989,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          "Settings",
+                          "More Settings",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -1060,6 +1060,46 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                           },
                         ),
                         const SizedBox(height: 16),
+                        // Audio Track
+                        _buildSettingRow(
+                          label: "Audio Track",
+                          value: Obx(() {
+                            final track = controller.currentAudioTrack.value;
+                            return Text(
+                              track == null ? "Default" : track.displayName,
+                              style: const TextStyle(color: Colors.white),
+                            );
+                          }),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showAudioTrackDialog(context);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // Subtitles
+                        _buildSettingRow(
+                          label: "Subtitles",
+                          value: Obx(() {
+                            final track = controller.currentSubtitleTrack.value;
+                            if (!controller.isSubtitleEnabled.value ||
+                                track == null ||
+                                track == SubtitleTrack.no()) {
+                              return const Text(
+                                "Off",
+                                style: TextStyle(color: Colors.white),
+                              );
+                            }
+                            return Text(
+                              track.displayName,
+                              style: const TextStyle(color: Colors.white),
+                            );
+                          }),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showSubtitleDialog(context);
+                          },
+                        ),
+                        const SizedBox(height: 16),
                         // Google Cast
                         _buildSettingRow(
                           label: "Google Cast",
@@ -1095,27 +1135,6 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                             },
                           ),
                         ],
-                        // const SizedBox(height: 16),
-                        // // Subtitle/CC
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //   children: [
-                        //     const Text(
-                        //       "Subtitle/CC",
-                        //       style: TextStyle(color: Colors.white),
-                        //     ),
-                        //     Obx(
-                        //       () => Switch(
-                        //         value: controller.isSubtitleEnabled.value,
-                        //         onChanged: (value) {
-                        //           controller.toggleSubtitle(value);
-                        //         },
-                        //         activeColor: AppColors.red,
-                        //         inactiveTrackColor: Colors.grey[700],
-                        //       ),
-                        //     ),
-                        //   ],
-                        // ),
                       ],
                     ),
                   ),
@@ -1268,6 +1287,236 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   //     },
   //   );
   // }
+
+  void _showAudioTrackDialog(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      pageBuilder: (context, anim1, anim2) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.7,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.containerBgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      "Audio Track",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: Obx(() {
+                      final tracks = controller.availableAudioTracks;
+                      if (tracks.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            "No audio tracks available",
+                            style: TextStyle(color: AppColors.primaryGray),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: tracks.length,
+                        itemBuilder: (context, index) {
+                          final track = tracks[index];
+                          final isSelected =
+                              controller.currentAudioTrack.value == track;
+
+                          return InkWell(
+                            onTap: () {
+                              controller.setAudioTrack(track);
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    track.displayName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.red
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                    child: isSelected
+                                        ? Center(
+                                            child: Container(
+                                              width: 10,
+                                              height: 10,
+                                              decoration: const BoxDecoration(
+                                                color: AppColors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSubtitleDialog(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      pageBuilder: (context, anim1, anim2) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.7,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.containerBgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      "Subtitles",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: Obx(() {
+                      final tracks = controller.availableSubtitleTracks;
+                      if (tracks.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            "No subtitles available",
+                            style: TextStyle(color: AppColors.primaryGray),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: tracks.length,
+                        itemBuilder: (context, index) {
+                          final track = tracks[index];
+                          final isSelected =
+                              controller.isSubtitleEnabled.value
+                              ? controller.currentSubtitleTrack.value == track
+                              : track == SubtitleTrack.no();
+
+                          return InkWell(
+                            onTap: () {
+                              controller.setSubtitleTrack(track);
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    track.displayName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.red
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                    child: isSelected
+                                        ? Center(
+                                            child: Container(
+                                              width: 10,
+                                              height: 10,
+                                              decoration: const BoxDecoration(
+                                                color: AppColors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _showCastPickerDialog(BuildContext context) {
     _castService.startScan();
@@ -1607,5 +1856,25 @@ extension VideoTrackExtension on VideoTrack {
 
     // Otherwise fallback to id or something descriptive
     return id.split('/').last.split('.').first;
+  }
+}
+
+extension AudioTrackExtension on AudioTrack {
+  String get displayName {
+    if (this == AudioTrack.auto()) return "Auto";
+    if (this == AudioTrack.no()) return "None";
+    if (language != null && language!.isNotEmpty) return language!;
+    if (title != null && title!.isNotEmpty) return title!;
+    return id;
+  }
+}
+
+extension SubtitleTrackExtension on SubtitleTrack {
+  String get displayName {
+    if (this == SubtitleTrack.no()) return "Off";
+    if (this == SubtitleTrack.auto()) return "Auto";
+    if (language != null && language!.isNotEmpty) return language!;
+    if (title != null && title!.isNotEmpty) return title!;
+    return id;
   }
 }
