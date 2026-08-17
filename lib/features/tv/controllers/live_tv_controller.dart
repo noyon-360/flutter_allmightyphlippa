@@ -53,6 +53,8 @@ class LiveTvController extends GetxController {
         ? Get.find<GenreRepo>().getGenresById<LiveTvModel>(
             id: selectedCategoryId.value,
             type: ServerType.live,
+            page: _currentPage,
+            limit: _limit,
           )
         : _liveTvRepo.getLiveTVList(
             page: _currentPage,

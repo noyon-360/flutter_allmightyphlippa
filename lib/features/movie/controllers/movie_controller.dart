@@ -51,6 +51,8 @@ class MovieController extends GetxController {
         ? Get.find<GenreRepo>().getGenresById<MoviesResponseModel>(
             id: selectedCategoryId.value,
             type: ServerType.movies,
+            page: _currentPage,
+            limit: _limit,
           )
         : _movieRepo.getMovies(
             page: _currentPage,

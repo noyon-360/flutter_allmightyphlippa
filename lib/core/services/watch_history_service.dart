@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import '../../features/video/models/watch_history_model.dart';
 import '../../features/video/repositories/video_status_repo.dart';
@@ -14,16 +15,32 @@ class WatchHistoryService extends GetxService {
     getWatchHistory();
   }
 
+  /// Background triggers (position ticks, post-dispose sync callbacks) can land
+  /// while Flutter is mid-frame, e.g. during a route's pop transition. Mutating
+  /// an .obs in that window crashes the watching Obx with "widget tree was
+  /// locked". Defer to the next frame in that case; mutate immediately otherwise
+  /// so normal user-triggered refreshes stay instant.
+  void _safeMutate(VoidCallback mutate) {
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle ||
+        SchedulerBinding.instance.schedulerPhase == SchedulerPhase.postFrameCallbacks) {
+      mutate();
+    } else {
+      SchedulerBinding.instance.addPostFrameCallback((_) => mutate());
+    }
+  }
+
   Future<void> getWatchHistory() async {
-    isLoading.value = true;
+    _safeMutate(() => isLoading.value = true);
     final result = await _videoStatusRepo.getWatchHistory();
     result.fold(
       (failure) {
-        isLoading.value = false;
+        _safeMutate(() => isLoading.value = false);
       },
       (success) {
-        watchHistory.assignAll(success.data);
-        isLoading.value = false;
+        _safeMutate(() {
+          watchHistory.assignAll(success.data);
+          isLoading.value = false;
+        });
       },
     );
   }
@@ -52,7 +69,7 @@ class WatchHistoryService extends GetxService {
         isLoved: oldItem.isLoved,
         lastWatchedAt: DateTime.now(),
       );
-      watchHistory[index] = newItem;
+      _safeMutate(() => watchHistory[index] = newItem);
     }
   }
 

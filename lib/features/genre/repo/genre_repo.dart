@@ -8,5 +8,7 @@ abstract class GenreRepo {
   NetworkResult<List<T>> getGenresById<T>({
     required String id,
     required ServerType type,
+    int page = 1,
+    int limit = 50,
   });
 }

@@ -46,6 +46,7 @@ class VideoPlayController extends GetxController {
 
   StreamSubscription? _positionSubscription;
   StreamSubscription? _tracksSubscription;
+  StreamSubscription? _errorSubscription;
   Duration _lastUpdatePosition = Duration.zero;
   final _updateInterval = const Duration(seconds: 10);
   String? _currentVideoId;
@@ -89,6 +90,10 @@ class VideoPlayController extends GetxController {
     player = Player();
     videoController = VideoController(player);
     _setupTracksListener();
+    _errorSubscription = player.stream.error.listen((error) {
+      DPrint.error("Player error for url $_currentPlayUrl: $error");
+      Get.snackbar('Playback Error', 'Failed to play this video. Please try again later.');
+    });
   }
 
   void _setupTracksListener() {
@@ -190,6 +195,7 @@ class VideoPlayController extends GetxController {
   void onClose() {
     _positionSubscription?.cancel();
     _tracksSubscription?.cancel();
+    _errorSubscription?.cancel();
     _syncVideoStatus().then((_) {
       // Refresh the watch history globally after the final sync
       if (Get.isRegistered<WatchHistoryService>()) {
@@ -245,6 +251,9 @@ class VideoPlayController extends GetxController {
     final movie = movieCtrl.movie.value;
     if (movie != null && movie.playUrl.isNotEmpty) {
       await _initializePlayer(movie.playUrl, autoPlay: autoPlay);
+    } else {
+      DPrint.error("No playUrl returned for movie streamId: $streamId");
+      Get.snackbar('Playback Error', 'Could not get a playable link for this movie.');
     }
   }
 
@@ -377,6 +386,7 @@ class VideoPlayController extends GetxController {
         }
       }
 
+      DPrint.log("Opening video URL: $videoUrl");
       await player.open(Media(videoUrl), play: false);
 
       if (startPosition > Duration.zero) {

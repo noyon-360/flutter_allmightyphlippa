@@ -38,11 +38,15 @@ class GenreRepoImpl implements GenreRepo {
   NetworkResult<List<T>> getGenresById<T>({
     required String id,
     required ServerType type,
+    int page = 1,
+    int limit = 50,
   }) async {
     final storage = AuthStorageService();
     final requestData = await ServerRequestModel.fromStorage(
       type: type,
       storage: storage,
+      page: page,
+      limit: limit,
     );
     return _apiClient.post(
       endpoint: ApiConstants.genre.getCategoriesByType(id),

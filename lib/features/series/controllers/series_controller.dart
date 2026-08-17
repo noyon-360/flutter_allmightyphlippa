@@ -51,6 +51,8 @@ class SeriesController extends GetxController {
         ? Get.find<GenreRepo>().getGenresById<SeriesResponesModel>(
             id: selectedCategoryId.value,
             type: ServerType.series,
+            page: _currentPage,
+            limit: _limit,
           )
         : _seriesRepo.getSeries(
             page: _currentPage,
