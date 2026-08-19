@@ -130,6 +130,20 @@ class VideoPlayController extends GetxController {
     currentVideoTrack.value = track;
   }
 
+  /// Quality badge label derived from the actual decoded video track, not
+  /// from text in the title or pre-fetched metadata. Only returns a value
+  /// once the video is confirmed loaded and rendering, so the badge never
+  /// appears prematurely.
+  String? get qualityLabel {
+    if (!isVideoInitialized.value) return null;
+    final height = currentVideoTrack.value?.h;
+    if (height == null || height <= 0) return null;
+    if (height >= 2160) return '4K';
+    if (height >= 1080) return 'FHD';
+    if (height >= 720) return 'HD';
+    return null;
+  }
+
   void setAudioTrack(AudioTrack track) {
     player.setAudioTrack(track);
     currentAudioTrack.value = track;

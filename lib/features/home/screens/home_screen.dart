@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Get.find<BottomNavController>().changeIndex(3);
               }),
               _buildSeriesList(),
-              _buildLiveTvHistorySection(),
+              // _buildLiveTvHistorySection(),
               const SizedBox(height: 40),
             ],
           ),
@@ -322,90 +322,90 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildLiveTvHistorySection() {
-    return Obx(() {
-      final liveHistory = watchHistoryService.watchHistory
-          .where((item) => item.videoType.toLowerCase() == 'live')
-          .toList();
+  // Widget _buildLiveTvHistorySection() {
+  //   return Obx(() {
+  //     final liveHistory = watchHistoryService.watchHistory
+  //         .where((item) => item.videoType.toLowerCase() == 'live')
+  //         .toList();
 
-      // Purely a "recently watched" convenience shelf — hide it entirely
-      // rather than showing an empty section for users with no live history.
-      if (liveHistory.isEmpty) return const SizedBox.shrink();
+  //     // Purely a "recently watched" convenience shelf — hide it entirely
+  //     // rather than showing an empty section for users with no live history.
+  //     if (liveHistory.isEmpty) return const SizedBox.shrink();
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          _buildSectionHeader(context, 'Live TV History', () {
-            Get.to(() => const HistoryScreen());
-          }),
-          SizedBox(
-            height: 150,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: liveHistory.length,
-              itemBuilder: (context, index) {
-                final channel = liveHistory[index];
-                final streamId = int.tryParse(channel.videoId) ?? 0;
-                return TvFocusWrapper(
-                  onTap: () {
-                    Get.to(
-                      () => LiveVideoPlayScreen(
-                        streamId: streamId,
-                        channelName: channel.name ?? 'Live TV',
-                        channelLogo: channel.thumbnail,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: 140,
-                    margin: const EdgeInsets.only(right: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: channel.thumbnail.isNotEmpty
-                                ? Image.network(
-                                    channel.thumbnail,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        _buildPlaceholder(),
-                                  )
-                                : _buildPlaceholder(),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          channel.name ?? 'Live TV',
-                          style: const TextStyle(
-                            color: AppColors.primaryWhite,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const Text(
-                          'Live TV',
-                          style: TextStyle(
-                            color: AppColors.primaryGray,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      );
-    });
-  }
+  //     return Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const SizedBox(height: 20),
+  //         _buildSectionHeader(context, 'Live TV History', () {
+  //           Get.to(() => const HistoryScreen());
+  //         }),
+  //         SizedBox(
+  //           height: 150,
+  //           child: ListView.builder(
+  //             scrollDirection: Axis.horizontal,
+  //             padding: const EdgeInsets.symmetric(horizontal: 16),
+  //             itemCount: liveHistory.length,
+  //             itemBuilder: (context, index) {
+  //               final channel = liveHistory[index];
+  //               final streamId = int.tryParse(channel.videoId) ?? 0;
+  //               return TvFocusWrapper(
+  //                 onTap: () {
+  //                   Get.to(
+  //                     () => LiveVideoPlayScreen(
+  //                       streamId: streamId,
+  //                       channelName: channel.name ?? 'Live TV',
+  //                       channelLogo: channel.thumbnail,
+  //                     ),
+  //                   );
+  //                 },
+  //                 child: Container(
+  //                   width: 140,
+  //                   margin: const EdgeInsets.only(right: 12),
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       Expanded(
+  //                         child: ClipRRect(
+  //                           borderRadius: BorderRadius.circular(12),
+  //                           child: channel.thumbnail.isNotEmpty
+  //                               ? Image.network(
+  //                                   channel.thumbnail,
+  //                                   fit: BoxFit.cover,
+  //                                   errorBuilder: (context, error, stackTrace) =>
+  //                                       _buildPlaceholder(),
+  //                                 )
+  //                               : _buildPlaceholder(),
+  //                         ),
+  //                       ),
+  //                       const SizedBox(height: 8),
+  //                       Text(
+  //                         channel.name ?? 'Live TV',
+  //                         style: const TextStyle(
+  //                           color: AppColors.primaryWhite,
+  //                           fontSize: 14,
+  //                           fontWeight: FontWeight.w600,
+  //                         ),
+  //                         maxLines: 1,
+  //                         overflow: TextOverflow.ellipsis,
+  //                       ),
+  //                       const Text(
+  //                         'Live TV',
+  //                         style: TextStyle(
+  //                           color: AppColors.primaryGray,
+  //                           fontSize: 12,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //       ],
+  //     );
+  //   });
+  // }
 
   Widget _buildShimmerList() {
     return SizedBox(

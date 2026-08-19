@@ -380,12 +380,40 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                         ),
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    controller.subTitle,
-                                    style: const TextStyle(
-                                      color: AppColors.primaryGray,
-                                      fontSize: 14,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          controller.subTitle,
+                                          style: const TextStyle(
+                                            color: AppColors.primaryGray,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      if (controller.qualityLabel != null) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.red,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            controller.qualityLabel!,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
