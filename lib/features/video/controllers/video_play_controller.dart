@@ -289,7 +289,7 @@ class VideoPlayController extends GetxController {
       await _initializePlayer(movie.playUrl, autoPlay: autoPlay);
     } else {
       DPrint.error("No playUrl returned for movie streamId: $streamId");
-      Get.snackbar('Playback Error', 'Could not get a playable link for this movie.');
+      // Get.snackbar('Playback Error', 'Could not get a playable link for this movie.');
     }
   }
 

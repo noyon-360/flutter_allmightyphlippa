@@ -226,6 +226,12 @@ class _MovieScreenState extends State<MovieScreen> {
                     ),
 
                     // Movie List
+                    if (movieCtrl.movies.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _buildMoviesEmptyOrError(),
+                      )
+                    else
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final movie = movieCtrl.movies[index];
@@ -286,8 +292,7 @@ class _MovieScreenState extends State<MovieScreen> {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        // Formatting date and duration if available, else placeholder
-                                        '${movie.added} | Movie',
+                                        'Movie${movie.rating.isNotEmpty && movie.rating != '0' ? ' | ⭐ ${movie.rating}' : ''}',
                                         style: const TextStyle(
                                           color: AppColors.primaryGray,
                                           fontSize: 12,
@@ -341,6 +346,42 @@ class _MovieScreenState extends State<MovieScreen> {
             : null,
       );
     });
+  }
+
+  Widget _buildMoviesEmptyOrError() {
+    final error = movieCtrl.errorMessage.value;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            error != null ? Icons.cloud_off : Icons.movie_outlined,
+            size: 48,
+            color: AppColors.primaryGray,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            error != null
+                ? "Couldn't load movies.\n$error"
+                : 'No movies available',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.primaryGray, fontSize: 14),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () => movieCtrl.getMovies(),
+              icon: const Icon(Icons.refresh, color: AppColors.red),
+              label: const Text(
+                'Try Again',
+                style: TextStyle(color: AppColors.red),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildShimmerContent() {

@@ -353,6 +353,16 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
             Expanded(
               child: liveTvCtrl.isLoading.value
                   ? _buildShimmerGrid(crossAxisCount)
+                  : liveTvCtrl.liveTvList.isEmpty
+                  ? RefreshIndicator.adaptive(
+                      onRefresh: () async {
+                        await liveTvCtrl.getLiveTvList();
+                      },
+                      color: AppColors.red,
+                      child: ListView(
+                        children: [_buildLiveTvEmptyOrError()],
+                      ),
+                    )
                   : RefreshIndicator.adaptive(
                 onRefresh: () async {
                   await liveTvCtrl.getLiveTvList();
@@ -512,6 +522,42 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
               child: const Icon(Icons.arrow_upward, color: Colors.white),
             )
           : null,
+    );
+  }
+
+  Widget _buildLiveTvEmptyOrError() {
+    final error = liveTvCtrl.errorMessage.value;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 60.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            error != null ? Icons.cloud_off : Icons.live_tv_outlined,
+            size: 48,
+            color: AppColors.primaryGray,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            error != null
+                ? "Couldn't load channels.\n$error"
+                : 'No channels available',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.primaryGray, fontSize: 14),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () => liveTvCtrl.getLiveTvList(),
+              icon: const Icon(Icons.refresh, color: AppColors.red),
+              label: const Text(
+                'Try Again',
+                style: TextStyle(color: AppColors.red),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

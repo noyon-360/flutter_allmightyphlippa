@@ -288,6 +288,12 @@ class _SeriesScreenState extends State<SeriesScreen> {
                     ),
 
                     // Movie List
+                    if (seriesCtrl.series.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _buildSeriesEmptyOrError(),
+                      )
+                    else
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final series = seriesCtrl.series[index];
@@ -412,6 +418,42 @@ class _SeriesScreenState extends State<SeriesScreen> {
             : null,
       );
     });
+  }
+
+  Widget _buildSeriesEmptyOrError() {
+    final error = seriesCtrl.errorMessage.value;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            error != null ? Icons.cloud_off : Icons.video_library_outlined,
+            size: 48,
+            color: AppColors.primaryGray,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            error != null
+                ? "Couldn't load series.\n$error"
+                : 'No series available',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.primaryGray, fontSize: 14),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () => seriesCtrl.getSeries(),
+              icon: const Icon(Icons.refresh, color: AppColors.red),
+              label: const Text(
+                'Try Again',
+                style: TextStyle(color: AppColors.red),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildShimmerContent() {

@@ -18,6 +18,7 @@ class MovieController extends GetxController {
   final isLoading = false.obs;
   final isMoreLoading = false.obs;
   final hasMore = true.obs;
+  final errorMessage = Rxn<String>();
   final selectedCategoryId = ''.obs;
   int _currentPage = 1;
   final int _limit = 10;
@@ -41,6 +42,7 @@ class MovieController extends GetxController {
       isMoreLoading.value = true;
     } else {
       isLoading.value = true;
+      errorMessage.value = null;
       _currentPage = 1;
       hasMore.value = true;
     }
@@ -62,8 +64,10 @@ class MovieController extends GetxController {
     result.fold(
       (fail) {
         DPrint.error('Error fetching movies: ${fail.message}');
+        errorMessage.value = fail.message;
       },
       (success) {
+        errorMessage.value = null;
         final data = success.data;
         if (data.length < _limit) {
           hasMore.value = false;
