@@ -23,12 +23,18 @@ class AirPlayService {
   bool get isAvailable => Platform.isIOS;
 
   /// Present the native AirPlay route picker overlay.
-  Future<void> showAirPlayPicker() async {
-    if (!Platform.isIOS) return;
+  ///
+  /// Returns `false` (instead of throwing) if the native picker couldn't be
+  /// triggered, so callers can tell the user something went wrong rather
+  /// than have the request fail silently.
+  Future<bool> showAirPlayPicker() async {
+    if (!Platform.isIOS) return false;
     try {
-      await _channel.invokeMethod<void>('showAirPlayPicker');
+      final result = await _channel.invokeMethod<bool>('showAirPlayPicker');
+      return result ?? false;
     } catch (e) {
       debugPrint('AirPlayService showAirPlayPicker error: $e');
+      return false;
     }
   }
 }

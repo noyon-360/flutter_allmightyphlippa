@@ -190,7 +190,9 @@ class VideoPlayController extends GetxController {
     if (currentType.value == ServerType.movies) {
       final movie = movieCtrl.movie.value;
       if (movie == null) return '';
-      return '${movie.streamData.movieData.added} | Movie | ${movie.streamData.info.duration}';
+      final rating = movie.streamData.info.rating;
+      final ratingText = rating > 0 ? ' | ⭐ $rating' : '';
+      return 'Movie$ratingText | ${movie.streamData.info.duration}';
     } else if (currentType.value == ServerType.series) {
       final series = seriesCtrl.singleSeries.value;
       if (series == null) return '';

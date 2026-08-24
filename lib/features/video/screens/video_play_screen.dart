@@ -1157,9 +1157,16 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                               "Available",
                               style: TextStyle(color: Colors.white),
                             ),
-                            onTap: () {
+                            onTap: () async {
                               Navigator.pop(context);
-                              AirPlayService.instance.showAirPlayPicker();
+                              final ok = await AirPlayService.instance
+                                  .showAirPlayPicker();
+                              if (!ok) {
+                                Get.snackbar(
+                                  'AirPlay',
+                                  'Could not open the AirPlay picker. Please try again.',
+                                );
+                              }
                             },
                           ),
                         ],

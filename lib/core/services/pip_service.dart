@@ -54,13 +54,29 @@ class PiPService {
         debugPrint('PiPService Android init: $e');
       }
     } else if (Platform.isIOS) {
+      _iosAvailable = await _checkIosAvailability();
+    }
+  }
+
+  /// The native PiP channel handler is registered asynchronously on app
+  /// launch (see AppDelegate.swift), so the very first video screen opened
+  /// after a cold start can query this channel before the native side has
+  /// finished listening, throwing a MissingPluginException even though PiP
+  /// genuinely is supported on the device. Retry briefly instead of
+  /// treating that startup race as "unsupported".
+  Future<bool> _checkIosAvailability() async {
+    const maxAttempts = 4;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        _iosAvailable =
-            await _channel.invokeMethod<bool>('isPiPAvailable') ?? false;
+        return await _channel.invokeMethod<bool>('isPiPAvailable') ?? false;
       } catch (e) {
-        debugPrint('PiPService iOS availability: $e');
+        debugPrint('PiPService iOS availability (attempt ${attempt + 1}): $e');
+        if (attempt < maxAttempts - 1) {
+          await Future.delayed(const Duration(milliseconds: 250));
+        }
       }
     }
+    return false;
   }
 
   /// Activate PiP.

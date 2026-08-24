@@ -121,13 +121,45 @@ class SubscriptionScreen extends StatelessWidget {
 
   // ── Current Plan Banner ─────────────────────────────────────────────────────
 
+  /// Always shows the user's current LABBY membership status — Free,
+  /// active Premium, or expired/canceled Premium — so a user never has to
+  /// infer their plan from side effects like whether a watermark appears.
   Widget _buildCurrentPlanBanner(UserModel? user) {
     final isActive = user?.subscriptionStatus == 'active';
-    if (!isActive) return const SizedBox.shrink();
-
-    final planName = _planNameFromProductId(user?.subscriptionProductId);
+    final wasPremium = user?.plan == 'premium';
     final expiresAt = user?.subscriptionExpiresAt;
     final startDate = user?.subscriptionStartDate;
+
+    final String planName;
+    final String statusLabel;
+    final Color statusColor;
+    final List<Color> gradientColors;
+
+    if (isActive) {
+      planName = _planNameFromProductId(user?.subscriptionProductId);
+      statusLabel = 'Active';
+      statusColor = AppColors.successGreen;
+      gradientColors = [
+        AppColors.red.withAlpha((0.85 * 255).toInt()),
+        AppColors.red.withAlpha((0.55 * 255).toInt()),
+      ];
+    } else if (wasPremium) {
+      planName = _planNameFromProductId(user?.subscriptionProductId);
+      statusLabel = 'Expired';
+      statusColor = AppColors.red;
+      gradientColors = [
+        AppColors.containerBgColor,
+        AppColors.containerBgColor,
+      ];
+    } else {
+      planName = 'Free Plan';
+      statusLabel = 'Free';
+      statusColor = AppColors.primaryGray;
+      gradientColors = [
+        AppColors.containerBgColor,
+        AppColors.containerBgColor,
+      ];
+    }
 
     return Container(
       width: double.infinity,
@@ -135,10 +167,7 @@ class SubscriptionScreen extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
-          colors: [
-            AppColors.red.withAlpha((0.85 * 255).toInt()),
-            AppColors.red.withAlpha((0.55 * 255).toInt()),
-          ],
+          colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -146,17 +175,41 @@ class SubscriptionScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            planName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                planName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withAlpha((0.2 * 255).toInt()),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
           if (startDate != null || expiresAt != null) ...[
             const SizedBox(height: 8),
-            if (startDate != null)
+            if (startDate != null && isActive)
               Text(
                 'Started: ${_fmtDate(startDate)}',
                 style: TextStyle(
@@ -167,7 +220,7 @@ class SubscriptionScreen extends StatelessWidget {
             if (expiresAt != null) ...[
               const SizedBox(height: 2),
               Text(
-                'Renews: ${_fmtDate(expiresAt)}',
+                '${isActive ? 'Renews' : 'Expired'}: ${_fmtDate(expiresAt)}',
                 style: TextStyle(
                   color: Colors.white.withAlpha((0.8 * 255).toInt()),
                   fontSize: 13,
