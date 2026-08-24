@@ -18,7 +18,7 @@ class EpgController extends GetxController {
   final isLoadingReminders = false.obs;
 
   // Set of keys for O(1) reminder lookup: "channelId_startMs"
-  final _reminderKeys = <String>{};
+  final _reminderKeys = <String>{}.obs;
 
   @override
   void onInit() {

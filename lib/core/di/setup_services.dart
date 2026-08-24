@@ -5,6 +5,7 @@ import '../../core/services/notification_service.dart';
 import '../../core/services/revenuecat_service.dart';
 import '../../core/services/premium_service.dart';
 import '../../features/downloads/services/download_service.dart';
+import '../../features/epg/services/live_tv_now_playing_cache.dart';
 
 Future<void> setupServices() async {
   Get.put(WatchHistoryService());
@@ -12,5 +13,6 @@ Future<void> setupServices() async {
   Get.put(RevenueCatService(), permanent: true);
   Get.put(PremiumService(), permanent: true);
   Get.put(NotificationService(), permanent: true);
+  Get.put(LiveTvNowPlayingCache(), permanent: true);
   await Get.putAsync<DownloadService>(() => DownloadService().init(), permanent: true);
 }

@@ -11,6 +11,8 @@ import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/cast_service.dart';
 import '../../../core/services/pip_service.dart';
+import '../../epg/widgets/live_tv_epg_row.dart';
+import '../../tv/controllers/live_tv_controller.dart';
 import '../controllers/live_video_play_controller.dart';
 
 class LiveVideoPlayScreen extends StatefulWidget {
@@ -116,10 +118,10 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
       body: Container(
         width: MediaQuery.of(context).size.width,
         color: Colors.black,
-        child: Center(
-          child: Obx(() {
-            if (controller.isLoading.value) {
-              return const Column(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(color: AppColors.red),
@@ -129,46 +131,66 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                     style: TextStyle(color: Colors.white),
                   ),
                 ],
-              );
-            }
+              ),
+            );
+          }
 
-            if (controller.isVideoInitialized.value &&
-                controller.chewieController != null) {
-              return AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Stack(
-                  children: [
-                    Chewie(
-                      controller: controller.chewieController!,
-                      key: ValueKey('live_video_${widget.streamId}'),
-                    ),
-                    Obx(() {
-                      if (PremiumService.to.isPremium.value) return const SizedBox.shrink();
-                      return const Positioned(
-                        bottom: 56,
-                        right: 12,
-                        child: IgnorePointer(
-                          child: Opacity(
-                            opacity: 0.5,
-                            child: Text(
-                              'LabbyTV',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                              ),
+          if (controller.isVideoInitialized.value &&
+              controller.chewieController != null) {
+            final videoPlayer = AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                children: [
+                  Chewie(
+                    controller: controller.chewieController!,
+                    key: ValueKey('live_video_${widget.streamId}'),
+                  ),
+                  Obx(() {
+                    if (PremiumService.to.isPremium.value) return const SizedBox.shrink();
+                    return const Positioned(
+                      bottom: 56,
+                      right: 12,
+                      child: IgnorePointer(
+                        child: Opacity(
+                          opacity: 0.5,
+                          child: Text(
+                            'LabbyTV',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              shadows: [Shadow(color: Colors.black, blurRadius: 4)],
                             ),
                           ),
                         ),
-                      );
-                    }),
-                  ],
-                ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            );
+
+            // Fill the dead space below the video in portrait mode with a
+            // scrollable EPG — Premium only, both to match the client's
+            // ask and because each visible row fires its own EPG request
+            // (see LiveTvNowPlayingCache) and there's no reason to add that
+            // load for users who can't see it anyway.
+            final isPortrait =
+                MediaQuery.of(context).orientation == Orientation.portrait;
+            if (isPortrait && PremiumService.to.isPremium.value) {
+              return Column(
+                children: [
+                  videoPlayer,
+                  Expanded(child: _buildPortraitEpgList()),
+                ],
               );
             }
 
-            return Column(
+            return Center(child: videoPlayer);
+          }
+
+          return Center(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.signal_wifi_connected_no_internet_4_rounded, color: Colors.redAccent, size: 56),
@@ -188,11 +210,51 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                   label: const Text('Try Again', style: TextStyle(color: AppColors.red, fontSize: 15)),
                 ),
               ],
-            );
-          }),
-        ),
+            ),
+          );
+        }),
       ),
     );
+  }
+
+  /// Scrollable "what's on" list shown below the video in portrait mode,
+  /// reusing whatever channel list is already loaded on the Live TV tab
+  /// rather than re-fetching. Tapping a channel replaces this screen with
+  /// a fresh player for that channel — simplest safe way to switch without
+  /// having to keep this screen's AppBar/state in sync with an in-place
+  /// controller swap.
+  Widget _buildPortraitEpgList() {
+    if (!Get.isRegistered<LiveTvController>()) return const SizedBox.shrink();
+    final liveTvCtrl = Get.find<LiveTvController>();
+
+    return Obx(() {
+      final channels = liveTvCtrl.liveTvList;
+      if (channels.isEmpty) return const SizedBox.shrink();
+
+      return ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: channels.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          final channel = channels[index];
+          return LiveTvEpgRow(
+            streamId: channel.streamId,
+            channelName: channel.name,
+            channelLogo: channel.streamIcon,
+            onTap: () {
+              if (channel.streamId == widget.streamId) return;
+              Get.off(
+                () => LiveVideoPlayScreen(
+                  streamId: channel.streamId,
+                  channelName: channel.name,
+                  channelLogo: channel.streamIcon,
+                ),
+              );
+            },
+          );
+        },
+      );
+    });
   }
 
   void _showSettingsDialog(BuildContext context) {

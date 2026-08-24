@@ -12,6 +12,7 @@ import '../../epg/models/epg_program_model.dart';
 import '../../genre/controllers/genre_controller.dart';
 import '../../genre/screens/category_selection_screen.dart';
 import '../../playlist/models/server_request_model.dart';
+import '../../epg/widgets/live_tv_epg_row.dart';
 import '../../search/controllers/search_controller.dart';
 import '../../search/screens/search_screen.dart';
 import '../../video/screens/live_video_play_screen.dart';
