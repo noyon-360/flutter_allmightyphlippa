@@ -491,7 +491,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
+                                                  CrossAxisAlignment.stretch,
                                               children: [
                                                 Obx(
                                                   () => Icon(
@@ -502,7 +502,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                                     size: 28,
                                                   ),
                                                 ),
-                                                const SizedBox(height: 4),
+                                                // const SizedBox(height: 4),
                                                 const Text(
                                                   "Favourite",
                                                   style: TextStyle(
@@ -539,17 +539,19 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
+                                                    CrossAxisAlignment.stretch,
                                                 children: [
-                                                  DownloadButton(
-                                                    videoId: vid,
-                                                    videoType: vtype,
-                                                    title: controller.title,
-                                                    url: url,
-                                                    ext: controller.currentExt,
-                                                    thumbnail: controller
-                                                        .currentThumbnail,
-                                                    iconSize: 28,
+                                                  Center(
+                                                    child: DownloadButton(
+                                                      videoId: vid,
+                                                      videoType: vtype,
+                                                      title: controller.title,
+                                                      url: url,
+                                                      ext: controller.currentExt,
+                                                      thumbnail: controller
+                                                          .currentThumbnail,
+                                                      iconSize: 28,
+                                                    ),
                                                   ),
                                                   const Text(
                                                     'Download',
@@ -564,6 +566,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                             ),
                                           );
                                         }),
+                                      
                                       ],
                                     ),
                                   ),

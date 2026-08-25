@@ -72,14 +72,8 @@ class DownloadButton extends StatelessWidget {
         );
       }
 
-      return IconButton(
-        icon: Icon(
-          Icons.download_outlined,
-          // color: Colors.white70,
-          size: iconSize,
-        ),
-        tooltip: 'Download for offline',
-        onPressed: () => ctrl.download(
+      return GestureDetector(
+        onTap: () => ctrl.download(
           videoId: videoId,
           videoType: videoType,
           title: title,
@@ -87,8 +81,11 @@ class DownloadButton extends StatelessWidget {
           ext: ext,
           thumbnail: thumbnail,
         ),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
+        child: Icon(
+          Icons.download_outlined,
+          // color: Colors.white70,
+          size: iconSize,
+        ),
       );
     });
   }
