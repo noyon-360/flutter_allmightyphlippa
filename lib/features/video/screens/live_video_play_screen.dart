@@ -33,21 +33,32 @@ class LiveVideoPlayScreen extends StatefulWidget {
 
 class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     with WidgetsBindingObserver {
-  final controller = Get.put(LiveVideoPlayController());
+  // Tagged uniquely per screen instance — switching channels replaces this
+  // screen with a new one of the same type, and an untagged Get.put/delete
+  // pair would race: the new screen's put() overwrites the old screen's
+  // registry entry before the old screen's dispose() runs, so the old
+  // screen's delete() ends up tearing down the *new* screen's controller.
+  final String _controllerTag = UniqueKey().toString();
+  late final LiveVideoPlayController controller;
   final CastService _castService = Get.find<CastService>();
+  final ScrollController _epgScrollController = ScrollController();
+  bool _showBackToTop = false;
 
   late final PiPService _pipService;
 
   @override
   void initState() {
     super.initState();
+    controller = Get.put(LiveVideoPlayController(), tag: _controllerTag);
     WidgetsBinding.instance.addObserver(this);
+    _epgScrollController.addListener(_onEpgScroll);
     _pipService = PiPService();
     _pipService.initialize().then((_) {
       if (mounted) setState(() {});
     });
     // Pause local playback while casting, resume when the cast ends.
-    _castService.onCastStarted = () => controller.videoPlayerController?.pause();
+    _castService.onCastStarted = () =>
+        controller.videoPlayerController?.pause();
     _castService.onCastStopped = () {
       if (mounted) controller.videoPlayerController?.play();
     };
@@ -74,12 +85,32 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
 
   @override
   void dispose() {
+    _epgScrollController.dispose();
     _pipService.dispose();
     _castService.onCastStarted = null;
     _castService.onCastStopped = null;
     WidgetsBinding.instance.removeObserver(this);
-    Get.delete<LiveVideoPlayController>();
+    Get.delete<LiveVideoPlayController>(tag: _controllerTag);
     super.dispose();
+  }
+
+  void _onEpgScroll() {
+    // Scroll to Top visibility
+    if (_epgScrollController.offset >= 400 && !_showBackToTop) {
+      setState(() {
+        _showBackToTop = true;
+      });
+    } else if (_epgScrollController.offset < 400 && _showBackToTop) {
+      setState(() {
+        _showBackToTop = false;
+      });
+    }
+
+    if (!Get.isRegistered<LiveTvController>()) return;
+    if (_epgScrollController.position.pixels >=
+        _epgScrollController.position.maxScrollExtent - 200) {
+      Get.find<LiveTvController>().getLiveTvList(isLoadMore: true);
+    }
   }
 
   @override
@@ -106,7 +137,10 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
           // ),
           if (_pipService.isAvailable)
             IconButton(
-              icon: const Icon(Icons.picture_in_picture_alt, color: Colors.white),
+              icon: const Icon(
+                Icons.picture_in_picture_alt,
+                color: Colors.white,
+              ),
               onPressed: () => _pipService.enable(),
             ),
           IconButton(
@@ -119,100 +153,145 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
         width: MediaQuery.of(context).size.width,
         color: Colors.black,
         child: Obx(() {
-          if (controller.isLoading.value) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: AppColors.red),
-                  SizedBox(height: 16),
-                  Text(
-                    'Fetching Stream...',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+          final videoArea = _buildVideoArea();
+
+          // Fill the dead space below the video in portrait mode with a
+          // scrollable EPG — Premium only, both to match the client's
+          // ask and because each visible row fires its own EPG request
+          // (see LiveTvNowPlayingCache) and there's no reason to add that
+          // load for users who can't see it anyway. Kept mounted across
+          // loading/error/playing so switching channels only swaps the
+          // video area instead of blanking the whole page.
+          final isPortrait =
+              MediaQuery.of(context).orientation == Orientation.portrait;
+          if (isPortrait && PremiumService.to.isPremium.value) {
+            return Column(
+              children: [
+                videoArea,
+                Expanded(child: _buildPortraitEpgList()),
+              ],
             );
           }
 
-          if (controller.isVideoInitialized.value &&
-              controller.chewieController != null) {
-            final videoPlayer = AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                children: [
-                  Chewie(
-                    controller: controller.chewieController!,
-                    key: ValueKey('live_video_${widget.streamId}'),
-                  ),
-                  Obx(() {
-                    if (PremiumService.to.isPremium.value) return const SizedBox.shrink();
-                    return const Positioned(
-                      bottom: 56,
-                      right: 12,
-                      child: IgnorePointer(
-                        child: Opacity(
-                          opacity: 0.5,
-                          child: Text(
-                            'LabbyTV',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            );
+          return Center(child: videoArea);
+        }),
+      ),
+      floatingActionButton: _showBackToTop
+          ? FloatingActionButton(
+              onPressed: () {
+                _epgScrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                );
+              },
+              backgroundColor: AppColors.red,
+              mini: true,
+              child: const Icon(Icons.arrow_upward, color: Colors.white),
+            )
+          : null,
+    );
+  }
 
-            // Fill the dead space below the video in portrait mode with a
-            // scrollable EPG — Premium only, both to match the client's
-            // ask and because each visible row fires its own EPG request
-            // (see LiveTvNowPlayingCache) and there's no reason to add that
-            // load for users who can't see it anyway.
-            final isPortrait =
-                MediaQuery.of(context).orientation == Orientation.portrait;
-            if (isPortrait && PremiumService.to.isPremium.value) {
-              return Column(
-                children: [
-                  videoPlayer,
-                  Expanded(child: _buildPortraitEpgList()),
-                ],
-              );
-            }
-
-            return Center(child: videoPlayer);
-          }
-
-          return Center(
+  /// The 16:9 video slot — loading spinner, the player, or an error state,
+  /// always the same size/position so switching channels (which recreates
+  /// this whole screen) only swaps this area instead of blanking the page.
+  Widget _buildVideoArea() {
+    if (controller.isLoading.value) {
+      return const AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ColoredBox(
+          color: Colors.black,
+          child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.signal_wifi_connected_no_internet_4_rounded, color: Colors.redAccent, size: 56),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    controller.errorMessage.value ?? 'Failed to load stream.',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.5),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                TextButton.icon(
-                  onPressed: () => controller.initializeLiveVideo(streamId: widget.streamId),
-                  icon: const Icon(Icons.refresh, color: AppColors.red),
-                  label: const Text('Try Again', style: TextStyle(color: AppColors.red, fontSize: 15)),
+                CircularProgressIndicator(color: AppColors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Fetching Stream...',
+                  style: TextStyle(color: Colors.white),
                 ),
               ],
             ),
-          );
-        }),
+          ),
+        ),
+      );
+    }
+
+    if (controller.isVideoInitialized.value &&
+        controller.chewieController != null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Stack(
+          children: [
+            Chewie(
+              controller: controller.chewieController!,
+              key: ValueKey('live_video_${widget.streamId}'),
+            ),
+            Obx(() {
+              if (PremiumService.to.isPremium.value) {
+                return const SizedBox.shrink();
+              }
+              return const Positioned(
+                bottom: 56,
+                right: 12,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: 0.5,
+                    child: Text(
+                      'LabbyTV',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      );
+    }
+
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: ColoredBox(
+        color: Colors.black,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.signal_wifi_connected_no_internet_4_rounded,
+                  color: Colors.redAccent,
+                  size: 40,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  controller.errorMessage.value ?? 'Failed to load stream.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed: () =>
+                      controller.initializeLiveVideo(streamId: widget.streamId),
+                  icon: const Icon(Icons.refresh, color: AppColors.red),
+                  label: const Text(
+                    'Try Again',
+                    style: TextStyle(color: AppColors.red, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -232,10 +311,27 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
       if (channels.isEmpty) return const SizedBox.shrink();
 
       return ListView.separated(
+        controller: _epgScrollController,
         padding: const EdgeInsets.all(16),
-        itemCount: channels.length,
+        itemCount: channels.length + (liveTvCtrl.isMoreLoading.value ? 1 : 0),
         separatorBuilder: (context, index) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
+          if (index >= channels.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: AppColors.red,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+            );
+          }
+
           final channel = channels[index];
           return LiveTvEpgRow(
             streamId: channel.streamId,
@@ -249,6 +345,14 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                   channelName: channel.name,
                   channelLogo: channel.streamIcon,
                 ),
+                // LiveVideoPlayScreen isn't a named route, so GetX derives
+                // the route name from the widget type — every channel
+                // produces the same generated name. With the default
+                // preventDuplicates:true, GetX sees that name matching the
+                // current route and silently no-ops the navigation, so
+                // switching to another channel from within this screen
+                // never happened.
+                preventDuplicates: false,
               );
             },
           );
@@ -326,12 +430,14 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                         // Google Cast
                         _buildSettingRow(
                           label: "Google Cast",
-                          value: Obx(() => Text(
-                            _castService.isCasting.value
-                                ? "Connected"
-                                : "Off",
-                            style: const TextStyle(color: Colors.white),
-                          )),
+                          value: Obx(
+                            () => Text(
+                              _castService.isCasting.value
+                                  ? "Connected"
+                                  : "Off",
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
                           onTap: () {
                             if (_castService.isCasting.value) {
                               _castService.stopCasting();
@@ -565,7 +671,10 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                             onTap: () async {
                               final url = controller.currentPlayUrl;
                               if (url == null || url.isEmpty) {
-                                Get.snackbar('Cast', 'No video is currently playing.');
+                                Get.snackbar(
+                                  'Cast',
+                                  'No video is currently playing.',
+                                );
                                 return;
                               }
                               try {
@@ -577,7 +686,10 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                                 if (ctx.mounted) Navigator.pop(ctx);
                               } catch (_) {
                                 if (ctx.mounted) Navigator.pop(ctx);
-                                Get.snackbar('Cast', 'Failed to connect to ${device.name}.');
+                                Get.snackbar(
+                                  'Cast',
+                                  'Failed to connect to ${device.name}.',
+                                );
                               }
                             },
                             child: Padding(
@@ -587,7 +699,11 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.tv, color: Colors.white, size: 22),
+                                  const Icon(
+                                    Icons.tv,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Text(
@@ -602,7 +718,8 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                                   ),
                                   Obx(() {
                                     if (_castService.isConnecting.value &&
-                                        _castService.connectedDevice.value == device) {
+                                        _castService.connectedDevice.value ==
+                                            device) {
                                       return const SizedBox(
                                         width: 18,
                                         height: 18,

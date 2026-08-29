@@ -12,7 +12,6 @@ import '../../epg/models/epg_program_model.dart';
 import '../../genre/controllers/genre_controller.dart';
 import '../../genre/screens/category_selection_screen.dart';
 import '../../playlist/models/server_request_model.dart';
-import '../../epg/widgets/live_tv_epg_row.dart';
 import '../../search/controllers/search_controller.dart';
 import '../../search/screens/search_screen.dart';
 import '../../video/screens/live_video_play_screen.dart';
@@ -76,7 +75,12 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
     );
   }
 
-  void _showEpgSheet(BuildContext context, int streamId, String channelName) {
+  void _showEpgSheet(
+    BuildContext context,
+    int streamId,
+    String channelName,
+    String channelLogo,
+  ) {
     final epgCtrl = EpgController.to;
     epgCtrl.fetchEpg(streamId);
 
@@ -157,8 +161,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       final program = epgCtrl.programs[index];
                       return _EpgProgramTile(
                         program: program,
+                        streamId: streamId,
                         channelId: streamId.toString(),
                         channelName: channelName,
+                        channelLogo: channelLogo,
                         epgCtrl: epgCtrl,
                       );
                     },
@@ -360,151 +366,155 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                         await liveTvCtrl.getLiveTvList();
                       },
                       color: AppColors.red,
-                      child: ListView(
-                        children: [_buildLiveTvEmptyOrError()],
-                      ),
+                      child: ListView(children: [_buildLiveTvEmptyOrError()]),
                     )
                   : RefreshIndicator.adaptive(
-                onRefresh: () async {
-                  await liveTvCtrl.getLiveTvList();
-                },
-                color: AppColors.red,
-                child: GridView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    childAspectRatio: 1.5,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount:
-                      liveTvCtrl.liveTvList.length +
-                      (liveTvCtrl.isMoreLoading.value ? crossAxisCount : 0),
-                  itemBuilder: (context, index) {
-                    if (index >= liveTvCtrl.liveTvList.length) {
-                      return _buildSingleShimmerItem();
-                    }
-
-                    final channel = liveTvCtrl.liveTvList[index];
-                    return TvFocusWrapper(
-                      onTap: () {
-                        // Live video play screen
-                        Get.to(
-                          () => LiveVideoPlayScreen(
-                            streamId: channel.streamId,
-                            channelName: channel.name,
-                            channelLogo: channel.streamIcon,
-                          ),
-                        );
+                      onRefresh: () async {
+                        await liveTvCtrl.getLiveTvList();
                       },
-                      borderRadius: 12,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.containerBgColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primaryWhite.withOpacity(0.05),
-                          ),
+                      color: AppColors.red,
+                      child: GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: 1.5,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(
-                          children: [
-                            // Background/Icon
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: channel.streamIcon.isNotEmpty
-                                    ? Image.network(
-                                        channel.streamIcon,
-                                        fit: BoxFit.contain,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return const Icon(
-                                                Icons.tv,
-                                                color: AppColors.iconColor,
-                                                size: 40,
-                                              );
-                                            },
-                                      )
-                                    : const Icon(
-                                        Icons.tv,
-                                        color: AppColors.iconColor,
-                                        size: 40,
-                                      ),
-                              ),
-                            ),
+                        itemCount:
+                            liveTvCtrl.liveTvList.length +
+                            (liveTvCtrl.isMoreLoading.value
+                                ? crossAxisCount
+                                : 0),
+                        itemBuilder: (context, index) {
+                          if (index >= liveTvCtrl.liveTvList.length) {
+                            return _buildSingleShimmerItem();
+                          }
 
-                            // Bottom Overlay for Name
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.bottomCenter,
-                                    end: Alignment.topCenter,
-                                    colors: [
-                                      Colors.black.withValues(alpha: 0.8),
-                                      Colors.transparent,
-                                    ],
+                          final channel = liveTvCtrl.liveTvList[index];
+                          return TvFocusWrapper(
+                            onTap: () {
+                              // Live video play screen
+                              Get.to(
+                                () => LiveVideoPlayScreen(
+                                  streamId: channel.streamId,
+                                  channelName: channel.name,
+                                  channelLogo: channel.streamIcon,
+                                ),
+                              );
+                            },
+                            borderRadius: 12,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.containerBgColor,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primaryWhite.withOpacity(
+                                    0.05,
                                   ),
                                 ),
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  channel.name,
-                                  style: const TextStyle(
-                                    color: AppColors.primaryWhite,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                children: [
+                                  // Background/Icon
+                                  Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(20.0),
+                                      child: channel.streamIcon.isNotEmpty
+                                          ? Image.network(
+                                              channel.streamIcon,
+                                              fit: BoxFit.contain,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return const Icon(
+                                                      Icons.tv,
+                                                      color:
+                                                          AppColors.iconColor,
+                                                      size: 40,
+                                                    );
+                                                  },
+                                            )
+                                          : const Icon(
+                                              Icons.tv,
+                                              color: AppColors.iconColor,
+                                              size: 40,
+                                            ),
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                ),
+
+                                  // Bottom Overlay for Name
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.bottomCenter,
+                                          end: Alignment.topCenter,
+                                          colors: [
+                                            Colors.black.withValues(alpha: 0.8),
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        channel.name,
+                                        style: const TextStyle(
+                                          color: AppColors.primaryWhite,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+
+                                  // EPG bell — premium only
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Obx(() {
+                                      if (!PremiumService.to.isPremium.value) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return GestureDetector(
+                                        onTap: () => _showEpgSheet(
+                                          context,
+                                          channel.streamId,
+                                          channel.name,
+                                          channel.streamIcon,
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.55,
+                                            ),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.notifications_none,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                ],
                               ),
                             ),
-
-                            // EPG bell — premium only
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Obx(() {
-                                if (!PremiumService.to.isPremium.value) {
-                                  return const SizedBox.shrink();
-                                }
-                                return GestureDetector(
-                                  onTap: () => _showEpgSheet(
-                                    context,
-                                    channel.streamId,
-                                    channel.name,
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.55,
-                                      ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.notifications_none,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-              ),
+                    ),
             ),
           ],
         );
@@ -592,14 +602,18 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
 class _EpgProgramTile extends StatelessWidget {
   final EpgProgramModel program;
+  final int streamId;
   final String channelId;
   final String channelName;
+  final String channelLogo;
   final EpgController epgCtrl;
 
   const _EpgProgramTile({
     required this.program,
+    required this.streamId,
     required this.channelId,
     required this.channelName,
+    required this.channelLogo,
     required this.epgCtrl,
   });
 
@@ -611,80 +625,92 @@ class _EpgProgramTile extends StatelessWidget {
         (program.startTime.isBefore(DateTime.now()) &&
             program.endTime.isAfter(DateTime.now()));
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 44,
-            child: Text(
-              timeStr,
-              style: TextStyle(
-                color: isNow ? AppColors.red : Colors.white54,
-                fontSize: 12,
-                fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
+    return TvFocusWrapper(
+      onTap: () {
+        Navigator.of(context).pop();
+        Get.to(
+          () => LiveVideoPlayScreen(
+            streamId: streamId,
+            channelName: channelName,
+            channelLogo: channelLogo,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 44,
+              child: Text(
+                timeStr,
+                style: TextStyle(
+                  color: isNow ? AppColors.red : Colors.white54,
+                  fontSize: 12,
+                  fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
-          ),
-          if (isNow)
-            Container(
-              width: 3,
-              height: 36,
-              margin: const EdgeInsets.only(right: 10),
-              decoration: BoxDecoration(
-                color: AppColors.red,
-                borderRadius: BorderRadius.circular(2),
+            if (isNow)
+              Container(
+                width: 3,
+                height: 36,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.red,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              )
+            else
+              const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    program.title,
+                    style: TextStyle(
+                      color: isNow ? Colors.white : Colors.white70,
+                      fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (isNow)
+                    const Text(
+                      'Now Playing',
+                      style: TextStyle(color: AppColors.red, fontSize: 11),
+                    ),
+                ],
               ),
-            )
-          else
-            const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  program.title,
-                  style: TextStyle(
-                    color: isNow ? Colors.white : Colors.white70,
-                    fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 14,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (isNow)
-                  const Text(
-                    'Now Playing',
-                    style: TextStyle(color: AppColors.red, fontSize: 11),
-                  ),
-              ],
             ),
-          ),
-          if (program.isFuture)
-            Obx(() {
-              final hasReminder = epgCtrl.hasReminder(program, channelId);
-              return GestureDetector(
-                onTap: hasReminder
-                    ? null
-                    : () => epgCtrl.setReminder(
-                        channelId: channelId,
-                        channelName: channelName,
-                        program: program,
-                      ),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(
-                    hasReminder
-                        ? Icons.notifications_active
-                        : Icons.notifications_none,
-                    color: hasReminder ? AppColors.red : Colors.white38,
-                    size: 20,
+            if (program.isFuture)
+              Obx(() {
+                final hasReminder = epgCtrl.hasReminder(program, channelId);
+                return GestureDetector(
+                  onTap: hasReminder
+                      ? null
+                      : () => epgCtrl.setReminder(
+                          channelId: channelId,
+                          channelName: channelName,
+                          program: program,
+                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      hasReminder
+                          ? Icons.notifications_active
+                          : Icons.notifications_none,
+                      color: hasReminder ? AppColors.red : Colors.white38,
+                      size: 20,
+                    ),
                   ),
-                ),
-              );
-            }),
-        ],
+                );
+              }),
+          ],
+        ),
       ),
     );
   }

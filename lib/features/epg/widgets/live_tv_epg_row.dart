@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../video/screens/live_video_play_screen.dart';
 import '../services/live_tv_now_playing_cache.dart';
 
 /// A single Live TV channel row showing the channel logo/name plus whatever
@@ -41,6 +42,16 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
 
     return TvFocusWrapper(
       onTap: widget.onTap,
+      // onTap: () => {
+      //   l.streamId == widget.streamId) return;
+      //         // Get.off(
+      //         //   () => LiveVideoPlayScreen(
+      //         //     streamId: widget.streamId,
+      //         //     channelName: widget.channelName,
+      //         //     channelLogo: widget.channelLogo,
+      //         //   ),
+      //         // )
+      // },
       borderRadius: 12,
       child: Container(
         padding: const EdgeInsets.all(10),
