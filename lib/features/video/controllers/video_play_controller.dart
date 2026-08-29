@@ -35,6 +35,7 @@ class VideoPlayController extends GetxController {
   // Track which season's episode folder is currently open in the episode list
   final selectedSeason = Rxn<String>();
   final isLoved = false.obs;
+  final isTogglingFavorite = false.obs;
 
   final playbackSpeed = 1.0.obs;
   final availableSpeeds = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
@@ -57,6 +58,10 @@ class VideoPlayController extends GetxController {
   String? _currentVideoId;
   String? _currentVideoType;
   String? _currentPlayUrl;
+  // Series are favourited at the show level, not per-episode, so this is
+  // tracked separately from _currentVideoId (which becomes the episode id
+  // once playback starts and is used for progress/downloads).
+  int? _seriesStreamId;
 
   /// The URL currently loaded into the player — used by iOS PiP fallback.
   String? get currentPlayUrl => _currentPlayUrl;
@@ -248,6 +253,8 @@ class VideoPlayController extends GetxController {
     currentType.value = type;
     currentEpisode.value = null;
     hasStartedPlaying.value = autoPlay;
+    isLoved.value = false;
+    _seriesStreamId = null;
 
     // Reset settings
     playbackSpeed.value = 1.0;
@@ -340,6 +347,17 @@ class VideoPlayController extends GetxController {
     // flight, or indefinitely if this fetch fails.
     seriesCtrl.singleSeries.value = null;
     selectedSeason.value = null;
+    _seriesStreamId = streamId;
+
+    // Favourite status is tracked at the series level, so fetch it here
+    // rather than waiting for an episode to start playing.
+    final statusResult = await videoStatusRepo.getVideoStatus(
+      streamId.toString(),
+    );
+    if (statusResult.isRight()) {
+      final status = statusResult.getOrElse(() => throw Exception());
+      isLoved.value = status.data.isLoved;
+    }
 
     // Fetch details
     await seriesCtrl.getSeriesDetails(streamId: streamId);
@@ -424,7 +442,12 @@ class VideoPlayController extends GetxController {
           //   (item) => item.videoId == _currentVideoId,
           // );
 
-          isLoved.value = historyItem.isLoved;
+          // Series favourite status is tracked at the show level (set in
+          // _loadSeries) and must not be overwritten by an individual
+          // episode's status record.
+          if (_currentVideoType == 'movie') {
+            isLoved.value = historyItem.isLoved;
+          }
 
           if (!historyItem.isCompleted && historyItem.currentTime > 0) {
             // Check if the video is nearly at the end
@@ -449,7 +472,9 @@ class VideoPlayController extends GetxController {
           }
         } else {
           startPosition = Duration.zero;
-          isLoved.value = false;
+          if (_currentVideoType == 'movie') {
+            isLoved.value = false;
+          }
         }
       }
 
@@ -512,21 +537,58 @@ class VideoPlayController extends GetxController {
   }
 
   Future<void> toggleFavorite() async {
-    if (_currentVideoId == null || _currentVideoType == null) return;
+    // Ignore taps while a request is already in flight instead of letting
+    // a slow connection queue up multiple conflicting toggles.
+    if (isTogglingFavorite.value) return;
 
-    final result = await videoStatusRepo.updateVideoStatus(
-      UpdateVideoStatusRequest(
-        title: title,
-        videoId: _currentVideoId!,
-        videoType: _currentVideoType!,
-        isLoved: !isLoved.value,
-      ),
-    );
-    if (result.isRight()) {
-      isLoved.value = !isLoved.value;
-      if (Get.isRegistered<WatchHistoryService>()) {
-        Get.find<WatchHistoryService>().refreshList();
+    // Series are favourited at the show level, using the series streamId,
+    // rather than the currently playing episode's id.
+    final isSeries = currentType.value == ServerType.series;
+    final favoriteVideoId = isSeries
+        ? _seriesStreamId?.toString()
+        : _currentVideoId;
+    final favoriteVideoType = isSeries ? 'series' : _currentVideoType;
+    if (favoriteVideoId == null || favoriteVideoType == null) return;
+    // Use the show's own name/cover, not the currently playing episode's
+    // title (`title`/`currentThumbnail` reflect the episode once one is
+    // playing, and may not be set at all if playback hasn't started yet).
+    final favoriteTitle = isSeries
+        ? (seriesCtrl.singleSeries.value?.data?.info?.name ?? title)
+        : title;
+    final favoriteThumbnail = isSeries
+        ? seriesCtrl.singleSeries.value?.data?.info?.cover
+        : movieCtrl.movie.value?.streamData.info.movieImage;
+
+    // Optimistically flip the icon so the UI feels instant even on a slow
+    // connection; roll back if the request ends up failing.
+    final previousValue = isLoved.value;
+    final newValue = !previousValue;
+    isLoved.value = newValue;
+    isTogglingFavorite.value = true;
+
+    try {
+      final result = await videoStatusRepo.updateVideoStatus(
+        UpdateVideoStatusRequest(
+          title: favoriteTitle,
+          videoId: favoriteVideoId,
+          videoType: favoriteVideoType,
+          thumbnail: favoriteThumbnail,
+          isLoved: newValue,
+        ),
+      );
+      if (result.isRight()) {
+        if (Get.isRegistered<WatchHistoryService>()) {
+          Get.find<WatchHistoryService>().refreshList();
+        }
+      } else {
+        isLoved.value = previousValue;
+        Get.snackbar(
+          'Favourite',
+          'Could not update favourite. Please check your connection and try again.',
+        );
       }
+    } finally {
+      isTogglingFavorite.value = false;
     }
   }
 

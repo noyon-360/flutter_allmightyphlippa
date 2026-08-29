@@ -494,12 +494,23 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                                   CrossAxisAlignment.stretch,
                                               children: [
                                                 Obx(
-                                                  () => Icon(
-                                                    controller.isLoved.value
-                                                        ? Icons.favorite
-                                                        : Icons.favorite_border,
-                                                    color: Colors.white,
-                                                    size: 28,
+                                                  () => AnimatedOpacity(
+                                                    opacity: controller
+                                                            .isTogglingFavorite
+                                                            .value
+                                                        ? 0.5
+                                                        : 1.0,
+                                                    duration: const Duration(
+                                                      milliseconds: 150,
+                                                    ),
+                                                    child: Icon(
+                                                      controller.isLoved.value
+                                                          ? Icons.favorite
+                                                          : Icons
+                                                                .favorite_border,
+                                                      color: Colors.white,
+                                                      size: 28,
+                                                    ),
                                                   ),
                                                 ),
                                                 // const SizedBox(height: 4),
