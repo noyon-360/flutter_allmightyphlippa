@@ -241,12 +241,24 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 normal: const MaterialVideoControlsThemeData(
                                   buttonBarHeight: 48.0,
                                   controlsHoverDuration: Duration(seconds: 10),
+                                  seekOnDoubleTap: true,
+                                  seekOnDoubleTapBackwardDuration: Duration(
+                                    seconds: 10,
+                                  ),
+                                  seekOnDoubleTapForwardDuration: Duration(
+                                    seconds: 10,
+                                  ),
                                 ),
                                 fullscreen:
                                     const MaterialVideoControlsThemeData(
                                       controlsHoverDuration: Duration(
                                         seconds: 10,
                                       ),
+                                      seekOnDoubleTap: true,
+                                      seekOnDoubleTapBackwardDuration:
+                                          Duration(seconds: 10),
+                                      seekOnDoubleTapForwardDuration:
+                                          Duration(seconds: 10),
                                     ),
                                 child: Focus(
                                   autofocus: true,

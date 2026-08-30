@@ -1,9 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
-import 'package:chewie/chewie.dart';
+import 'package:video_player/video_player.dart';
 import '../../../core/services/airplay_service.dart';
 import '../../../core/services/premium_service.dart';
 
@@ -11,9 +12,14 @@ import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/cast_service.dart';
 import '../../../core/services/pip_service.dart';
-import '../../epg/widgets/live_tv_epg_row.dart';
+import '../../epg/controllers/epg_timeline_controller.dart';
+import '../../epg/widgets/epg_timeline_channel_row.dart';
+import '../../epg/widgets/epg_timeline_day_nav.dart';
+import '../../epg/widgets/epg_timeline_ruler.dart';
 import '../../tv/controllers/live_tv_controller.dart';
+import '../../tv/models/live_tv_reponse_model.dart';
 import '../controllers/live_video_play_controller.dart';
+import '../widgets/live_video_controls.dart';
 
 class LiveVideoPlayScreen extends StatefulWidget {
   final int streamId;
@@ -43,6 +49,7 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   final CastService _castService = Get.find<CastService>();
   final ScrollController _epgScrollController = ScrollController();
   bool _showBackToTop = false;
+  bool _isFullScreen = false;
 
   late final PiPService _pipService;
 
@@ -85,6 +92,12 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
 
   @override
   void dispose() {
+    // Safety net: if this screen is torn down while still in fullscreen
+    // (e.g. the user switches channels, or backgrounds the app instead of
+    // using the back gesture), the orientation lock/immersive UI must not
+    // leak into the rest of the app — always restore, not just on the
+    // explicit exit-fullscreen path.
+    if (_isFullScreen) _restoreSystemChrome();
     _epgScrollController.dispose();
     _pipService.dispose();
     _castService.onCastStarted = null;
@@ -92,6 +105,36 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     WidgetsBinding.instance.removeObserver(this);
     Get.delete<LiveVideoPlayController>(tag: _controllerTag);
     super.dispose();
+  }
+
+  void _enterFullScreen() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    setState(() => _isFullScreen = true);
+  }
+
+  void _restoreSystemChrome() {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.edgeToEdge,
+      overlays: SystemUiOverlay.values,
+    );
+  }
+
+  void _exitFullScreen() {
+    _restoreSystemChrome();
+    if (mounted) setState(() => _isFullScreen = false);
+  }
+
+  void _toggleFullScreen() {
+    if (_isFullScreen) {
+      _exitFullScreen();
+    } else {
+      _enterFullScreen();
+    }
   }
 
   void _onEpgScroll() {
@@ -115,50 +158,65 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Temporarily disabled PiPSwitcher to debug blank screen issue
-    return _buildMainContent(context);
+    // While fullscreen, the back gesture/button must exit fullscreen
+    // (restoring orientation + system UI) instead of popping this screen —
+    // otherwise backing out mid-fullscreen leaves the whole app stuck in a
+    // locked landscape orientation with the system bars still hidden.
+    return PopScope(
+      canPop: !_isFullScreen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isFullScreen) _exitFullScreen();
+      },
+      child: _buildMainContent(context),
+    );
   }
 
   Widget _buildMainContent(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primaryBlack,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: Text(
-          widget.channelName,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
-        ),
-        actions: [
-          // CastAirPlayButtons(
-          //   currentUrl: () => controller.currentPlayUrl,
-          //   title: () => widget.channelName,
-          // ),
-          if (_pipService.isAvailable)
-            IconButton(
-              icon: const Icon(
-                Icons.picture_in_picture_alt,
-                color: Colors.white,
+      appBar: _isFullScreen
+          ? null
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: const BackButton(color: Colors.white),
+              title: Text(
+                widget.channelName,
+                style: const TextStyle(color: Colors.white, fontSize: 18),
               ),
-              onPressed: () => _pipService.enable(),
+              actions: [
+                // CastAirPlayButtons(
+                //   currentUrl: () => controller.currentPlayUrl,
+                //   title: () => widget.channelName,
+                // ),
+                if (_pipService.isAvailable)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.picture_in_picture_alt,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => _pipService.enable(),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.settings, color: Colors.white),
+                  onPressed: () => _showSettingsDialog(context),
+                ),
+              ],
             ),
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () => _showSettingsDialog(context),
-          ),
-        ],
-      ),
       body: Container(
         width: MediaQuery.of(context).size.width,
         color: Colors.black,
         child: Obx(() {
           final videoArea = _buildVideoArea();
 
+          if (_isFullScreen) {
+            return Center(child: videoArea);
+          }
+
           // Fill the dead space below the video in portrait mode with a
-          // scrollable EPG — Premium only, both to match the client's
+          // scrollable EPG guide — Premium only, both to match the client's
           // ask and because each visible row fires its own EPG request
-          // (see LiveTvNowPlayingCache) and there's no reason to add that
+          // (see EpgTimelineCache) and there's no reason to add that
           // load for users who can't see it anyway. Kept mounted across
           // loading/error/playing so switching channels only swaps the
           // video area instead of blanking the whole page.
@@ -176,7 +234,7 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
           return Center(child: videoArea);
         }),
       ),
-      floatingActionButton: _showBackToTop
+      floatingActionButton: (_showBackToTop && !_isFullScreen)
           ? FloatingActionButton(
               onPressed: () {
                 _epgScrollController.animateTo(
@@ -220,14 +278,19 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     }
 
     if (controller.isVideoInitialized.value &&
-        controller.chewieController != null) {
+        controller.videoPlayerController != null) {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: Stack(
+          key: ValueKey('live_video_${widget.streamId}'),
           children: [
-            Chewie(
-              controller: controller.chewieController!,
-              key: ValueKey('live_video_${widget.streamId}'),
+            VideoPlayer(controller.videoPlayerController!),
+            LiveVideoControls(
+              streamId: widget.streamId,
+              channelName: widget.channelName,
+              videoController: controller.videoPlayerController!,
+              isFullScreen: _isFullScreen,
+              onToggleFullScreen: _toggleFullScreen,
             ),
             Obx(() {
               if (PremiumService.to.isPremium.value) {
@@ -296,67 +359,89 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     );
   }
 
-  /// Scrollable "what's on" list shown below the video in portrait mode,
-  /// reusing whatever channel list is already loaded on the Live TV tab
-  /// rather than re-fetching. Tapping a channel replaces this screen with
-  /// a fresh player for that channel — simplest safe way to switch without
-  /// having to keep this screen's AppBar/state in sync with an in-place
-  /// controller swap.
+  /// EPG guide shown below the video in portrait mode: a shared time ruler
+  /// above a vertically-scrolling grid of channel rows, each a horizontal
+  /// strip of previously-aired/current/upcoming program blocks. Reuses
+  /// whatever channel list is already loaded on the Live TV tab rather than
+  /// re-fetching. Tapping a channel replaces this screen with a fresh
+  /// player for that channel — simplest safe way to switch without having
+  /// to keep this screen's AppBar/state in sync with an in-place controller
+  /// swap.
   Widget _buildPortraitEpgList() {
     if (!Get.isRegistered<LiveTvController>()) return const SizedBox.shrink();
     final liveTvCtrl = Get.find<LiveTvController>();
+    final timelineCtrl = Get.find<EpgTimelineController>();
+
+    void openChannel(LiveTvModel channel) {
+      if (channel.streamId == widget.streamId) return;
+      Get.off(
+        () => LiveVideoPlayScreen(
+          streamId: channel.streamId,
+          channelName: channel.name,
+          channelLogo: channel.streamIcon,
+        ),
+        // LiveVideoPlayScreen isn't a named route, so GetX derives the
+        // route name from the widget type — every channel produces the
+        // same generated name. With the default preventDuplicates:true,
+        // GetX sees that name matching the current route and silently
+        // no-ops the navigation, so switching to another channel from
+        // within this screen never happened.
+        preventDuplicates: false,
+      );
+    }
 
     return Obx(() {
       final channels = liveTvCtrl.liveTvList;
       if (channels.isEmpty) return const SizedBox.shrink();
 
-      return ListView.separated(
-        controller: _epgScrollController,
-        padding: const EdgeInsets.all(16),
-        itemCount: channels.length + (liveTvCtrl.isMoreLoading.value ? 1 : 0),
-        separatorBuilder: (context, index) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          if (index >= channels.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: AppColors.red,
-                    strokeWidth: 2,
-                  ),
-                ),
-              ),
-            );
-          }
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: EpgTimelineDayNav(timelineCtrl: timelineCtrl),
+          ),
+          EpgTimelineRuler(timelineCtrl: timelineCtrl),
+          const Divider(color: Colors.white12, height: 1),
+          Expanded(
+            child: Obx(() {
+              final day = timelineCtrl.selectedDate.value;
+              return ListView.separated(
+                controller: _epgScrollController,
+                padding: const EdgeInsets.all(12),
+                itemCount:
+                    channels.length + (liveTvCtrl.isMoreLoading.value ? 1 : 0),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  if (index >= channels.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: AppColors.red,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
 
-          final channel = channels[index];
-          return LiveTvEpgRow(
-            streamId: channel.streamId,
-            channelName: channel.name,
-            channelLogo: channel.streamIcon,
-            onTap: () {
-              if (channel.streamId == widget.streamId) return;
-              Get.off(
-                () => LiveVideoPlayScreen(
-                  streamId: channel.streamId,
-                  channelName: channel.name,
-                  channelLogo: channel.streamIcon,
-                ),
-                // LiveVideoPlayScreen isn't a named route, so GetX derives
-                // the route name from the widget type — every channel
-                // produces the same generated name. With the default
-                // preventDuplicates:true, GetX sees that name matching the
-                // current route and silently no-ops the navigation, so
-                // switching to another channel from within this screen
-                // never happened.
-                preventDuplicates: false,
+                  final channel = channels[index];
+                  return EpgTimelineChannelRow(
+                    streamId: channel.streamId,
+                    channelName: channel.name,
+                    channelLogo: channel.streamIcon,
+                    day: day,
+                    onOpenChannel: (_) => openChannel(channel),
+                  );
+                },
               );
-            },
-          );
-        },
+            }),
+          ),
+        ],
       );
     });
   }

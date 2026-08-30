@@ -81,7 +81,7 @@ class _ReminderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateStr = DateFormat('EEE, MMM d').format(reminder.programStartTime);
-    final timeStr = DateFormat('HH:mm').format(reminder.programStartTime);
+    final timeStr = DateFormat('h:mm a').format(reminder.programStartTime);
 
     return Container(
       padding: const EdgeInsets.all(14),

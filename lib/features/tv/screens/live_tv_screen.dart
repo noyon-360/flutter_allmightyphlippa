@@ -619,7 +619,7 @@ class _EpgProgramTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeStr = DateFormat('HH:mm').format(program.startTime);
+    final timeStr = DateFormat('h:mm a').format(program.startTime);
     final isNow =
         program.isNowPlaying ||
         (program.startTime.isBefore(DateTime.now()) &&
@@ -642,7 +642,7 @@ class _EpgProgramTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: 44,
+              width: 68,
               child: Text(
                 timeStr,
                 style: TextStyle(

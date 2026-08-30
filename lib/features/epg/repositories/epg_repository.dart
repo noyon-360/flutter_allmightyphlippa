@@ -35,6 +35,41 @@ class EpgRepository {
     );
   }
 
+  /// Fetches every program overlapping [from]..[to] for one channel — used
+  /// by the EPG timeline to show a whole day (past + current + future)
+  /// rather than just current+upcoming. Requires a backend that understands
+  /// the `from`/`to` fields on `/epg/schedule`; falls back to an empty list
+  /// on old backends the same way any other unrecognized-field 200 would.
+  NetworkResult<List<EpgProgramModel>> getChannelSchedule({
+    required String serverUrl,
+    required String username,
+    required String password,
+    required int streamId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    return await _apiClient.post(
+      endpoint: ApiConstants.epg.schedule,
+      data: {
+        'serverUrl': serverUrl,
+        'username': username,
+        'password': password,
+        'streamId': streamId,
+        'from': from.toUtc().millisecondsSinceEpoch ~/ 1000,
+        'to': to.toUtc().millisecondsSinceEpoch ~/ 1000,
+      },
+      fromJsonT: (json) {
+        if (json is List) {
+          return json
+              .whereType<Map<String, dynamic>>()
+              .map(EpgProgramModel.fromJson)
+              .toList();
+        }
+        return <EpgProgramModel>[];
+      },
+    );
+  }
+
   NetworkResult<EpgReminderModel> createReminder({
     required String channelId,
     required String channelName,

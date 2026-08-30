@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:intl/intl.dart';
+
 class EpgProgramModel {
   final String id;
   final String title;
@@ -58,11 +60,10 @@ class EpgProgramModel {
 
   bool get isFuture => startTime.isAfter(DateTime.now());
 
-  String get timeRange {
-    String fmt(DateTime t) =>
-        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-    return '${fmt(startTime)} – ${fmt(endTime)}';
-  }
+  static final _timeFormat = DateFormat('h:mm a');
+
+  String get timeRange =>
+      '${_timeFormat.format(startTime)} – ${_timeFormat.format(endTime)}';
 
   // Unique key used to check if a reminder exists for this program + channel
   String reminderKey(String channelId) =>

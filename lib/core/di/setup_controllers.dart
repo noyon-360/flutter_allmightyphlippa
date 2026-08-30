@@ -5,6 +5,7 @@ import 'package:flutter_almightyflippa/features/series/controllers/series_contro
 import 'package:flutter_almightyflippa/features/subscription/controllers/subscription_controller.dart';
 import '../../features/downloads/controllers/download_controller.dart';
 import '../../features/epg/controllers/epg_controller.dart';
+import '../../features/epg/controllers/epg_timeline_controller.dart';
 import 'package:get/get.dart';
 
 import '../../features/search/controllers/search_controller.dart'
@@ -20,5 +21,6 @@ Future<void> setupControllers() async {
   Get.getOrPutLazy(() => search_ctrl.SearchingController(), fenix: true);
   Get.getOrPutLazy(() => SubscriptionController(), fenix: true);
   Get.getOrPutLazy(() => EpgController(), fenix: true);
+  Get.getOrPutLazy(() => EpgTimelineController(), fenix: true);
   Get.getOrPutLazy(() => DownloadController(), fenix: true);
 }
