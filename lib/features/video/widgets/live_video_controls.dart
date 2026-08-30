@@ -5,20 +5,22 @@ import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../epg/models/epg_program_model.dart';
 import '../../epg/services/epg_timeline_cache.dart';
-import '../../epg/widgets/epg_program_info_sheet.dart';
-
-const double _kChipWidth = 112;
-const int _kContextCount = 10; // programs shown before/after the current one
 
 /// Fully custom playback controls for the live video area — replaces the
-/// default Chewie chrome. Tapping the video toggles a play/pause button
-/// plus a bottom bar: the current program's title, live progress (elapsed
-/// fraction of its EPG start/end window), and a horizontal strip of the
-/// surrounding 10 previous + 10 next programs on this channel, sourced from
-/// [EpgTimelineCache] (same cache the EPG grid uses, so revisiting a
-/// channel/day already fetched is free).
+/// default Chewie chrome. Tapping the video toggles a center play/pause
+/// button plus a bottom bar: the current program's title, live progress
+/// (elapsed fraction of its EPG start/end window), and a fullscreen
+/// toggle. The surrounding-programs strip lives outside the player, below
+/// it, as [LiveChannelProgramStrip] — see that widget's doc comment for why.
+///
+/// The play/pause button and the buffering spinner share one `Center()` in
+/// [build] rather than each computing their own — they used to drift apart
+/// (the spinner centered in the full video frame, the button centered only
+/// in the space *above* the bottom bar) whenever the bottom bar had any
+/// height, which is confusing since only one of them is ever showing at a
+/// time. The spinner still isn't gated by [_controlsVisible]: buffering can
+/// happen whether or not the user is currently looking at the controls.
 class LiveVideoControls extends StatefulWidget {
   final int streamId;
   final String channelName;
@@ -41,10 +43,8 @@ class LiveVideoControls extends StatefulWidget {
 
 class _LiveVideoControlsState extends State<LiveVideoControls> {
   bool _controlsVisible = true;
-  bool _didAutoScrollStrip = false;
   Timer? _hideTimer;
   Timer? _tickTimer;
-  final ScrollController _stripController = ScrollController();
 
   @override
   void initState() {
@@ -55,7 +55,7 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
     );
     widget.videoController.addListener(_onVideoValueChanged);
     _resetHideTimer();
-    // The progress bar and current-program highlight advance with the wall
+    // The progress bar and current-program title advance with the wall
     // clock even when no video/player event fires — repaint periodically
     // so they don't go stale during a long-idle live view.
     _tickTimer = Timer.periodic(const Duration(seconds: 15), (_) {
@@ -71,7 +71,6 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
       widget.videoController.addListener(_onVideoValueChanged);
     }
     if (oldWidget.streamId != widget.streamId) {
-      _didAutoScrollStrip = false;
       Get.find<EpgTimelineCache>().ensureLoadedAround(
         widget.streamId,
         DateTime.now(),
@@ -84,7 +83,6 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
     widget.videoController.removeListener(_onVideoValueChanged);
     _hideTimer?.cancel();
     _tickTimer?.cancel();
-    _stripController.dispose();
     super.dispose();
   }
 
@@ -116,11 +114,14 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
 
   @override
   Widget build(BuildContext context) {
+    final isBuffering = widget.videoController.value.isBuffering;
+    final isPlaying = widget.videoController.value.isPlaying;
+
     return Stack(
       fit: StackFit.expand,
       children: [
         // Background tap-to-toggle layer, sized to the whole video area but
-        // placed *behind* the chrome below as a sibling — not wrapped
+        // placed *behind* everything below as a sibling — not wrapped
         // around it. Nesting a full-area GestureDetector around the
         // buttons made every button tap race the background toggle in the
         // same gesture arena, which is what made play/pause feel like it
@@ -135,62 +136,55 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
             onTap: _toggleControls,
           ),
         ),
-        if (widget.videoController.value.isBuffering)
-          const IgnorePointer(
-            child: Center(
-              child: CircularProgressIndicator(color: AppColors.red),
-            ),
-          ),
+        // One Center() shared by the spinner and the button (see the class
+        // doc comment) — only one of the two is ever present at a time.
+        Center(
+          child: isBuffering
+              ? const IgnorePointer(
+                  child: CircularProgressIndicator(color: AppColors.red),
+                )
+              : AnimatedOpacity(
+                  opacity: _controlsVisible ? 1 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: IgnorePointer(
+                    ignoring: !_controlsVisible,
+                    child: Material(
+                      color: Colors.black45,
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        iconSize: 36,
+                        color: Colors.white,
+                        onPressed: _togglePlayPause,
+                        icon: Icon(
+                          isPlaying ? Icons.pause : Icons.play_arrow,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+        ),
         AnimatedOpacity(
           opacity: _controlsVisible ? 1 : 0,
           duration: const Duration(milliseconds: 200),
           child: IgnorePointer(
             ignoring: !_controlsVisible,
-            child: _buildChrome(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChrome() {
-    final isPlaying = widget.videoController.value.isPlaying;
-
-    // A Column, not Center()+Positioned(bottom) independently stacked —
-    // the bottom bar (title/progress/program strip) can be tall relative
-    // to a 16:9 video area on a phone, and Center() ignores it entirely
-    // when placing the play/pause button, so on a short video the two
-    // regions' hit-test areas actually overlapped: taps meant for
-    // play/pause could land on the bottom bar's title row or a program
-    // chip instead. A Column gives the button `Expanded` — whatever space
-    // is actually left above the bottom bar — so the two never compete
-    // for the same pixels.
-    return Stack(
-      children: [
-        const IgnorePointer(
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: Colors.black26),
-            child: SizedBox.expand(),
-          ),
-        ),
-        Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: Material(
-                  color: Colors.black45,
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    iconSize: 36,
-                    color: Colors.white,
-                    onPressed: _togglePlayPause,
-                    icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+            child: Stack(
+              children: [
+                const IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: Colors.black26),
+                    child: SizedBox.expand(),
                   ),
                 ),
-              ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Obx(() => _buildBottomBar()),
+                ),
+              ],
             ),
-            Obx(() => _buildBottomBar()),
-          ],
+          ),
         ),
       ],
     );
@@ -199,13 +193,11 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
   Widget _buildBottomBar() {
     final cache = Get.find<EpgTimelineCache>();
     final now = DateTime.now();
-    final loaded = cache.isLoadedAround(widget.streamId, now);
     final programs = cache.peekAround(widget.streamId, now);
 
-    final currentIndex = programs.indexWhere(
+    final current = programs.firstWhereOrNull(
       (p) => p.startTime.isBefore(now) && p.endTime.isAfter(now),
     );
-    final current = currentIndex >= 0 ? programs[currentIndex] : null;
 
     final totalSeconds = current == null
         ? 0
@@ -297,120 +289,8 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
               ),
             ),
           ],
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 46,
-            child: !loaded
-                ? const Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        color: AppColors.red,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  )
-                : programs.isEmpty
-                ? const SizedBox.shrink()
-                : _buildStrip(programs, currentIndex, now),
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStrip(
-    List<EpgProgramModel> programs,
-    int currentIndex,
-    DateTime now,
-  ) {
-    final start = currentIndex >= 0
-        ? (currentIndex - _kContextCount).clamp(0, programs.length)
-        : 0;
-    final end = currentIndex >= 0
-        ? (currentIndex + _kContextCount + 1).clamp(0, programs.length)
-        : programs.length;
-    final visible = programs.sublist(start, end);
-    final visibleCurrentIndex = currentIndex >= 0 ? currentIndex - start : -1;
-
-    if (!_didAutoScrollStrip && visibleCurrentIndex >= 0) {
-      _didAutoScrollStrip = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_stripController.hasClients) return;
-        final offset =
-            (visibleCurrentIndex * (_kChipWidth + 6)) -
-            (_stripController.position.viewportDimension / 2) +
-            (_kChipWidth / 2);
-        _stripController.jumpTo(
-          offset.clamp(0.0, _stripController.position.maxScrollExtent),
-        );
-      });
-    }
-
-    return ListView.separated(
-      controller: _stripController,
-      scrollDirection: Axis.horizontal,
-      itemCount: visible.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 6),
-      itemBuilder: (context, index) {
-        final program = visible[index];
-        final isCurrent = index == visibleCurrentIndex;
-        final isPast = !isCurrent && program.endTime.isBefore(now);
-        final isFuture = !isCurrent && !isPast;
-
-        return GestureDetector(
-          onTap: () {
-            _resetHideTimer();
-            showEpgProgramInfoSheet(
-              context,
-              program: program,
-              streamId: widget.streamId,
-              channelName: widget.channelName,
-              isFuture: isFuture,
-            );
-          },
-          child: Container(
-            width: _kChipWidth,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isCurrent
-                  ? AppColors.red.withValues(alpha: 0.85)
-                  : Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(6),
-              border: isCurrent ? Border.all(color: AppColors.red) : null,
-            ),
-            alignment: Alignment.centerLeft,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  program.title,
-                  style: TextStyle(
-                    color: isPast ? Colors.white54 : Colors.white,
-                    fontSize: 11,
-                    fontWeight: isCurrent
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  program.timeRange,
-                  style: TextStyle(
-                    color: isCurrent ? Colors.white70 : Colors.white38,
-                    fontSize: 9,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

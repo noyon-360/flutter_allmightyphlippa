@@ -19,6 +19,7 @@ import '../../epg/widgets/epg_timeline_ruler.dart';
 import '../../tv/controllers/live_tv_controller.dart';
 import '../../tv/models/live_tv_reponse_model.dart';
 import '../controllers/live_video_play_controller.dart';
+import '../widgets/live_channel_program_strip.dart';
 import '../widgets/live_video_controls.dart';
 
 class LiveVideoPlayScreen extends StatefulWidget {
@@ -117,11 +118,20 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   }
 
   void _restoreSystemChrome() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.edgeToEdge,
-      overlays: SystemUiOverlay.values,
-    );
+    // Deferred a frame: this is called from PopScope's callback while a
+    // pop/back-gesture is still being handled, and issuing the orientation
+    // change in that same synchronous callback raced iOS's own scene
+    // transition — the OS would reject "portrait" because, for a moment,
+    // the view controller it asked still reported the fullscreen
+    // landscape-only mask ("UISceneErrorDomain Code=101"). Waiting for the
+    // frame to finish first lets that transition settle before we ask.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.edgeToEdge,
+        overlays: SystemUiOverlay.values,
+      );
+    });
   }
 
   void _exitFullScreen() {
@@ -213,6 +223,17 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
             return Center(child: videoArea);
           }
 
+          // The prev/next program strip sits below the video, not overlaid
+          // on top of it (see LiveChannelProgramStrip's doc comment) — only
+          // once the stream is actually up, so it doesn't show against a
+          // loading/error placeholder.
+          final programStrip = controller.isVideoInitialized.value
+              ? LiveChannelProgramStrip(
+                  streamId: widget.streamId,
+                  channelName: widget.channelName,
+                )
+              : const SizedBox.shrink();
+
           // Fill the dead space below the video in portrait mode with a
           // scrollable EPG guide — Premium only, both to match the client's
           // ask and because each visible row fires its own EPG request
@@ -222,16 +243,33 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
           // video area instead of blanking the whole page.
           final isPortrait =
               MediaQuery.of(context).orientation == Orientation.portrait;
+          // In portrait, videoArea's natural 16:9 height is always well
+          // under the available screen height, so it's a plain (non-flex)
+          // Column child here — the EPG list's Expanded takes whatever's
+          // left, same as before.
           if (isPortrait && PremiumService.to.isPremium.value) {
             return Column(
               children: [
                 videoArea,
+                programStrip,
                 Expanded(child: _buildPortraitEpgList()),
               ],
             );
           }
 
-          return Center(child: videoArea);
+          // Landscape (non-fullscreen) is different: a 16:9 video at full
+          // landscape *width* can want more height than a short landscape
+          // *viewport* actually has once the AppBar/strip take their
+          // share. A bare Column child gets unbounded height and reported
+          // a real overflow instead of shrinking to fit, so this branch
+          // specifically needs Flexible to cap it to what's left.
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(child: Center(child: videoArea)),
+              programStrip,
+            ],
+          );
         }),
       ),
       floatingActionButton: (_showBackToTop && !_isFullScreen)
