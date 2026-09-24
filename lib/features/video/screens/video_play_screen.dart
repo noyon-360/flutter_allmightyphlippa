@@ -238,6 +238,15 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                           return Stack(
                             children: [
                               MaterialVideoControlsTheme(
+                                // These replace media_kit's own defaults
+                                // wholesale, so the layout has to be spelled
+                                // out: without margins the seek bar ran
+                                // edge to edge (playhead half off-screen in
+                                // portrait) and, in fullscreen, sat on the
+                                // bottom edge — inside Android's gesture-
+                                // navigation zone, where dragging it swiped
+                                // to Home/Back instead of seeking. The
+                                // container height is the touch target.
                                 normal: const MaterialVideoControlsThemeData(
                                   buttonBarHeight: 48.0,
                                   controlsHoverDuration: Duration(seconds: 10),
@@ -248,18 +257,46 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   seekOnDoubleTapForwardDuration: Duration(
                                     seconds: 10,
                                   ),
+                                  seekBarMargin: EdgeInsets.only(
+                                    left: 16.0,
+                                    right: 16.0,
+                                    bottom: 6.0,
+                                  ),
+                                  bottomButtonBarMargin: EdgeInsets.only(
+                                    left: 16.0,
+                                    right: 8.0,
+                                    bottom: 6.0,
+                                  ),
+                                  seekBarContainerHeight: 48.0,
+                                  seekBarThumbSize: 16.0,
+                                  seekBarHeight: 3.0,
                                 ),
-                                fullscreen:
-                                    const MaterialVideoControlsThemeData(
-                                      controlsHoverDuration: Duration(
-                                        seconds: 10,
-                                      ),
-                                      seekOnDoubleTap: true,
-                                      seekOnDoubleTapBackwardDuration:
-                                          Duration(seconds: 10),
-                                      seekOnDoubleTapForwardDuration:
-                                          Duration(seconds: 10),
-                                    ),
+                                fullscreen: const MaterialVideoControlsThemeData(
+                                  controlsHoverDuration: Duration(seconds: 10),
+                                  seekOnDoubleTap: true,
+                                  seekOnDoubleTapBackwardDuration: Duration(
+                                    seconds: 10,
+                                  ),
+                                  seekOnDoubleTapForwardDuration: Duration(
+                                    seconds: 10,
+                                  ),
+                                  // Well clear of the bottom gesture bar and
+                                  // of the left/right edge-swipe (back)
+                                  // zones.
+                                  seekBarMargin: EdgeInsets.only(
+                                    left: 48.0,
+                                    right: 48.0,
+                                    bottom: 56.0,
+                                  ),
+                                  bottomButtonBarMargin: EdgeInsets.only(
+                                    left: 48.0,
+                                    right: 40.0,
+                                    bottom: 56.0,
+                                  ),
+                                  seekBarContainerHeight: 56.0,
+                                  seekBarThumbSize: 18.0,
+                                  seekBarHeight: 3.0,
+                                ),
                                 child: Focus(
                                   autofocus: true,
                                   child: Video(

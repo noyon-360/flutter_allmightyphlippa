@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:floating/floating.dart';
 import 'package:get/get.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import '../../../core/services/airplay_service.dart';
 import '../../../core/services/premium_service.dart';
 
@@ -53,6 +54,8 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   bool _isFullScreen = false;
 
   late final PiPService _pipService;
+  PiPStatus _pipStatus = PiPStatus.disabled;
+  Worker? _pipArmWorker;
 
   @override
   void initState() {
@@ -60,20 +63,30 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     controller = Get.put(LiveVideoPlayController(), tag: _controllerTag);
     WidgetsBinding.instance.addObserver(this);
     _epgScrollController.addListener(_onEpgScroll);
-    _pipService = PiPService();
+    _pipService = PiPService(
+      onStatusChanged: (status) {
+        if (mounted) setState(() => _pipStatus = status);
+      },
+    );
     _pipService.initialize().then((_) {
       if (mounted) setState(() {});
     });
+    // Android: once there's a picture to show, let PiP start by itself when
+    // the user leaves the app (but not when they lock the screen).
+    _pipArmWorker = ever(controller.isVideoInitialized, (ready) {
+      if (ready) _pipService.armAutoEnter();
+    });
     // Pause local playback while casting, resume when the cast ends.
-    _castService.onCastStarted = () =>
-        controller.videoPlayerController?.pause();
+    _castService.onCastStarted = () => controller.player.pause();
     _castService.onCastStopped = () {
-      if (mounted) controller.videoPlayerController?.play();
+      if (mounted) controller.player.play();
     };
     // The EPG guide (Premium, portrait) always opens on today at the current
     // time, with the channel being watched scrolled into view.
     Get.find<EpgTimelineController>().goToToday();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _revealPlayingChannel());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _revealPlayingChannel(),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeLiveVideo(
         streamId: widget.streamId,
@@ -85,13 +98,16 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if ((state == AppLifecycleState.hidden ||
+    // iOS only: Android enters PiP through the armed "leave" hint instead, so
+    // that locking the screen doesn't trigger it.
+    if (Platform.isIOS &&
+        (state == AppLifecycleState.hidden ||
             state == AppLifecycleState.paused) &&
         _pipService.isAvailable &&
         controller.isVideoInitialized.value) {
-      // Live TV: no URL/position needed — iOS uses view-hierarchy AVPlayerLayer,
-      // Android uses the floating package directly.
-      _pipService.enable();
+      // Live has no position; iOS opens the stream itself in a secondary
+      // player (this screen renders through media_kit, not an AVPlayerLayer).
+      _pipService.enable(videoUrl: controller.currentPlayUrl);
     }
   }
 
@@ -103,6 +119,7 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     // leak into the rest of the app — always restore, not just on the
     // explicit exit-fullscreen path.
     if (_isFullScreen) _restoreSystemChrome();
+    _pipArmWorker?.dispose();
     _epgScrollController.dispose();
     _pipService.dispose();
     _castService.onCastStarted = null;
@@ -160,9 +177,9 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
         !Get.isRegistered<LiveTvController>()) {
       return;
     }
-    final index = Get.find<LiveTvController>()
-        .liveTvList
-        .indexWhere((c) => c.streamId == widget.streamId);
+    final index = Get.find<LiveTvController>().liveTvList.indexWhere(
+      (c) => c.streamId == widget.streamId,
+    );
     if (index <= 0) return;
     final max = _epgScrollController.position.maxScrollExtent;
     _epgScrollController.jumpTo((index * 72.0).clamp(0.0, max));
@@ -203,95 +220,83 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   }
 
   Widget _buildMainContent(BuildContext context) {
+    // Android puts the whole window into picture-in-picture, so while it's
+    // there draw only the video — none of the guide, strip or controls.
+    if (_pipStatus == PiPStatus.enabled) return _buildPipOnlyVideo();
+
     return Scaffold(
       backgroundColor: AppColors.primaryBlack,
-      appBar: _isFullScreen
-          ? null
-          : AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: const BackButton(color: Colors.white),
-              title: Text(
-                widget.channelName,
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-              ),
-              actions: [
-                // CastAirPlayButtons(
-                //   currentUrl: () => controller.currentPlayUrl,
-                //   title: () => widget.channelName,
-                // ),
-                if (_pipService.isAvailable)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.picture_in_picture_alt,
-                      color: Colors.white,
-                    ),
-                    onPressed: () => _pipService.enable(),
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.settings, color: Colors.white),
-                  onPressed: () => _showSettingsDialog(context),
-                ),
-              ],
-            ),
-      body: Container(
-        width: MediaQuery.of(context).size.width,
-        color: Colors.black,
-        child: Obx(() {
-          final videoArea = _buildVideoArea();
+      // No app bar: back, title, captions, PiP and settings live in the
+      // player overlay so the video gets that space back. The top inset is
+      // still needed in portrait, where the video sits under the status bar.
+      body: SafeArea(
+        top: !_isFullScreen,
+        bottom: false,
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          color: Colors.black,
+          child: Obx(() {
+            final videoArea = _buildVideoArea();
 
-          if (_isFullScreen) {
-            return Center(child: videoArea);
-          }
+            if (_isFullScreen) {
+              return Center(child: videoArea);
+            }
 
-          // The prev/next program strip sits below the video, not overlaid
-          // on top of it (see LiveChannelProgramStrip's doc comment) — only
-          // once the stream is actually up, so it doesn't show against a
-          // loading/error placeholder.
-          final programStrip = controller.isVideoInitialized.value
-              ? LiveChannelProgramStrip(
-                  streamId: widget.streamId,
-                  channelName: widget.channelName,
-                )
-              : const SizedBox.shrink();
+            // The prev/next program strip sits below the video, not overlaid
+            // on top of it (see LiveChannelProgramStrip's doc comment) — only
+            // once the stream is actually up, so it doesn't show against a
+            // loading/error placeholder.
+            final programStrip = controller.isVideoInitialized.value
+                ? LiveChannelProgramStrip(
+                    streamId: widget.streamId,
+                    channelName: widget.channelName,
+                  )
+                : const SizedBox.shrink();
 
-          // Fill the dead space below the video in portrait mode with a
-          // scrollable EPG guide — Premium only, both to match the client's
-          // ask and because each visible row fires its own EPG request
-          // (see EpgTimelineCache) and there's no reason to add that
-          // load for users who can't see it anyway. Kept mounted across
-          // loading/error/playing so switching channels only swaps the
-          // video area instead of blanking the whole page.
-          final isPortrait =
-              MediaQuery.of(context).orientation == Orientation.portrait;
-          // In portrait, videoArea's natural 16:9 height is always well
-          // under the available screen height, so it's a plain (non-flex)
-          // Column child here — the EPG list's Expanded takes whatever's
-          // left, same as before.
-          if (isPortrait && PremiumService.to.isPremium.value) {
+            // Fill the dead space below the video in portrait mode with a
+            // scrollable EPG guide — Premium only, both to match the client's
+            // ask and because each visible row fires its own EPG request
+            // (see EpgTimelineCache) and there's no reason to add that
+            // load for users who can't see it anyway. Kept mounted across
+            // loading/error/playing so switching channels only swaps the
+            // video area instead of blanking the whole page.
+            final isPortrait =
+                MediaQuery.of(context).orientation == Orientation.portrait;
+            // In portrait, videoArea's natural 16:9 height is always well
+            // under the available screen height, so it's a plain (non-flex)
+            // Column child here — the EPG list's Expanded takes whatever's
+            // left, same as before.
+            if (isPortrait && PremiumService.to.isPremium.value) {
+              return Column(
+                children: [
+                  videoArea,
+                  programStrip,
+                  Expanded(child: _buildPortraitEpgList()),
+                ],
+              );
+            }
+
+            // Landscape (non-fullscreen) is different: a 16:9 video at full
+            // landscape *width* can want more height than a short landscape
+            // *viewport* actually has once the AppBar/strip take their
+            // share. A bare Column child gets unbounded height and reported
+            // a real overflow instead of shrinking to fit, so this branch
+            // specifically needs Flexible to cap it to what's left.
             return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                videoArea,
+                Flexible(
+                  child: isPortrait
+                      // Portrait: the video belongs at the top under the status
+                      // bar, not floating mid-screen.
+                      ? Align(alignment: Alignment.topCenter, child: videoArea)
+                      : Center(child: videoArea),
+                ),
                 programStrip,
-                Expanded(child: _buildPortraitEpgList()),
               ],
             );
-          }
-
-          // Landscape (non-fullscreen) is different: a 16:9 video at full
-          // landscape *width* can want more height than a short landscape
-          // *viewport* actually has once the AppBar/strip take their
-          // share. A bare Column child gets unbounded height and reported
-          // a real overflow instead of shrinking to fit, so this branch
-          // specifically needs Flexible to cap it to what's left.
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(child: Center(child: videoArea)),
-              programStrip,
-            ],
-          );
-        }),
+          }),
+        ),
       ),
       floatingActionButton: (_showBackToTop && !_isFullScreen)
           ? FloatingActionButton(
@@ -315,41 +320,52 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   /// this whole screen) only swaps this area instead of blanking the page.
   Widget _buildVideoArea() {
     if (controller.isLoading.value) {
-      return const AspectRatio(
+      return AspectRatio(
         aspectRatio: 16 / 9,
-        child: ColoredBox(
-          color: Colors.black,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(color: AppColors.red),
-                SizedBox(height: 16),
-                Text(
-                  'Fetching Stream...',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ],
+        child: _withBackButton(
+          child: const ColoredBox(
+            color: Colors.black,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: AppColors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    'Fetching Stream...',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
     }
 
-    if (controller.isVideoInitialized.value &&
-        controller.videoPlayerController != null) {
+    if (controller.isVideoInitialized.value) {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: Stack(
           key: ValueKey('live_video_${widget.streamId}'),
           children: [
-            VideoPlayer(controller.videoPlayerController!),
+            Video(
+              controller: controller.videoController,
+              controls: NoVideoControls,
+              fill: Colors.black,
+            ),
             LiveVideoControls(
               streamId: widget.streamId,
               channelName: widget.channelName,
-              videoController: controller.videoPlayerController!,
+              controller: controller,
               isFullScreen: _isFullScreen,
               onToggleFullScreen: _toggleFullScreen,
+              onBack: () => Navigator.of(context).maybePop(),
+              onSettings: () => _showSettingsDialog(context),
+              onPictureInPicture: _pipService.isAvailable
+                  ? () =>
+                        _pipService.enable(videoUrl: controller.currentPlayUrl)
+                  : null,
             ),
             Obx(() {
               if (PremiumService.to.isPremium.value) {
@@ -381,39 +397,85 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
 
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: ColoredBox(
-        color: Colors.black,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.signal_wifi_connected_no_internet_4_rounded,
-                  color: Colors.redAccent,
-                  size: 40,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  controller.errorMessage.value ?? 'Failed to load stream.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                ),
-                const SizedBox(height: 16),
-                TextButton.icon(
-                  onPressed: () =>
-                      controller.initializeLiveVideo(streamId: widget.streamId),
-                  icon: const Icon(Icons.refresh, color: AppColors.red),
-                  label: const Text(
-                    'Try Again',
-                    style: TextStyle(color: AppColors.red, fontSize: 14),
+      child: _withBackButton(
+        child: ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.signal_wifi_connected_no_internet_4_rounded,
+                    color: Colors.redAccent,
+                    size: 40,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Text(
+                    controller.errorMessage.value ?? 'Failed to load stream.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: () => controller.initializeLiveVideo(
+                      streamId: widget.streamId,
+                    ),
+                    icon: const Icon(Icons.refresh, color: AppColors.red),
+                    label: const Text(
+                      'Try Again',
+                      style: TextStyle(color: AppColors.red, fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// The loading and error states have no player overlay (and the app bar is
+  /// gone), so give them their own back button — otherwise a stream that
+  /// never starts would leave nothing to tap to leave the screen.
+  Widget _withBackButton({required Widget child}) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        child,
+        Positioned(
+          top: 0,
+          left: 0,
+          child: IconButton(
+            tooltip: 'Back',
+            color: Colors.white,
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// What the Android PiP window shows: just the picture.
+  Widget _buildPipOnlyVideo() {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Obx(
+        () => controller.isVideoInitialized.value
+            ? Center(
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Video(
+                    controller: controller.videoController,
+                    controls: NoVideoControls,
+                    fill: Colors.black,
+                  ),
+                ),
+              )
+            : const SizedBox.expand(),
       ),
     );
   }
@@ -469,8 +531,7 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                 padding: const EdgeInsets.all(12),
                 itemCount:
                     channels.length + (liveTvCtrl.isMoreLoading.value ? 1 : 0),
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 8),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   if (index >= channels.length) {
                     return const Padding(
