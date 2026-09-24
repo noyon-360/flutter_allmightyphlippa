@@ -48,6 +48,7 @@ class ApiConstants {
   static PaymentEndpoints get payment => PaymentEndpoints();
   static GenreEndpoints get genre => GenreEndpoints();
   static EpgEndpoints get epg => EpgEndpoints();
+  static AnnouncementEndpoints get announcement => AnnouncementEndpoints();
 }
 
 /// [Authentication Endpoints]
@@ -117,6 +118,12 @@ class GenreEndpoints {
   final String getCategories = _base;
 
   String getCategoriesByType(String id) => '$_base/$id';
+}
+
+class AnnouncementEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/announcement';
+
+  final String active = _base;
 }
 
 class EpgEndpoints {

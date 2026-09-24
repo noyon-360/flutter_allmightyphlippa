@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/constants/app_colors.dart';
 import 'package:flutter_almightyflippa/features/bottom_nav/controllers/bottom_nav_controller.dart';
+import 'package:flutter_almightyflippa/features/home/controllers/announcement_controller.dart';
 import 'package:flutter_almightyflippa/features/home/controllers/home_controller.dart';
+import 'package:flutter_almightyflippa/features/home/widgets/announcement_card.dart';
 import 'package:flutter_almightyflippa/features/movie/controllers/movie_controller.dart';
 import 'package:flutter_almightyflippa/features/series/controllers/series_controller.dart';
 import 'package:flutter_almightyflippa/features/video/screens/live_video_play_screen.dart';
@@ -26,6 +28,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final homeCtrl = Get.put(HomeController());
+  final announcementCtrl = Get.put(AnnouncementController());
   final movieCtrl = Get.find<MovieController>();
   final seriesCtrl = Get.find<SeriesController>();
   final profileCtrl = Get.put(ProfileController());
@@ -94,28 +97,17 @@ class _HomeScreenState extends State<HomeScreen> {
               // ),
             ],
           ),
-          const SizedBox(height: 20),
+          // Replaces the old "Hello <name>, Welcome to LABBY app" line with
+          // something worth the space: the current announcement (new version,
+          // feature, maintenance notice...) from LABBY, if there is one.
           Obx(() {
-            if (profileCtrl.isLoading.value) {
-              return Container(
-                height: 24,
-                width: 250,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGray.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }
-            // Get first name for "Hello Ross" style if possible, or just use full name as requested "Hello Ross" (assuming name is Ross)
-            // The request image shows "Hello Ross, Welcome to LABBY app"
-            // I'll just use the full name for now.
-            final name = profileCtrl.userProfile.value?.name ?? "Guest";
-            return Text(
-              'Hello $name, Welcome to LABBY app',
-              style: const TextStyle(
-                color: AppColors.primaryWhite,
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
+            final announcement = announcementCtrl.current;
+            if (announcement == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: AnnouncementCard(
+                announcement: announcement,
+                onDismiss: () => announcementCtrl.dismiss(announcement),
               ),
             );
           }),
@@ -266,13 +258,13 @@ class _HomeScreenState extends State<HomeScreen> {
             return TvFocusWrapper(
               onTap: () {
                 if (series.seriesId != null) {
-                    Get.to(
-                      () => VideoPlayScreen(
-                        streamId: series.seriesId!,
-                        type: ServerType.series,
-                        autoPlay: false,
-                      ),
-                    );
+                  Get.to(
+                    () => VideoPlayScreen(
+                      streamId: series.seriesId!,
+                      type: ServerType.series,
+                      autoPlay: false,
+                    ),
+                  );
                 }
               },
               child: Container(
