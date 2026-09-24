@@ -1,9 +1,4 @@
 PODS:
-  - audio_service (0.0.1):
-    - Flutter
-    - FlutterMacOS
-  - audio_session (0.0.1):
-    - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
   - file_picker_darwin (1.0.0):
@@ -108,8 +103,6 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - audio_service (from `.symlinks/plugins/audio_service/darwin`)
-  - audio_session (from `.symlinks/plugins/audio_session/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - file_picker_darwin (from `.symlinks/plugins/file_picker_darwin/darwin`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
@@ -143,10 +136,6 @@ SPEC REPOS:
     - RevenueCat
 
 EXTERNAL SOURCES:
-  audio_service:
-    :path: ".symlinks/plugins/audio_service/darwin"
-  audio_session:
-    :path: ".symlinks/plugins/audio_session/ios"
   connectivity_plus:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   file_picker_darwin:
@@ -183,8 +172,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/wakelock_plus/ios"
 
 SPEC CHECKSUMS:
-  audio_service: aa99a6ba2ae7565996015322b0bb024e1d25c6fd
-  audio_session: 9bb7f6c970f21241b19f5a3658097ae459681ba0
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   file_picker_darwin: 4c2b9a50ea44cb3b071381ea0cf48591bdd80251
   Firebase: 7ca191e43724142f79fae653547b3382c45413cc
