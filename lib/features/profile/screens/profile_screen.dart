@@ -42,6 +42,8 @@ class ProfileScreen extends StatelessWidget {
       onRefresh: () => profileCtrl.refreshProfile(),
 
       child: SingleChildScrollView(
+        // Clear of the floating nav bar.
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18),
           child: Column(

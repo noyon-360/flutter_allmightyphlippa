@@ -43,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.red,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
+          // Clear of the floating nav bar.
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

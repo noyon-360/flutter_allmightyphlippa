@@ -399,7 +399,13 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       color: AppColors.red,
                       child: GridView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        // Bottom: clear of the floating nav bar.
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          MediaQuery.of(context).padding.bottom + 8,
+                        ),
                         physics: const AlwaysScrollableScrollPhysics(),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
