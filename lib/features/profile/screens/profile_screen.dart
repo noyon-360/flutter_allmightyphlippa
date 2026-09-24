@@ -12,6 +12,8 @@ import 'package:flutter_almightyflippa/features/playlist/models/server_request_m
 import 'package:flutter_almightyflippa/features/video/screens/live_video_play_screen.dart';
 import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.dart';
 import '../../../core/services/watch_history_service.dart';
+import '../../epg/services/epg_timeline_cache.dart';
+import '../../epg/services/live_tv_now_playing_cache.dart';
 
 import '../../../core/common/widgets/app_cached_image.dart';
 import '../../../core/common/widgets/button_widgets.dart';
@@ -358,6 +360,21 @@ class ProfileScreen extends StatelessWidget {
                   Get.to(
                     () => const PlaylistListScreen(),
                     transition: Transition.rightToLeft,
+                  );
+                },
+              ),
+              _buildMenuItem(
+                iconAsset: '',
+                iconData: Icons.refresh,
+                title: "Update EPG",
+                onTap: () {
+                  Get.find<EpgTimelineCache>().clear();
+                  Get.find<LiveTvNowPlayingCache>().clear();
+                  Get.snackbar(
+                    'EPG',
+                    'TV guide will be refreshed the next time you open it.',
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
                   );
                 },
               ),

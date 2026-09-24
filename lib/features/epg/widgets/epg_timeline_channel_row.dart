@@ -34,6 +34,11 @@ class EpgTimelineChannelRow extends StatefulWidget {
   /// no-op when this row already sits inside a `LiveVideoPlayScreen`.
   final ValueChanged<int> onOpenChannel;
 
+  /// The channel currently being watched, if any. The matching row's channel
+  /// cell gets a border, tinted background, and a "Now Playing" badge so the
+  /// viewer can spot it at a glance.
+  final int? currentStreamId;
+
   const EpgTimelineChannelRow({
     super.key,
     required this.streamId,
@@ -41,6 +46,7 @@ class EpgTimelineChannelRow extends StatefulWidget {
     required this.channelLogo,
     required this.day,
     required this.onOpenChannel,
+    this.currentStreamId,
   });
 
   @override
@@ -82,6 +88,7 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
     final cache = Get.find<EpgTimelineCache>();
     final dayStart = widget.day;
     final dayEnd = dayStart.add(const Duration(days: 1));
+    final isPlayingChannel = widget.currentStreamId == widget.streamId;
 
     return SizedBox(
       height: _kRowHeight,
@@ -96,12 +103,36 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.containerBgColor,
+                  color: isPlayingChannel
+                      ? AppColors.red.withOpacity(0.18)
+                      : AppColors.containerBgColor,
                   borderRadius: BorderRadius.circular(8),
+                  border: isPlayingChannel
+                      ? Border.all(color: AppColors.red, width: 1.5)
+                      : null,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    if (isPlayingChannel)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.red,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const Text(
+                          'NOW PLAYING',
+                          style: TextStyle(
+                            color: AppColors.primaryWhite,
+                            fontSize: 7,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     Expanded(
                       child: widget.channelLogo.isNotEmpty
                           ? Image.network(

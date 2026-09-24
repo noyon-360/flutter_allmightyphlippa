@@ -13,6 +13,7 @@ class EpgRepository {
     required String password,
     required int streamId,
     int limit = 10,
+    bool refresh = false,
   }) async {
     return await _apiClient.post(
       endpoint: ApiConstants.epg.schedule,
@@ -22,6 +23,7 @@ class EpgRepository {
         'password': password,
         'streamId': streamId,
         'limit': limit,
+        if (refresh) 'refresh': true,
       },
       fromJsonT: (json) {
         if (json is List) {
@@ -47,6 +49,7 @@ class EpgRepository {
     required int streamId,
     required DateTime from,
     required DateTime to,
+    bool refresh = false,
   }) async {
     return await _apiClient.post(
       endpoint: ApiConstants.epg.schedule,
@@ -57,6 +60,7 @@ class EpgRepository {
         'streamId': streamId,
         'from': from.toUtc().millisecondsSinceEpoch ~/ 1000,
         'to': to.toUtc().millisecondsSinceEpoch ~/ 1000,
+        if (refresh) 'refresh': true,
       },
       fromJsonT: (json) {
         if (json is List) {

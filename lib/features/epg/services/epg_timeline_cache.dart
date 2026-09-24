@@ -30,6 +30,21 @@ class EpgTimelineCache extends GetxService {
   final Set<String> _fetched = {};
   final Set<String> _inFlight = {};
 
+
+  /// After [clear], fetches for the next couple of minutes ask the backend to
+  /// skip its own EPG cache too, so "Update EPG" really returns fresh data.
+  DateTime? _bypassServerCacheUntil;
+  bool get _bypassServerCache =>
+      _bypassServerCacheUntil?.isAfter(DateTime.now()) ?? false;
+
+  /// Drops everything cached so visible rows/channels refetch on next build.
+  void clear() {
+    dayPrograms.clear();
+    _fetched.clear();
+    _inFlight.clear();
+    _bypassServerCacheUntil = DateTime.now().add(const Duration(minutes: 2));
+  }
+
   String _keyFor(int streamId, DateTime day) =>
       '$streamId|${_dayKeyFormat.format(day)}';
 
@@ -91,6 +106,7 @@ class EpgTimelineCache extends GetxService {
         streamId: streamId,
         from: dayStart,
         to: dayEnd,
+        refresh: _bypassServerCache,
       );
 
       result.fold(

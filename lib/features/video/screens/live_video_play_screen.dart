@@ -70,6 +70,10 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     _castService.onCastStopped = () {
       if (mounted) controller.videoPlayerController?.play();
     };
+    // The EPG guide (Premium, portrait) always opens on today at the current
+    // time, with the channel being watched scrolled into view.
+    Get.find<EpgTimelineController>().goToToday();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revealPlayingChannel());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeLiveVideo(
         streamId: widget.streamId,
@@ -145,6 +149,23 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     } else {
       _enterFullScreen();
     }
+  }
+
+  /// Scrolls the EPG channel list so the row for the channel being watched
+  /// is at the top. Row height (64) + separator (8) is fixed, so its offset
+  /// is index * 72 without needing to build the rows above it.
+  void _revealPlayingChannel() {
+    if (!mounted ||
+        !_epgScrollController.hasClients ||
+        !Get.isRegistered<LiveTvController>()) {
+      return;
+    }
+    final index = Get.find<LiveTvController>()
+        .liveTvList
+        .indexWhere((c) => c.streamId == widget.streamId);
+    if (index <= 0) return;
+    final max = _epgScrollController.position.maxScrollExtent;
+    _epgScrollController.jumpTo((index * 72.0).clamp(0.0, max));
   }
 
   void _onEpgScroll() {
@@ -473,6 +494,7 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                     channelName: channel.name,
                     channelLogo: channel.streamIcon,
                     day: day,
+                    currentStreamId: widget.streamId,
                     onOpenChannel: (_) => openChannel(channel),
                   );
                 },

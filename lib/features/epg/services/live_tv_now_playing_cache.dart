@@ -27,6 +27,21 @@ class LiveTvNowPlayingCache extends GetxService {
   final Set<int> _fetched = {};
   final Set<int> _inFlight = {};
 
+
+  /// After [clear], fetches for the next couple of minutes ask the backend to
+  /// skip its own EPG cache too, so "Update EPG" really returns fresh data.
+  DateTime? _bypassServerCacheUntil;
+  bool get _bypassServerCache =>
+      _bypassServerCacheUntil?.isAfter(DateTime.now()) ?? false;
+
+  /// Drops everything cached so visible rows/channels refetch on next build.
+  void clear() {
+    nowPlaying.clear();
+    _fetched.clear();
+    _inFlight.clear();
+    _bypassServerCacheUntil = DateTime.now().add(const Duration(minutes: 2));
+  }
+
   EpgProgramModel? peek(int streamId) => nowPlaying[streamId];
 
   Future<void> ensureLoaded(int streamId) async {
@@ -41,6 +56,7 @@ class LiveTvNowPlayingCache extends GetxService {
         password: playlist.password,
         streamId: streamId,
         limit: 2,
+        refresh: _bypassServerCache,
       );
 
       result.fold(
