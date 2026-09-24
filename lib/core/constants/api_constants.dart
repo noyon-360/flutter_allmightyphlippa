@@ -83,6 +83,7 @@ class PlaylistEndpoints {
   final String addPlaylist = '$_base/add-playlist';
   final String getPlaylist = '$_base/get-playlist';
   String deletePlaylist(String id) => '$_base/delete-playlist/$id';
+  String updatePlaylist(String id) => '$_base/update-playlist/$id';
 }
 
 class ServerEndpoints {

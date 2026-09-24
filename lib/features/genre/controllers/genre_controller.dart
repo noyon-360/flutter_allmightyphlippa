@@ -14,13 +14,20 @@ class GenreController extends GetxController {
   final genres = <GenreModel>[].obs;
   final isLoading = false.obs;
 
+  /// Message from the last [getGenres] call if it failed, null if it
+  /// succeeded — lets callers (e.g. the playlist sync) tell "no categories"
+  /// apart from "couldn't load categories".
+  final errorMessage = Rxn<String>();
+
   Future<void> getGenres({required ServerType type}) async {
     isLoading.value = true;
+    errorMessage.value = null;
     final result = await _genreRepo.getGenres(type);
     isLoading.value = false;
     result.fold(
       (fail) {
         DPrint.error('Error fetching genres: ${fail.message}');
+        errorMessage.value = fail.message;
       },
       (success) {
         final data = success.data;

@@ -31,12 +31,14 @@ class PlaylistModel {
     String? userName,
     String? password,
     String? url,
+    String? id,
   }) {
     return PlaylistModel(
       name: name ?? this.name,
       userName: userName ?? this.userName,
       password: password ?? this.password,
       url: url ?? this.url,
+      id: id ?? this.id,
     );
   }
 }

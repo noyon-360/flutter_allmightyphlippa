@@ -169,16 +169,48 @@ class PlaylistListScreen extends StatelessWidget {
                             ),
                           ),
                           const Gap(w: 12),
-                          IconButton(
+                          PopupMenuButton<String>(
                             icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.red,
+                              Icons.more_vert,
+                              color: Colors.white,
                             ),
-                            onPressed: () => _showDeleteDialog(
-                              context,
-                              playlistCtrl,
-                              playlist.id!,
+                            color: AppColors.containerBgColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'update':
+                                  playlistCtrl.updateControllers();
+                                case 'edit':
+                                  Get.to(
+                                    () => AddPlaylistScreen(editing: playlist),
+                                  );
+                                case 'delete':
+                                  _showDeleteDialog(
+                                    context,
+                                    playlistCtrl,
+                                    playlist.id!,
+                                  );
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              // Only the playlist in use has content loaded to
+                              // refresh; "Select" already reloads any other.
+                              if (isActive)
+                                _menuItem(
+                                  'update',
+                                  Icons.refresh,
+                                  'Update Playlist',
+                                ),
+                              _menuItem('edit', Icons.edit_outlined, 'Edit'),
+                              _menuItem(
+                                'delete',
+                                Icons.delete_outline,
+                                'Delete',
+                                color: Colors.red,
+                              ),
+                            ],
                           ),
                           SecondaryButton(
                             text: isActive ? "Selected" : "Select",
@@ -207,6 +239,24 @@ class PlaylistListScreen extends StatelessWidget {
             },
           ),
           Gap.bottomBarGap,
+        ],
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _menuItem(
+    String value,
+    IconData icon,
+    String label, {
+    Color color = Colors.white,
+  }) {
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const Gap(w: 12),
+          Text(label, style: TextStyle(color: color)),
         ],
       ),
     );
