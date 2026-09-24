@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/services/premium_service.dart';
 import '../../epg/controllers/epg_controller.dart';
+import '../../epg/screens/category_epg_screen.dart';
 import '../../epg/models/epg_program_model.dart';
 import '../../genre/controllers/genre_controller.dart';
 import '../../genre/screens/category_selection_screen.dart';
@@ -343,15 +344,38 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       title = genre?.categoryName ?? 'Channels';
                     }
 
-                    return Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.primaryWhite,
-                          fontWeight: FontWeight.bold,
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: AppColors.primaryWhite,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
                         ),
-                      ),
+                        // Premium: the whole category as a full TV guide.
+                        if (PremiumService.to.isPremium.value)
+                          TextButton.icon(
+                            onPressed: () =>
+                                Get.to(() => CategoryEpgScreen(title: title)),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.red,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                            ),
+                            icon: const Icon(Icons.view_timeline_outlined),
+                            label: const Text(
+                              'Full Guide',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                      ],
                     );
                   });
                 },

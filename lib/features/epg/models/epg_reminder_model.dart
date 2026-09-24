@@ -25,9 +25,12 @@ class EpgReminderModel {
       channelId: json['channelId'] ?? '',
       channelName: json['channelName'] ?? '',
       programName: json['programName'] ?? '',
-      programStartTime: DateTime.parse(json['programStartTime']),
+      // The backend sends UTC ISO strings; convert so times are shown in the
+      // viewer's local time, matching the guide (the epoch value behind [key]
+      // is unchanged by this).
+      programStartTime: DateTime.parse(json['programStartTime']).toLocal(),
       programEndTime: json['programEndTime'] != null
-          ? DateTime.tryParse(json['programEndTime'])
+          ? DateTime.tryParse(json['programEndTime'])?.toLocal()
           : null,
       notifyMinutesBefore: json['notifyMinutesBefore'] ?? 5,
       isNotified: json['isNotified'] ?? false,
