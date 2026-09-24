@@ -14,6 +14,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '/core/constants/app_colors.dart';
 import 'package:get/get.dart';
+import '../../cast/utils/cast_names.dart';
+import '../../cast/widgets/cast_section.dart';
 import '../controllers/video_play_controller.dart';
 
 class VideoPlayScreen extends StatefulWidget {
@@ -474,6 +476,10 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 16),
+                                  CastSection(cast: controller.castText),
+                                  if (parseCastNames(controller.castText)
+                                      .isNotEmpty)
+                                    const SizedBox(height: 16),
                                   Obx(() {
                                     if (!controller.hasStartedPlaying.value) {
                                       return Center(
