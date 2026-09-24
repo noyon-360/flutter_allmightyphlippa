@@ -12,6 +12,7 @@ import 'package:flutter_almightyflippa/features/playlist/models/server_request_m
 import 'package:flutter_almightyflippa/features/video/screens/live_video_play_screen.dart';
 import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.dart';
 import '../../../core/services/watch_history_service.dart';
+import '../../epg/screens/epg_reminders_screen.dart';
 import '../../epg/services/epg_timeline_cache.dart';
 import '../../epg/services/live_tv_now_playing_cache.dart';
 
@@ -359,6 +360,17 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () {
                   Get.to(
                     () => const PlaylistListScreen(),
+                    transition: Transition.rightToLeft,
+                  );
+                },
+              ),
+              _buildMenuItem(
+                iconAsset: '',
+                iconData: Icons.notifications_active_outlined,
+                title: "My Alerts",
+                onTap: () {
+                  Get.to(
+                    () => const EpgRemindersScreen(),
                     transition: Transition.rightToLeft,
                   );
                 },

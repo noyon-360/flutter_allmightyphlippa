@@ -174,11 +174,14 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                   width: EpgTimelineController.dayWidth,
                   height: _kRowHeight,
                   child: !isLoaded
-                      ? _RowShimmer()
+                      ? _PinnedToViewport(
+                          timelineCtrl: timelineCtrl,
+                          child: _RowShimmer(),
+                        )
                       : programs.isEmpty
-                      ? const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
+                      ? _PinnedToViewport(
+                          timelineCtrl: timelineCtrl,
+                          child: const Padding(
                             padding: EdgeInsets.only(left: 8),
                             child: Text(
                               'No program info',
@@ -312,6 +315,41 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Keeps a row's loading/empty placeholder at the left edge of what's
+/// currently visible. The day strip is 24h wide and now opens scrolled to the
+/// current time, so a placeholder laid out at the strip's own left edge would
+/// sit off-screen and the row would look blank.
+class _PinnedToViewport extends StatelessWidget {
+  final EpgTimelineController timelineCtrl;
+  final Widget child;
+
+  const _PinnedToViewport({required this.timelineCtrl, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final scroll = timelineCtrl.timelineScrollController;
+    return Stack(
+      children: [
+        AnimatedBuilder(
+          animation: scroll,
+          builder: (context, _) => Positioned(
+            // The controller drives the ruler and every row, so it has many
+            // positions; they're kept in lockstep, so any one will do.
+            left: scroll.hasClients ? scroll.positions.first.pixels : 0,
+            top: 0,
+            bottom: 0,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              widthFactor: 1,
+              child: child,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
