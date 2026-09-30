@@ -451,8 +451,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                           ),
                                           decoration: BoxDecoration(
                                             color: AppColors.red,
-                                            borderRadius:
-                                                BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           child: Text(
                                             controller.qualityLabel!,
@@ -477,8 +478,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   ),
                                   const SizedBox(height: 16),
                                   CastSection(cast: controller.castText),
-                                  if (parseCastNames(controller.castText)
-                                      .isNotEmpty)
+                                  if (parseCastNames(
+                                    controller.castText,
+                                  ).isNotEmpty)
                                     const SizedBox(height: 16),
                                   Obx(() {
                                     if (!controller.hasStartedPlaying.value) {
@@ -550,7 +552,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                               children: [
                                                 Obx(
                                                   () => AnimatedOpacity(
-                                                    opacity: controller
+                                                    opacity:
+                                                        controller
                                                             .isTogglingFavorite
                                                             .value
                                                         ? 0.5
@@ -613,7 +616,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                                       videoType: vtype,
                                                       title: controller.title,
                                                       url: url,
-                                                      ext: controller.currentExt,
+                                                      ext:
+                                                          controller.currentExt,
                                                       thumbnail: controller
                                                           .currentThumbnail,
                                                       iconSize: 28,
@@ -632,7 +636,6 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                             ),
                                           );
                                         }),
-                                      
                                       ],
                                     ),
                                   ),
@@ -774,7 +777,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Movie | ${movie.added}',
+                        'Movie${movie.rating.isNotEmpty && movie.rating != '0' ? ' | ⭐ ${movie.rating}' : ''}',
                         style: const TextStyle(
                           color: AppColors.primaryGray,
                           fontSize: 12,
@@ -871,7 +874,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     final seasonKeys = controller.sortedSeasonKeys(
       episodesMap?.cast<String, List<dynamic>>(),
     );
-    if (seasonKeys.length <= 1) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (seasonKeys.length <= 1)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: SizedBox(
@@ -900,9 +904,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                   child: Text(
                     'Season $seasonKey',
                     style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.primaryGray,
+                      color: isSelected ? Colors.white : AppColors.primaryGray,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -959,91 +961,94 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                     controller.playEpisode(episode);
                   },
                   child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isPlaying
-                      ? AppColors.red.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: isPlaying
-                      ? Border.all(color: AppColors.red.withOpacity(0.5))
-                      : null,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: AppColors.containerBgColor,
-                        borderRadius: BorderRadius.circular(8),
-                        image:
-                            episode.info?.movieImage != null &&
-                                episode.info!.movieImage!.isNotEmpty
-                            ? DecorationImage(
-                                image: NetworkImage(episode.info!.movieImage!),
-                                fit: BoxFit.cover,
-                                onError: (_, __) {},
-                              )
-                            : null,
-                      ),
-                      child:
-                          episode.info?.movieImage == null ||
-                              episode.info!.movieImage!.isEmpty
-                          ? const Icon(
-                              Icons.play_circle_outline,
-                              color: AppColors.iconColor,
-                            )
-                          : isPlaying
-                          ? const Center(
-                              child: Icon(
-                                Icons.play_arrow,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            )
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isPlaying
+                          ? AppColors.red.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: isPlaying
+                          ? Border.all(color: AppColors.red.withOpacity(0.5))
                           : null,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            episode.title ?? "Episode ${episode.episodeNum}",
-                            style: TextStyle(
-                              color: isPlaying
-                                  ? AppColors.red
-                                  : AppColors.primaryWhite,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: AppColors.containerBgColor,
+                            borderRadius: BorderRadius.circular(8),
+                            image:
+                                episode.info?.movieImage != null &&
+                                    episode.info!.movieImage!.isNotEmpty
+                                ? DecorationImage(
+                                    image: NetworkImage(
+                                      episode.info!.movieImage!,
+                                    ),
+                                    fit: BoxFit.cover,
+                                    onError: (_, __) {},
+                                  )
+                                : null,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
-                            style: const TextStyle(
-                              color: AppColors.primaryGray,
-                              fontSize: 12,
-                            ),
+                          child:
+                              episode.info?.movieImage == null ||
+                                  episode.info!.movieImage!.isEmpty
+                              ? const Icon(
+                                  Icons.play_circle_outline,
+                                  color: AppColors.iconColor,
+                                )
+                              : isPlaying
+                              ? const Center(
+                                  child: Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                episode.title ??
+                                    "Episode ${episode.episodeNum}",
+                                style: TextStyle(
+                                  color: isPlaying
+                                      ? AppColors.red
+                                      : AppColors.primaryWhite,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
+                                style: const TextStyle(
+                                  color: AppColors.primaryGray,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        if (isPlaying)
+                          const Icon(
+                            Icons.equalizer,
+                            color: AppColors.red,
+                            size: 20,
+                          ),
+                      ],
                     ),
-                    if (isPlaying)
-                      const Icon(
-                        Icons.equalizer,
-                        color: AppColors.red,
-                        size: 20,
-                      ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }),
             );
-          }),
-        );
           },
         );
       }),
@@ -1461,9 +1466,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 children: [
                                   Text(
                                     track.displayName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                   Container(
                                     width: 18,
@@ -1556,8 +1559,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                         itemCount: tracks.length,
                         itemBuilder: (context, index) {
                           final track = tracks[index];
-                          final isSelected =
-                              controller.isSubtitleEnabled.value
+                          final isSelected = controller.isSubtitleEnabled.value
                               ? controller.currentSubtitleTrack.value == track
                               : track == SubtitleTrack.no();
 
@@ -1577,9 +1579,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 children: [
                                   Text(
                                     track.displayName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                   Container(
                                     width: 18,
