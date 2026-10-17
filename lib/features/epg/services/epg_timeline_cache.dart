@@ -27,6 +27,12 @@ class EpgTimelineCache extends GetxService {
   final RxMap<String, List<EpgProgramModel>> dayPrograms =
       <String, List<EpgProgramModel>>{}.obs;
 
+  /// Keys whose fetch came back a failure rather than an empty schedule.
+  /// Both leave [dayPrograms] empty, but only one of them is worth telling
+  /// the viewer about — "no guide for this channel" and "the guide server is
+  /// down" are different problems and read as the same blank row otherwise.
+  final RxSet<String> failedDays = <String>{}.obs;
+
   final Set<String> _fetched = {};
   final Set<String> _inFlight = {};
 
@@ -40,6 +46,7 @@ class EpgTimelineCache extends GetxService {
   /// Drops everything cached so visible rows/channels refetch on next build.
   void clear() {
     dayPrograms.clear();
+    failedDays.clear();
     _fetched.clear();
     _inFlight.clear();
     _bypassServerCacheUntil = DateTime.now().add(const Duration(minutes: 2));
@@ -55,6 +62,11 @@ class EpgTimelineCache extends GetxService {
   // watching this inside an Obx rebuild correctly when a fetch completes.
   bool isLoaded(int streamId, DateTime day) =>
       dayPrograms.containsKey(_keyFor(streamId, day));
+
+  /// Whether this day's guide failed to load, as opposed to loading fine and
+  /// simply having no programs.
+  bool hasFailed(int streamId, DateTime day) =>
+      failedDays.contains(_keyFor(streamId, day));
 
   /// The 3 calendar days ([referenceDay] plus the day before and after) —
   /// enough to always have at least 10 previous and 10 next programs
@@ -110,10 +122,14 @@ class EpgTimelineCache extends GetxService {
       );
 
       result.fold(
-        (fail) => dayPrograms[key] = const [],
+        (fail) {
+          failedDays.add(key);
+          dayPrograms[key] = const [];
+        },
         (success) => dayPrograms[key] = success.data,
       );
     } catch (_) {
+      failedDays.add(key);
       dayPrograms[key] = const [];
     } finally {
       _fetched.add(key);

@@ -6,6 +6,7 @@ import '/features/profile/controller/profile_controller.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 import '../controllers/playlist_controller.dart';
+import '../models/playlist_account_info.dart';
 import 'add_playlist_screen.dart';
 
 class PlaylistListScreen extends StatelessWidget {
@@ -165,6 +166,13 @@ class PlaylistListScreen extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                // Omitted entirely when the provider couldn't
+                                // be reached — a guess about the line's state
+                                // is worse than staying quiet.
+                                if (playlist.accountInfo != null) ...[
+                                  const Gap(h: 6),
+                                  _ExpiryBadge(info: playlist.accountInfo!),
+                                ],
                               ],
                             ),
                           ),
@@ -290,6 +298,45 @@ class PlaylistListScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The line's subscription state on a playlist card: a coloured dot plus
+/// wording that says when it lapses, so an expired playlist reads as expired
+/// rather than as a stream that mysteriously won't start.
+class _ExpiryBadge extends StatelessWidget {
+  final PlaylistAccountInfo info;
+
+  const _ExpiryBadge({required this.info});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = info.indicatorColor;
+    final needsAttention = info.isExpired || info.isExpiringSoon;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const Gap(w: 6),
+        Flexible(
+          child: Text(
+            info.label,
+            style: TextStyle(
+              color: needsAttention ? color : AppColors.primaryGray,
+              fontSize: 13,
+              fontWeight: needsAttention ? FontWeight.w600 : FontWeight.w400,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

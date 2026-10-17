@@ -10,6 +10,7 @@ import '../../profile/controller/profile_controller.dart';
 import '../../tv/repositories/live_tv_repo.dart';
 import '../models/video_status_request_model.dart';
 import '../repositories/video_status_repo.dart';
+import '../services/stream_failure_diagnosis.dart';
 
 class LiveVideoPlayController extends GetxController {
   final _liveTvRepo = Get.find<LiveTvRepo>();
@@ -24,6 +25,18 @@ class LiveVideoPlayController extends GetxController {
   final isVideoInitialized = false.obs;
   final isLoading = false.obs;
   final errorMessage = Rxn<String>();
+
+  /// What the post-failure probe established, so the UI can pick an icon and
+  /// decide whether it's fair to name the provider. Null until a failure has
+  /// actually been diagnosed.
+  final failureCause = Rxn<StreamFailureCause>();
+
+  /// The evidence line ("Provider returned HTTP 512") shown under the error.
+  final failureDetail = Rxn<String>();
+
+  /// True while the probe is running, so the error view can say it's still
+  /// working something out rather than flashing a generic message first.
+  final isDiagnosing = false.obs;
 
   final isPlaying = false.obs;
   final isBuffering = false.obs;
@@ -102,8 +115,31 @@ class LiveVideoPlayController extends GetxController {
     // recovers from transient hiccups on its own.
     final startup = _startup;
     if (startup != null && !startup.isCompleted) {
+      // Provisional only — [_diagnoseFailure] replaces this with a verdict
+      // based on what the provider actually answers.
       errorMessage.value = _friendlyError(error);
       startup.complete(false);
+    }
+  }
+
+  /// Re-requests the failed URL to find out who is actually at fault, and
+  /// rewrites the error copy with the answer. Never blames the provider
+  /// without a response (or a verified non-response) proving it.
+  Future<void> _diagnoseFailure(String playUrl) async {
+    isDiagnosing.value = true;
+    try {
+      final diagnosis = await StreamFailureDiagnosis.diagnose(
+        playUrl: playUrl,
+      );
+      errorMessage.value = diagnosis.message;
+      failureDetail.value = diagnosis.detail;
+      failureCause.value = diagnosis.cause;
+    } catch (e) {
+      // A probe that itself fails tells us nothing — keep the provisional
+      // message rather than inventing a cause.
+      debugPrint('Stream diagnosis failed: $e');
+    } finally {
+      isDiagnosing.value = false;
     }
   }
 
@@ -159,6 +195,8 @@ class LiveVideoPlayController extends GetxController {
   }) async {
     isVideoInitialized.value = false;
     errorMessage.value = null;
+    failureCause.value = null;
+    failureDetail.value = null;
     isLoading.value = true;
 
     // Stop whatever was playing before (a retry reuses the same player).
@@ -210,7 +248,10 @@ class LiveVideoPlayController extends GetxController {
             },
           );
           _startup = null;
-          if (!started) return;
+          if (!started) {
+            await _diagnoseFailure(playUrl);
+            return;
+          }
 
           isVideoInitialized.value = true;
 

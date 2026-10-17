@@ -24,6 +24,11 @@ class LiveTvNowPlayingCache extends GetxService {
   /// (or the fetch failed) — either way, [ensureLoaded] won't retry it.
   final RxMap<int, EpgProgramModel?> nowPlaying = <int, EpgProgramModel?>{}.obs;
 
+  /// Channels whose fetch failed rather than returning an empty schedule.
+  /// Both land as a null in [nowPlaying], but they mean different things to
+  /// the viewer, so the row needs to be able to tell them apart.
+  final RxSet<int> failedChannels = <int>{}.obs;
+
   final Set<int> _fetched = {};
   final Set<int> _inFlight = {};
 
@@ -37,12 +42,17 @@ class LiveTvNowPlayingCache extends GetxService {
   /// Drops everything cached so visible rows/channels refetch on next build.
   void clear() {
     nowPlaying.clear();
+    failedChannels.clear();
     _fetched.clear();
     _inFlight.clear();
     _bypassServerCacheUntil = DateTime.now().add(const Duration(minutes: 2));
   }
 
   EpgProgramModel? peek(int streamId) => nowPlaying[streamId];
+
+  /// Whether this channel's guide failed to load, as opposed to loading fine
+  /// and having nothing scheduled.
+  bool hasFailed(int streamId) => failedChannels.contains(streamId);
 
   Future<void> ensureLoaded(int streamId) async {
     if (_fetched.contains(streamId) || _inFlight.contains(streamId)) return;
@@ -61,6 +71,7 @@ class LiveTvNowPlayingCache extends GetxService {
 
       result.fold(
         (fail) {
+          failedChannels.add(streamId);
           nowPlaying[streamId] = null;
         },
         (success) {
@@ -72,6 +83,7 @@ class LiveTvNowPlayingCache extends GetxService {
         },
       );
     } catch (_) {
+      failedChannels.add(streamId);
       nowPlaying[streamId] = null;
     } finally {
       _fetched.add(streamId);

@@ -165,6 +165,10 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
             child: Obx(() {
               final isLoaded = cache.isLoaded(widget.streamId, widget.day);
               final programs = cache.peek(widget.streamId, widget.day);
+              // An empty row means one of two different things; say which.
+              final emptyLabel = cache.hasFailed(widget.streamId, widget.day)
+                  ? 'Guide unavailable from provider'
+                  : 'No program info';
 
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -181,11 +185,11 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                       : programs.isEmpty
                       ? _PinnedToViewport(
                           timelineCtrl: timelineCtrl,
-                          child: const Padding(
-                            padding: EdgeInsets.only(left: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8),
                             child: Text(
-                              'No program info',
-                              style: TextStyle(
+                              emptyLabel,
+                              style: const TextStyle(
                                 color: AppColors.primaryGray,
                                 fontSize: 12,
                               ),

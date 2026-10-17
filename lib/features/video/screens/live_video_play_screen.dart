@@ -20,6 +20,7 @@ import '../../epg/widgets/epg_timeline_ruler.dart';
 import '../../tv/controllers/live_tv_controller.dart';
 import '../../tv/models/live_tv_reponse_model.dart';
 import '../controllers/live_video_play_controller.dart';
+import '../services/stream_failure_diagnosis.dart';
 import '../widgets/live_channel_program_strip.dart';
 import '../widgets/live_video_controls.dart';
 
@@ -406,8 +407,8 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.signal_wifi_connected_no_internet_4_rounded,
+                  Icon(
+                    _failureIcon(controller.failureCause.value),
                     color: Colors.redAccent,
                     size: 40,
                   ),
@@ -417,6 +418,29 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
+                  // While the probe runs, say so — otherwise the provisional
+                  // message looks like the final verdict for a few seconds.
+                  if (controller.isDiagnosing.value) ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Checking what went wrong…',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.primaryGray,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ] else if (controller.failureDetail.value != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      controller.failureDetail.value!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.primaryGray,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   TextButton.icon(
                     onPressed: () => controller.initializeLiveVideo(
@@ -437,6 +461,28 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     );
   }
 
+  /// Pairs the error icon with what the probe found, so a provider outage
+  /// doesn't keep showing the "no internet" glyph and send the viewer off to
+  /// restart a router that was never the problem.
+  IconData _failureIcon(StreamFailureCause? cause) {
+    switch (cause) {
+      case StreamFailureCause.noInternet:
+        return Icons.signal_wifi_connected_no_internet_4_rounded;
+      case StreamFailureCause.providerDown:
+      case StreamFailureCause.providerUnreachable:
+        return Icons.cloud_off_rounded;
+      case StreamFailureCause.providerRejected:
+        return Icons.lock_outline_rounded;
+      case StreamFailureCause.channelNotFound:
+        return Icons.tv_off_rounded;
+      case StreamFailureCause.playbackFailed:
+        return Icons.error_outline_rounded;
+      case StreamFailureCause.unknown:
+      case null:
+        return Icons.signal_wifi_connected_no_internet_4_rounded;
+    }
+  }
+
   /// The loading and error states have no player overlay (and the app bar is
   /// gone), so give them their own back button — otherwise a stream that
   /// never starts would leave nothing to tap to leave the screen.
@@ -445,16 +491,7 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
       fit: StackFit.expand,
       children: [
         child,
-        Positioned(
-          top: 0,
-          left: 0,
-          child: IconButton(
-            tooltip: 'Back',
-            color: Colors.white,
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-        ),
+        Positioned(top: 0, left: 0, child: BackButton()),
       ],
     );
   }
