@@ -54,6 +54,36 @@ class PlaylistAccountInfo {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'status': status,
+        'isExpired': isExpired,
+        'expiresAt': expiresAt?.toUtc().toIso8601String(),
+        'daysRemaining': daysRemaining,
+        'isTrial': isTrial,
+        'maxConnections': maxConnections,
+        'activeConnections': activeConnections,
+      };
+
+  /// The same line re-evaluated against the clock. Cached info was accurate
+  /// when it was stored, so a line that has lapsed since then would otherwise
+  /// still read as active until the network answers.
+  PlaylistAccountInfo refreshed({DateTime? now}) {
+    final on = expiresAt;
+    if (on == null) return this;
+
+    final at = now ?? DateTime.now();
+    final days = on.difference(at).inDays;
+    return PlaylistAccountInfo(
+      status: status,
+      isExpired: isExpired || !on.isAfter(at),
+      expiresAt: on,
+      daysRemaining: days,
+      isTrial: isTrial,
+      maxConnections: maxConnections,
+      activeConnections: activeConnections,
+    );
+  }
+
   /// A line close enough to expiry to be worth flagging before it bites.
   static const int _warnWithinDays = 7;
 

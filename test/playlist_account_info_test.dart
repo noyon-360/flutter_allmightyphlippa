@@ -75,4 +75,41 @@ void main() {
     expect(info.isExpired, isTrue);
     expect(info.label, 'Expired 1 Jan 2026');
   });
+
+  test('cached info survives a round trip through storage', () {
+    final info = parse(payload(
+      status: 'Active',
+      expiresAt: '2027-09-22T00:00:00.000Z',
+      daysRemaining: 340,
+    ))!;
+    final restored = parse(info.toJson())!;
+    expect(restored.status, 'Active');
+    expect(restored.expiresAt, info.expiresAt);
+    expect(restored.daysRemaining, 340);
+  });
+
+  test('a cached line that has since lapsed is re-read as expired', () {
+    final info = parse(payload(
+      status: 'Active',
+      expiresAt: '2026-10-01T00:00:00.000Z',
+      daysRemaining: 5,
+    ))!;
+    final now = DateTime.parse('2026-10-17T00:00:00.000Z');
+    final refreshed = info.refreshed(now: now);
+    expect(refreshed.isExpired, isTrue);
+    expect(refreshed.daysRemaining, lessThan(0));
+    expect(refreshed.label, startsWith('Expired'));
+  });
+
+  test('a cached line still running counts down from today', () {
+    final info = parse(payload(
+      status: 'Active',
+      expiresAt: '2026-10-20T00:00:00.000Z',
+      daysRemaining: 30,
+    ))!;
+    final refreshed =
+        info.refreshed(now: DateTime.parse('2026-10-17T00:00:00.000Z'));
+    expect(refreshed.daysRemaining, 3);
+    expect(refreshed.label, 'Active · expires in 3 days');
+  });
 }

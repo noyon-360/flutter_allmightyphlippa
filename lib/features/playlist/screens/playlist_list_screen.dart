@@ -166,13 +166,18 @@ class PlaylistListScreen extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                // Omitted entirely when the provider couldn't
-                                // be reached — a guess about the line's state
-                                // is worse than staying quiet.
-                                if (playlist.accountInfo != null) ...[
-                                  const Gap(h: 6),
-                                  _ExpiryBadge(info: playlist.accountInfo!),
-                                ],
+                                const Gap(h: 6),
+                                // Never a guess about the line's state: the
+                                // cached badge while it is being refreshed, a
+                                // placeholder while there is nothing yet, and
+                                // an honest "unavailable" if the provider
+                                // couldn't be reached.
+                                if (playlist.accountInfo != null)
+                                  _ExpiryBadge(info: playlist.accountInfo!)
+                                else if (playlistCtrl.isFetchingList.value)
+                                  const _ExpiryBadgePlaceholder()
+                                else
+                                  const _ExpiryBadgeUnavailable(),
                               ],
                             ),
                           ),
@@ -298,6 +303,96 @@ class PlaylistListScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Stands in for the badge while the first check of a line is still in
+/// flight, pulsing so the row reads as loading rather than as a card that
+/// simply has nothing to say.
+class _ExpiryBadgePlaceholder extends StatefulWidget {
+  const _ExpiryBadgePlaceholder();
+
+  @override
+  State<_ExpiryBadgePlaceholder> createState() =>
+      _ExpiryBadgePlaceholderState();
+}
+
+class _ExpiryBadgePlaceholderState extends State<_ExpiryBadgePlaceholder>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  late final Animation<double> _opacity = Tween<double>(
+    begin: 0.35,
+    end: 0.85,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = AppColors.primaryGray;
+
+    return FadeTransition(
+      opacity: _opacity,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
+          ),
+          const Gap(w: 6),
+          Container(
+            width: 120,
+            height: 10,
+            decoration: BoxDecoration(
+              color: tint.withOpacity(0.35),
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown once the check has finished without an answer — the provider was
+/// unreachable — so the gap in the card is explained instead of looking like
+/// a badge that never loaded.
+class _ExpiryBadgeUnavailable extends StatelessWidget {
+  const _ExpiryBadgeUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.primaryGray, width: 1.5),
+          ),
+        ),
+        const Gap(w: 6),
+        Text(
+          'Status unavailable',
+          style: TextStyle(
+            color: AppColors.primaryGray.withOpacity(0.8),
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 }

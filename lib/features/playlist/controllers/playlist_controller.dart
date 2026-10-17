@@ -306,12 +306,19 @@ class PlaylistController extends GetxController {
     isFetchingList.value = true;
     await _loadActivePlaylistData();
 
-    // First, try to load from local storage
+    // First, try to load from local storage so the list — names, menus and
+    // expiry badges — is on screen immediately. Cached subscription info is
+    // re-checked against the clock, since a line may have lapsed since it was
+    // stored.
     final localPlaylists = await _authStorageService.getPlaylists();
     if (localPlaylists.isNotEmpty) {
-      playlists.value = localPlaylists
-          .map((e) => PlaylistModel.fromJson(e))
-          .toList();
+      playlists.value = localPlaylists.map((e) {
+        final playlist = PlaylistModel.fromJson(e);
+        final info = playlist.accountInfo;
+        return info == null
+            ? playlist
+            : playlist.copyWith(accountInfo: info.refreshed());
+      }).toList();
     }
 
     // Then, fetch from network
@@ -330,7 +337,7 @@ class PlaylistController extends GetxController {
         playlists.value = success.data;
         // Sync to local storage
         await _authStorageService.storePlaylists(
-          success.data.map((e) => e.toJson()).toList(),
+          success.data.map((e) => e.toStorageJson()).toList(),
         );
       },
     );

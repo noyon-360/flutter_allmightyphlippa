@@ -31,6 +31,8 @@ class PlaylistModel {
     );
   }
 
+  /// The payload the API accepts — deliberately without the id or the
+  /// provider-derived [accountInfo], which the backend owns.
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -39,6 +41,15 @@ class PlaylistModel {
       'url': url,
     };
   }
+
+  /// What gets cached on the device. Keeps the id and [accountInfo] so a
+  /// relaunch can draw the full list — menus and expiry badge included —
+  /// before the network answers.
+  Map<String, dynamic> toStorageJson() => {
+        ...toJson(),
+        '_id': id,
+        'accountInfo': accountInfo?.toJson(),
+      };
 
   PlaylistModel copyWith({
     String? name,
