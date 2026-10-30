@@ -6,6 +6,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../core/services/watch_history_service.dart';
+import '../../epg/models/epg_program_model.dart';
+import '../../epg/services/epg_timeline_cache.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../../tv/repositories/live_tv_repo.dart';
 import '../models/video_status_request_model.dart';
@@ -16,6 +18,7 @@ class LiveVideoPlayController extends GetxController {
   final _liveTvRepo = Get.find<LiveTvRepo>();
   final _profileCtrl = Get.find<ProfileController>();
   final _videoStatusRepo = Get.find<VideoStatusRepo>();
+  final _epgCache = Get.find<EpgTimelineCache>();
 
   // media_kit (like Movies/Series) rather than video_player: it can list and
   // select the subtitle and audio tracks a live stream carries.
@@ -56,6 +59,17 @@ class LiveVideoPlayController extends GetxController {
   String? _currentPlayUrl;
   String? get currentPlayUrl => _currentPlayUrl;
 
+  // A program's position moves slowly and live sessions run long, so this can
+  // be well above the 10s the Movies/Series player syncs at.
+  static const _progressSyncInterval = Duration(seconds: 30);
+  Timer? _progressTimer;
+
+  /// The channel being recorded in watch history. Null until a stream has
+  /// actually started, so a channel that fails to load is never recorded.
+  int? _syncedStreamId;
+  String _syncedChannelName = '';
+  String _syncedChannelLogo = '';
+
   bool get isSubscribed {
     final user = _profileCtrl.userProfile.value;
     return user?.subscriptionStatus == 'active' || user?.plan == 'premium';
@@ -95,8 +109,77 @@ class LiveVideoPlayController extends GetxController {
     for (final sub in _subscriptions) {
       sub.cancel();
     }
+    _progressTimer?.cancel();
+    _syncProgress().then((_) => _refreshWatchHistory());
     player.dispose();
     super.onClose();
+  }
+
+  // ─── Watch history ───────────────────────────────────────────────────────
+
+  void _startProgressSync({
+    required int streamId,
+    required String channelName,
+    required String channelLogo,
+  }) {
+    _syncedStreamId = streamId;
+    _syncedChannelName = channelName;
+    _syncedChannelLogo = channelLogo;
+
+    // Records the visit right away; the guide usually isn't loaded yet, so
+    // the first program position arrives with the next sync.
+    _syncProgress().then((_) => _refreshWatchHistory());
+    _epgCache.ensureLoadedAround(streamId, DateTime.now());
+
+    _progressTimer = Timer.periodic(_progressSyncInterval, (_) {
+      if (!player.state.playing || player.state.buffering) return;
+      // Already-fetched days are a no-op; this picks up the next day when a
+      // session runs past midnight.
+      _epgCache.ensureLoadedAround(streamId, DateTime.now());
+      if (_airingProgram(streamId, DateTime.now()) != null) _syncProgress();
+    });
+  }
+
+  void _stopProgressSync() {
+    _progressTimer?.cancel();
+    _syncedStreamId = null;
+  }
+
+  EpgProgramModel? _airingProgram(int streamId, DateTime now) => _epgCache
+      .peekAround(streamId, now)
+      .firstWhereOrNull((program) => program.isAiringAt(now));
+
+  /// Saves how far through the airing program the viewer is. A live stream
+  /// has no position of its own, so that's what its progress means. With no
+  /// guide data there's nothing to measure against, and the entry stays a
+  /// plain "recently watched" marker.
+  Future<void> _syncProgress() async {
+    final streamId = _syncedStreamId;
+    if (streamId == null) return;
+
+    final now = DateTime.now();
+    final program = _airingProgram(streamId, now);
+
+    final result = await _videoStatusRepo.updateVideoStatus(
+      UpdateVideoStatusRequest(
+        title: _syncedChannelName.isNotEmpty ? _syncedChannelName : 'Live TV',
+        videoId: streamId.toString(),
+        videoType: 'live',
+        currentTime: program?.elapsedSecondsAt(now),
+        duration: program?.durationSeconds,
+        thumbnail: _syncedChannelLogo.isNotEmpty ? _syncedChannelLogo : null,
+      ),
+    );
+    result.fold(
+      (fail) => debugPrint('Live watch history sync failed: ${fail.message}'),
+      (_) {},
+    );
+  }
+
+  void _refreshWatchHistory() {
+    if (Get.isRegistered<WatchHistoryService>()) {
+      Get.find<WatchHistoryService>().refreshList();
+    }
   }
 
   /// mpv also reports problems that don't stop playback (no audio output on a
@@ -200,6 +283,7 @@ class LiveVideoPlayController extends GetxController {
     isLoading.value = true;
 
     // Stop whatever was playing before (a retry reuses the same player).
+    _stopProgressSync();
     await player.stop();
 
     try {
@@ -255,24 +339,11 @@ class LiveVideoPlayController extends GetxController {
 
           isVideoInitialized.value = true;
 
-          // Record this channel in watch history so it can show up under
-          // "Live TV History" — there's no meaningful resume position for a
-          // live stream, so this is purely a "recently watched" marker.
-          _videoStatusRepo
-              .updateVideoStatus(
-                UpdateVideoStatusRequest(
-                  title: channelName.isNotEmpty ? channelName : 'Live TV',
-                  videoId: streamId.toString(),
-                  videoType: 'live',
-                  thumbnail: channelLogo.isNotEmpty ? channelLogo : null,
-                ),
-              )
-              .then((result) {
-                if (result.isRight() &&
-                    Get.isRegistered<WatchHistoryService>()) {
-                  Get.find<WatchHistoryService>().refreshList();
-                }
-              });
+          _startProgressSync(
+            streamId: streamId,
+            channelName: channelName,
+            channelLogo: channelLogo,
+          );
         },
       );
     } catch (e) {

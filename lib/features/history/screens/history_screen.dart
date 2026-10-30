@@ -201,10 +201,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ? '${item.lastWatchedAt!.day} ${_getMonth(item.lastWatchedAt!.month)} ${item.lastWatchedAt!.year}'
         : '';
 
-    final type = item.videoType.toLowerCase() == 'live'
+    final isLive = item.videoType.toLowerCase() == 'live';
+    final type = isLive
         ? 'Live TV'
         : (item.videoType.isNotEmpty ? item.videoType : 'Video');
-    final duration = _formatDuration(item.duration);
+    // A live entry's duration is the program's length, not the channel's or
+    // the time spent watching, so it would only mislead here.
+    final duration = isLive ? '' : _formatDuration(item.duration);
 
     // Filter out empty parts
     final parts = [date, type, duration].where((p) => p.isNotEmpty).toList();

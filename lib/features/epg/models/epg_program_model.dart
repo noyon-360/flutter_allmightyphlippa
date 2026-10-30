@@ -60,6 +60,15 @@ class EpgProgramModel {
 
   bool get isFuture => startTime.isAfter(DateTime.now());
 
+  bool isAiringAt(DateTime time) =>
+      !startTime.isAfter(time) && endTime.isAfter(time);
+
+  double get durationSeconds =>
+      endTime.difference(startTime).inSeconds.toDouble();
+
+  double elapsedSecondsAt(DateTime time) =>
+      time.difference(startTime).inSeconds.toDouble();
+
   static final _timeFormat = DateFormat('h:mm a');
 
   String get timeRange =>
