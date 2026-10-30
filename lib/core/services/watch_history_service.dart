@@ -45,6 +45,20 @@ class WatchHistoryService extends GetxService {
     );
   }
 
+  /// Finds an entry by its record id (`_id`), which is what a continue
+  /// watching push calls `videoId`. It can be older than the page held in
+  /// [watchHistory], so anything not loaded is looked up with a bigger fetch.
+  Future<WatchHistoryModel?> findByRecordId(String id) async {
+    final loaded = watchHistory.firstWhereOrNull((item) => item.id == id);
+    if (loaded != null) return loaded;
+
+    final result = await _videoStatusRepo.getWatchHistory(limit: 100);
+    return result.fold(
+      (failure) => null,
+      (success) => success.data.firstWhereOrNull((item) => item.id == id),
+    );
+  }
+
   void updateProgressGlobally({
     required String videoId,
     required double newTime,

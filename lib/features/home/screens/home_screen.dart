@@ -13,6 +13,7 @@ import 'package:get/get.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/services/watch_history_service.dart';
 import '../../history/screens/history_screen.dart';
+import '../../notifications/widgets/notification_bell.dart';
 import '../../playlist/models/server_request_model.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
     hide Icons;
@@ -89,14 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(Icons.flash_on, color: Colors.amber, size: 40),
                 ),
               ),
-              // IconButton(
-              //   onPressed: () {},
-              //   icon: const Icon(
-              //     Icons.notifications_none_outlined,
-              //     color: AppColors.primaryWhite,
-              //     size: 28,
-              //   ),
-              // ),
+              const NotificationBell(),
             ],
           ),
           // Replaces the old "Hello <name>, Welcome to LABBY app" line with

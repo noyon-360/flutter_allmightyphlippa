@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -9,16 +10,19 @@ import 'package:get/get.dart';
 import '../api/api_client.dart';
 import '../constants/api_constants.dart';
 import '../../features/epg/controllers/epg_controller.dart';
+import '../../features/history/screens/history_screen.dart';
+import '../../features/history/utils/open_watch_history_item.dart';
+import '../../features/notifications/services/notification_inbox_service.dart';
 import '../../features/video/screens/live_video_play_screen.dart';
 import 'auth_storage_service.dart';
+import 'watch_history_service.dart';
 
 const _channelId = 'labby_tv_high_importance';
 const _channelName = 'LABBY TV Notifications';
 
-/// FCM `data.type` the backend sends for a program alert, and the prefix used
-/// to carry it (plus the channel) through a local notification's payload.
+/// FCM `data.type` values the backend sends that open a specific screen.
 const _epgReminderType = 'epg_reminder';
-const _epgReminderPayloadPrefix = '$_epgReminderType:';
+const _continueWatchingType = 'continue_watching';
 
 class NotificationService extends GetxService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -27,6 +31,12 @@ class NotificationService extends GetxService {
   final ApiClient _apiClient = ApiClient();
 
   late final AuthStorageService _authStorage;
+
+  NotificationInboxService get _inbox => NotificationInboxService.to;
+
+  /// Local notification id -> FCM message id, so tapping a foreground
+  /// notification can mark its inbox entry read.
+  final Map<int, String> _shownLocally = {};
 
   @override
   Future<void> onInit() async {
@@ -153,6 +163,7 @@ class NotificationService extends GetxService {
   void _listenForeground() {
     FirebaseMessaging.onMessage.listen((message) {
       DPrint.log('[FCM] foreground: ${message.notification?.title}');
+      _inbox.add(message);
       _showLocalNotification(message);
     });
   }
@@ -160,7 +171,8 @@ class NotificationService extends GetxService {
   void _listenBackgroundTap() {
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       DPrint.log('[FCM] background tap: ${message.data}');
-      _navigateFromMessage(message);
+      _inbox.add(message, isRead: true);
+      openFromData(message.data);
     });
   }
 
@@ -168,8 +180,9 @@ class NotificationService extends GetxService {
     final initial = await _fcm.getInitialMessage();
     if (initial != null) {
       DPrint.log('[FCM] terminated tap: ${initial.data}');
+      await _inbox.add(initial, isRead: true);
       await Future.delayed(const Duration(milliseconds: 500));
-      _navigateFromMessage(initial);
+      openFromData(initial.data);
     }
   }
 
@@ -190,6 +203,9 @@ class NotificationService extends GetxService {
       iOS: iosDetails,
     );
 
+    final messageId = message.messageId;
+    if (messageId != null) _shownLocally[notification.hashCode] = messageId;
+
     await _localNotifications.show(
       notification.hashCode,
       notification.title,
@@ -199,31 +215,31 @@ class NotificationService extends GetxService {
     );
   }
 
-  /// A local notification carries a single string payload, so program alerts
-  /// are encoded as `epg_reminder:<channelId>` and anything else as its route.
-  String? _payloadFor(Map<String, dynamic> data) {
-    if (data['type'] == _epgReminderType && data['channelId'] != null) {
-      return '$_epgReminderPayloadPrefix${data['channelId']}';
-    }
-    return data['route'] as String?;
-  }
+  /// A local notification carries a single string payload, so the FCM `data`
+  /// map travels through it as JSON.
+  String? _payloadFor(Map<String, dynamic> data) =>
+      data.isEmpty ? null : jsonEncode(data);
 
   void _onLocalNotificationTap(NotificationResponse response) {
+    final messageId = _shownLocally.remove(response.id);
+    if (messageId != null) _inbox.markRead(messageId);
+
     final payload = response.payload;
     if (payload == null || payload.isEmpty) return;
-    if (payload.startsWith(_epgReminderPayloadPrefix)) {
-      _openReminderChannel(payload.substring(_epgReminderPayloadPrefix.length));
-    } else {
-      Get.toNamed(payload);
-    }
+    openFromData(jsonDecode(payload) as Map<String, dynamic>);
   }
 
-  void _navigateFromMessage(RemoteMessage message) {
-    if (message.data['type'] == _epgReminderType) {
-      _openReminderChannel(message.data['channelId'] as String?);
+  /// Opens what a notification points to, from its FCM `data` map.
+  void openFromData(Map<String, dynamic> data) {
+    if (data['type'] == _epgReminderType) {
+      _openReminderChannel(data['channelId'] as String?);
       return;
     }
-    final route = message.data['route'] as String?;
+    if (data['type'] == _continueWatchingType) {
+      _openContinueWatching(data['videoId'] as String?);
+      return;
+    }
+    final route = data['route'] as String?;
     if (route != null && route.isNotEmpty) {
       Get.toNamed(route);
     }
@@ -252,6 +268,22 @@ class NotificationService extends GetxService {
     );
   }
 
+  /// Resumes the video from a continue watching push. Its `videoId` is the
+  /// watch history record's id, not a stream id, so the entry has to be looked
+  /// up. If it's gone (deleted, or too old to fetch) the history list is the
+  /// closest place to send the user.
+  Future<void> _openContinueWatching(String? recordId) async {
+    if (recordId == null || recordId.isEmpty) return;
+    if (!await _authStorage.isAuthenticated()) return;
+
+    final item = await Get.find<WatchHistoryService>().findByRecordId(recordId);
+    if (item == null) {
+      Get.to(() => const HistoryScreen());
+      return;
+    }
+    openWatchHistoryItem(item);
+  }
+
   /// Call after login so the token for this device is registered.
   Future<void> onUserLogin() => _registerToken();
 
@@ -269,6 +301,7 @@ class NotificationService extends GetxService {
     } catch (e) {
       debugPrint('[FCM] removeToken error: $e');
     } finally {
+      await _inbox.clear();
       // Invalidate the token on Firebase's side so it can't be reused
       await _fcm.deleteToken();
     }

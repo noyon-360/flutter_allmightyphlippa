@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide FormData;
 
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/notifications/services/notification_inbox_service.dart';
 import '../common/models/base_response.dart';
 import '../common/models/network_failure.dart';
 import '../common/models/network_success.dart';
@@ -174,6 +175,9 @@ class ApiClient {
     try {
       if (Get.isRegistered<RevenueCatService>()) {
         await Get.find<RevenueCatService>().logoutUser();
+      }
+      if (Get.isRegistered<NotificationInboxService>()) {
+        await NotificationInboxService.to.clear();
       }
       await _authStorageService.clearAuthData();
       await Future.delayed(Duration.zero);

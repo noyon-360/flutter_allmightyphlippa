@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import AVFoundation
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -23,6 +24,11 @@ import AVFoundation
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // Registered like a plugin (not in registerCustomChannels) because Dart
+    // calls it during startup, before the view controller is attached.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "NotificationTrayHandler") {
+      NotificationTrayHandler.register(with: registrar)
+    }
     registerCustomChannels()
   }
 
@@ -51,5 +57,79 @@ import AVFoundation
     let airPlay = AirPlayHandler()
     airPlay.setup(with: controller.binaryMessenger)
     self.airPlayHandler = airPlay
+  }
+}
+
+/// Backs the in-app notification inbox. iOS doesn't run Dart for a push it
+/// shows while the app is in the background or closed, so those are collected
+/// from Notification Center, and the icon badge is kept matching the inbox.
+final class NotificationTrayHandler: NSObject, FlutterPlugin {
+  static func register(with registrar: FlutterPluginRegistrar) {
+    let channel = FlutterMethodChannel(
+      name: "labby/notification_tray",
+      binaryMessenger: registrar.messenger()
+    )
+    registrar.addMethodCallDelegate(NotificationTrayHandler(), channel: channel)
+  }
+
+  func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    switch call.method {
+    case "takeDelivered":
+      takeDelivered(result)
+    case "setBadge":
+      setBadge(call.arguments as? Int ?? 0)
+      result(nil)
+    default:
+      result(FlutterMethodNotImplemented)
+    }
+  }
+
+  /// Returns the FCM pushes in Notification Center, removing them from it so
+  /// they're only collected once. Anything without a `gcm.message_id` is a
+  /// foreground local notification, which the inbox already has.
+  private func takeDelivered(_ result: @escaping FlutterResult) {
+    let center = UNUserNotificationCenter.current()
+    center.getDeliveredNotifications { notifications in
+      let formatter = ISO8601DateFormatter()
+      var taken: [[String: Any]] = []
+      var identifiers: [String] = []
+
+      for notification in notifications {
+        let content = notification.request.content
+        guard let messageId = content.userInfo["gcm.message_id"] as? String else { continue }
+        taken.append([
+          "id": messageId,
+          "title": content.title,
+          "body": content.body,
+          "data": Self.customData(from: content.userInfo),
+          "receivedAt": formatter.string(from: notification.date),
+        ])
+        identifiers.append(notification.request.identifier)
+      }
+
+      center.removeDeliveredNotifications(withIdentifiers: identifiers)
+      DispatchQueue.main.async { result(taken) }
+    }
+  }
+
+  /// The backend's `data` fields, without what APNs and FCM add around them.
+  private static func customData(from userInfo: [AnyHashable: Any]) -> [String: String] {
+    var data: [String: String] = [:]
+    for (key, value) in userInfo {
+      guard let key = key as? String, let value = value as? String,
+        key != "aps", key != "fcm_options",
+        !key.hasPrefix("gcm."), !key.hasPrefix("google.")
+      else { continue }
+      data[key] = value
+    }
+    return data
+  }
+
+  private func setBadge(_ count: Int) {
+    if #available(iOS 16.0, *) {
+      UNUserNotificationCenter.current().setBadgeCount(count)
+    } else {
+      UIApplication.shared.applicationIconBadgeNumber = count
+    }
   }
 }

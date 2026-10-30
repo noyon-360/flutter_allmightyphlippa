@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../playlist/models/server_request_model.dart';
-import '../../video/screens/live_video_play_screen.dart';
-import '../../video/screens/video_play_screen.dart';
 import '../controllers/history_controller.dart';
+import '../utils/open_watch_history_item.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -100,31 +98,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         vertical: 8,
                       ),
                       child: TvFocusWrapper(
-                        onTap: () {
-                          // Try to parse streamId, default to 0 if fails
-                          final streamId = int.tryParse(item.videoId) ?? 0;
-                          final videoType = item.videoType.toLowerCase();
-
-                          if (videoType == 'live') {
-                            Get.to(
-                              () => LiveVideoPlayScreen(
-                                streamId: streamId,
-                                channelName: item.name ?? 'Live TV',
-                                channelLogo: item.thumbnail,
-                              ),
-                            );
-                            return;
-                          }
-
-                          final type = videoType == 'series'
-                              ? ServerType.series
-                              : ServerType.movies;
-
-                          Get.to(
-                            () =>
-                                VideoPlayScreen(streamId: streamId, type: type),
-                          );
-                        },
+                        onTap: () => openWatchHistoryItem(item),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
