@@ -48,6 +48,8 @@ class ApiConstants {
   static PaymentEndpoints get payment => PaymentEndpoints();
   static GenreEndpoints get genre => GenreEndpoints();
   static EpgEndpoints get epg => EpgEndpoints();
+  static AnnouncementEndpoints get announcement => AnnouncementEndpoints();
+  static CastEndpoints get cast => CastEndpoints();
 }
 
 /// [Authentication Endpoints]
@@ -83,6 +85,7 @@ class PlaylistEndpoints {
   final String addPlaylist = '$_base/add-playlist';
   final String getPlaylist = '$_base/get-playlist';
   String deletePlaylist(String id) => '$_base/delete-playlist/$id';
+  String updatePlaylist(String id) => '$_base/update-playlist/$id';
 }
 
 class ServerEndpoints {
@@ -116,6 +119,18 @@ class GenreEndpoints {
   final String getCategories = _base;
 
   String getCategoriesByType(String id) => '$_base/$id';
+}
+
+class CastEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/cast';
+
+  final String photos = '$_base/photos';
+}
+
+class AnnouncementEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/announcement';
+
+  final String active = _base;
 }
 
 class EpgEndpoints {

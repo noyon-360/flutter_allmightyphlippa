@@ -323,7 +323,12 @@ class _MovieScreenState extends State<MovieScreen> {
                         ),
                       ),
 
-                    const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+                    SliverPadding(
+                      // Bottom: clear of the floating nav bar.
+                      padding: EdgeInsets.only(
+                        bottom: 20 + MediaQuery.of(context).padding.bottom,
+                      ),
+                    ),
                   ],
                 ),
               ),

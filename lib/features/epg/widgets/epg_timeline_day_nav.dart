@@ -6,7 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../controllers/epg_timeline_controller.dart';
 
 /// Compact backward/forward day navigation for the EPG timeline —
-/// "< Today >", switching to the "EEE, MMM d" formatted date once the
+/// "< Today > Now", switching to the "EEE, MMM d" formatted date once the
 /// selected day is no longer today.
 class EpgTimelineDayNav extends StatelessWidget {
   final EpgTimelineController timelineCtrl;
@@ -48,19 +48,20 @@ class EpgTimelineDayNav extends StatelessWidget {
             ),
             onPressed: timelineCtrl.goToNextDay,
           ),
-          if (!isToday)
-            TextButton(
-              onPressed: timelineCtrl.goToToday,
-              style: TextButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Jump to Today',
-                style: TextStyle(color: AppColors.red, fontSize: 12),
-              ),
+          TextButton(
+            onPressed: isToday
+                ? () => timelineCtrl.scrollToNow(animate: true)
+                : timelineCtrl.goToToday,
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
+            child: Text(
+              isToday ? 'Now' : 'Jump to Today',
+              style: const TextStyle(color: AppColors.red, fontSize: 12),
+            ),
+          ),
         ],
       );
     });

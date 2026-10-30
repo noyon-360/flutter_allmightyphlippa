@@ -97,9 +97,11 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
                       return const _EpgLineShimmer();
                     }
                     if (program == null) {
-                      return const Text(
-                        'No program info',
-                        style: TextStyle(
+                      return Text(
+                        cache.hasFailed(widget.streamId)
+                            ? 'Guide unavailable from provider'
+                            : 'No program info',
+                        style: const TextStyle(
                           color: AppColors.primaryGray,
                           fontSize: 12,
                         ),

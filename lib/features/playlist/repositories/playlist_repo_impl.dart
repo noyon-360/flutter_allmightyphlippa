@@ -32,6 +32,15 @@ class PlaylistRepoImpl implements PlaylistRepo {
   }
 
   @override
+  NetworkResult<void> updatePlaylist(PlaylistModel playlist) async {
+    return _apiClient.put<void>(
+      endpoint: ApiConstants.playlist.updatePlaylist(playlist.id!),
+      data: playlist.toJson(),
+      fromJsonT: (json) => {},
+    );
+  }
+
+  @override
   NetworkResult<void> deletePlaylist(
     String id,
   ) async {

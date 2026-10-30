@@ -209,6 +209,18 @@ class VideoPlayController extends GetxController {
     return '';
   }
 
+  /// The provider's raw cast text for what's playing, for the Cast section.
+  String? get castText {
+    if (currentType.value == ServerType.movies) {
+      final info = movieCtrl.movie.value?.streamData.info;
+      if (info == null) return null;
+      return info.cast.trim().isNotEmpty ? info.cast : info.actors;
+    } else if (currentType.value == ServerType.series) {
+      return seriesCtrl.singleSeries.value?.data?.info?.cast;
+    }
+    return null;
+  }
+
   String get description {
     if (currentType.value == ServerType.movies) {
       final movie = movieCtrl.movie.value;

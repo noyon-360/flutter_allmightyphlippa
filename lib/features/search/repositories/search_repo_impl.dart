@@ -16,6 +16,7 @@ class SearchRepoImpl implements SearchRepo {
     required String query,
     required ServerType type,
     required T Function(Map<String, dynamic>) fromJson,
+    String? cast,
   }) async {
     final storage = AuthStorageService();
 
@@ -24,7 +25,8 @@ class SearchRepoImpl implements SearchRepo {
       storage: storage,
       limit: limit,
       page: page,
-      search: query,
+      search: query.isEmpty ? null : query,
+      cast: cast,
     );
 
     return _apiClient.post(

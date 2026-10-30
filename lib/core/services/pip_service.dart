@@ -105,6 +105,29 @@ class PiPService {
     }
   }
 
+  /// Android: arms PiP to start by itself when the user leaves the app for the
+  /// home screen or another app (the system's "user leave hint"). Unlike
+  /// entering PiP from an `AppLifecycleState` callback, this does not fire when
+  /// the screen is locked — locking should leave playback to the media
+  /// session, not shrink the app into a window nobody can see.
+  Future<void> armAutoEnter() async {
+    if (!Platform.isAndroid || _floating == null || !_androidAvailable) return;
+    try {
+      await _floating!.enable(
+        const OnLeavePiP(aspectRatio: Rational.landscape()),
+      );
+    } catch (e) {
+      debugPrint('PiPService Android armAutoEnter: $e');
+    }
+  }
+
+  Future<void> disarmAutoEnter() async {
+    if (!Platform.isAndroid || _floating == null) return;
+    try {
+      await _floating!.cancelOnLeavePiP();
+    } catch (_) {}
+  }
+
   /// Stop PiP programmatically (iOS only; Android is dismissed by the user).
   Future<void> disable() async {
     if (Platform.isIOS) {
@@ -116,6 +139,7 @@ class PiPService {
 
   void dispose() {
     _statusSub?.cancel();
+    disarmAutoEnter();
     _floating = null;
   }
 }

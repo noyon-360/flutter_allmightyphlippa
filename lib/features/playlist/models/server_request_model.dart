@@ -9,6 +9,9 @@ class ServerRequestModel {
   final String password;
   final String type;
   final String? search;
+
+  /// Only titles whose cast includes this person (movies/series).
+  final String? cast;
   final int limit;
   final int page;
 
@@ -18,6 +21,7 @@ class ServerRequestModel {
     required this.password,
     required this.type,
     this.search,
+    this.cast,
     this.limit = 50,
     this.page = 1,
   });
@@ -26,6 +30,7 @@ class ServerRequestModel {
   static Future<ServerRequestModel> fromStorage({
     required ServerType type,
     String? search,
+    String? cast,
     int limit = 50,
     int page = 1,
     required AuthStorageService storage,
@@ -37,6 +42,7 @@ class ServerRequestModel {
       password: playlistData.password,
       type: type.name,
       search: search,
+      cast: cast,
       limit: limit,
       page: page,
     );
@@ -49,6 +55,7 @@ class ServerRequestModel {
       'password': password,
       'type': type,
       'search': search,
+      if (cast != null) 'cast': cast,
       'limit': limit,
       'page': page,
     };

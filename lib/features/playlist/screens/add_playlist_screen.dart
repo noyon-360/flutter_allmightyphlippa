@@ -9,14 +9,54 @@ import '/core/common/widgets/app_logo.dart';
 import '/core/constants/app_colors.dart';
 import '/core/extensions/input_decoration_extensions.dart';
 import '../controllers/playlist_controller.dart';
+import '../models/playlist_model.dart';
 
-class AddPlaylistScreen extends StatelessWidget {
+class AddPlaylistScreen extends StatefulWidget {
   final bool isEdit;
-  const AddPlaylistScreen({super.key, this.isEdit = false});
+
+  /// When set, the screen edits this playlist in place (name, URL, username,
+  /// password) instead of adding a new one.
+  final PlaylistModel? editing;
+
+  const AddPlaylistScreen({super.key, this.isEdit = false, this.editing});
+
+  @override
+  State<AddPlaylistScreen> createState() => _AddPlaylistScreenState();
+}
+
+class _AddPlaylistScreenState extends State<AddPlaylistScreen> {
+  final PlaylistController playlistCtrl = Get.put(PlaylistController());
+
+  bool get _isEditing => widget.editing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // The form controllers are shared with the "add" flow, so start from a
+    // known state: prefilled when editing, empty otherwise. Deferred a frame
+    // because this changes observable state that widgets above are listening
+    // to, which isn't allowed mid-build. (No cleanup on dispose: the next
+    // screen to open resets the form itself, and the controller may already be
+    // torn down by then.)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_isEditing) {
+        playlistCtrl.startEditing(widget.editing!);
+      } else {
+        playlistCtrl.clearForm();
+      }
+    });
+  }
+
+  Future<void> _submit() {
+    if (_isEditing) return playlistCtrl.updatePlaylist();
+    return widget.isEdit
+        ? playlistCtrl.addPlaylistBackList()
+        : playlistCtrl.addPlaylist();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final playlistCtrl = Get.put(PlaylistController());
+    final isEdit = widget.isEdit;
 
     return AppScaffold(
       body: Align(
@@ -43,7 +83,9 @@ class AddPlaylistScreen extends StatelessWidget {
                       ),
                       Gap.h40,
                       Text(
-                        "Enter Your Playlist Details",
+                        _isEditing
+                            ? "Edit Your Playlist"
+                            : "Enter Your Playlist Details",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.primaryWhite,
@@ -100,6 +142,10 @@ class AddPlaylistScreen extends StatelessWidget {
                       Gap.h16,
                       TextFormField(
                         controller: playlistCtrl.usernameController,
+                        // Credentials and URLs must be sent exactly as typed — iOS
+                        // autocorrect otherwise rewrites e.g. "newpass" as "new pass".
+                        autocorrect: false,
+                        enableSuggestions: false,
                         focusNode: playlistCtrl.usernameFocus,
                         textInputAction: TextInputAction.next,
                         style: TextStyle(
@@ -122,6 +168,10 @@ class AddPlaylistScreen extends StatelessWidget {
                       Gap.h16,
                       TextFormField(
                         controller: playlistCtrl.passwordController,
+                        // Credentials and URLs must be sent exactly as typed — iOS
+                        // autocorrect otherwise rewrites e.g. "newpass" as "new pass".
+                        autocorrect: false,
+                        enableSuggestions: false,
                         focusNode: playlistCtrl.passwordFocus,
                         textInputAction: TextInputAction.next,
                         style: TextStyle(
@@ -144,6 +194,11 @@ class AddPlaylistScreen extends StatelessWidget {
                       Gap.h16,
                       TextFormField(
                         controller: playlistCtrl.urlController,
+                        // Credentials and URLs must be sent exactly as typed — iOS
+                        // autocorrect otherwise rewrites e.g. "newpass" as "new pass".
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        keyboardType: TextInputType.url,
                         focusNode: playlistCtrl.urlFocus,
                         textInputAction: TextInputAction.done,
                         style: TextStyle(
@@ -163,13 +218,15 @@ class AddPlaylistScreen extends StatelessWidget {
                           }
                           return null;
                         },
-                        onFieldSubmitted: (_) => playlistCtrl.addPlaylist(),
+                        onFieldSubmitted: (_) => _submit(),
                       ),
                       const Gap(h: 20),
                       PrimaryButton(
-                        text: "Add Playlist",
+                        text: _isEditing ? "Save Changes" : "Add Playlist",
                         onApiPressed: () async {
-                          if (isEdit) {
+                          if (_isEditing) {
+                            await playlistCtrl.updatePlaylist();
+                          } else if (isEdit) {
                             await playlistCtrl.addPlaylistBackList();
                           } else {
                             await playlistCtrl.addPlaylist();

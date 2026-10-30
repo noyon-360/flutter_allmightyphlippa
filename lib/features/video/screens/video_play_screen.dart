@@ -14,6 +14,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '/core/constants/app_colors.dart';
 import 'package:get/get.dart';
+import '../../cast/utils/cast_names.dart';
+import '../../cast/widgets/cast_section.dart';
 import '../controllers/video_play_controller.dart';
 
 class VideoPlayScreen extends StatefulWidget {
@@ -238,6 +240,15 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                           return Stack(
                             children: [
                               MaterialVideoControlsTheme(
+                                // These replace media_kit's own defaults
+                                // wholesale, so the layout has to be spelled
+                                // out: without margins the seek bar ran
+                                // edge to edge (playhead half off-screen in
+                                // portrait) and, in fullscreen, sat on the
+                                // bottom edge — inside Android's gesture-
+                                // navigation zone, where dragging it swiped
+                                // to Home/Back instead of seeking. The
+                                // container height is the touch target.
                                 normal: const MaterialVideoControlsThemeData(
                                   buttonBarHeight: 48.0,
                                   controlsHoverDuration: Duration(seconds: 10),
@@ -248,18 +259,46 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   seekOnDoubleTapForwardDuration: Duration(
                                     seconds: 10,
                                   ),
+                                  seekBarMargin: EdgeInsets.only(
+                                    left: 16.0,
+                                    right: 16.0,
+                                    bottom: 6.0,
+                                  ),
+                                  bottomButtonBarMargin: EdgeInsets.only(
+                                    left: 16.0,
+                                    right: 8.0,
+                                    bottom: 6.0,
+                                  ),
+                                  seekBarContainerHeight: 48.0,
+                                  seekBarThumbSize: 16.0,
+                                  seekBarHeight: 3.0,
                                 ),
-                                fullscreen:
-                                    const MaterialVideoControlsThemeData(
-                                      controlsHoverDuration: Duration(
-                                        seconds: 10,
-                                      ),
-                                      seekOnDoubleTap: true,
-                                      seekOnDoubleTapBackwardDuration:
-                                          Duration(seconds: 10),
-                                      seekOnDoubleTapForwardDuration:
-                                          Duration(seconds: 10),
-                                    ),
+                                fullscreen: const MaterialVideoControlsThemeData(
+                                  controlsHoverDuration: Duration(seconds: 10),
+                                  seekOnDoubleTap: true,
+                                  seekOnDoubleTapBackwardDuration: Duration(
+                                    seconds: 10,
+                                  ),
+                                  seekOnDoubleTapForwardDuration: Duration(
+                                    seconds: 10,
+                                  ),
+                                  // Well clear of the bottom gesture bar and
+                                  // of the left/right edge-swipe (back)
+                                  // zones.
+                                  seekBarMargin: EdgeInsets.only(
+                                    left: 48.0,
+                                    right: 48.0,
+                                    bottom: 56.0,
+                                  ),
+                                  bottomButtonBarMargin: EdgeInsets.only(
+                                    left: 48.0,
+                                    right: 40.0,
+                                    bottom: 56.0,
+                                  ),
+                                  seekBarContainerHeight: 56.0,
+                                  seekBarThumbSize: 18.0,
+                                  seekBarHeight: 3.0,
+                                ),
                                 child: Focus(
                                   autofocus: true,
                                   child: Video(
@@ -412,8 +451,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                           ),
                                           decoration: BoxDecoration(
                                             color: AppColors.red,
-                                            borderRadius:
-                                                BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           child: Text(
                                             controller.qualityLabel!,
@@ -437,6 +477,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 16),
+                                  CastSection(cast: controller.castText),
+                                  if (parseCastNames(
+                                    controller.castText,
+                                  ).isNotEmpty)
+                                    const SizedBox(height: 16),
                                   Obx(() {
                                     if (!controller.hasStartedPlaying.value) {
                                       return Center(
@@ -507,7 +552,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                               children: [
                                                 Obx(
                                                   () => AnimatedOpacity(
-                                                    opacity: controller
+                                                    opacity:
+                                                        controller
                                                             .isTogglingFavorite
                                                             .value
                                                         ? 0.5
@@ -570,7 +616,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                                       videoType: vtype,
                                                       title: controller.title,
                                                       url: url,
-                                                      ext: controller.currentExt,
+                                                      ext:
+                                                          controller.currentExt,
                                                       thumbnail: controller
                                                           .currentThumbnail,
                                                       iconSize: 28,
@@ -589,7 +636,6 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                             ),
                                           );
                                         }),
-                                      
                                       ],
                                     ),
                                   ),
@@ -731,7 +777,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Movie | ${movie.added}',
+                        'Movie${movie.rating.isNotEmpty && movie.rating != '0' ? ' | ⭐ ${movie.rating}' : ''}',
                         style: const TextStyle(
                           color: AppColors.primaryGray,
                           fontSize: 12,
@@ -828,7 +874,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     final seasonKeys = controller.sortedSeasonKeys(
       episodesMap?.cast<String, List<dynamic>>(),
     );
-    if (seasonKeys.length <= 1) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (seasonKeys.length <= 1)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: SizedBox(
@@ -857,9 +904,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                   child: Text(
                     'Season $seasonKey',
                     style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.primaryGray,
+                      color: isSelected ? Colors.white : AppColors.primaryGray,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -916,91 +961,94 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                     controller.playEpisode(episode);
                   },
                   child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isPlaying
-                      ? AppColors.red.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: isPlaying
-                      ? Border.all(color: AppColors.red.withOpacity(0.5))
-                      : null,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: AppColors.containerBgColor,
-                        borderRadius: BorderRadius.circular(8),
-                        image:
-                            episode.info?.movieImage != null &&
-                                episode.info!.movieImage!.isNotEmpty
-                            ? DecorationImage(
-                                image: NetworkImage(episode.info!.movieImage!),
-                                fit: BoxFit.cover,
-                                onError: (_, __) {},
-                              )
-                            : null,
-                      ),
-                      child:
-                          episode.info?.movieImage == null ||
-                              episode.info!.movieImage!.isEmpty
-                          ? const Icon(
-                              Icons.play_circle_outline,
-                              color: AppColors.iconColor,
-                            )
-                          : isPlaying
-                          ? const Center(
-                              child: Icon(
-                                Icons.play_arrow,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            )
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isPlaying
+                          ? AppColors.red.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: isPlaying
+                          ? Border.all(color: AppColors.red.withOpacity(0.5))
                           : null,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            episode.title ?? "Episode ${episode.episodeNum}",
-                            style: TextStyle(
-                              color: isPlaying
-                                  ? AppColors.red
-                                  : AppColors.primaryWhite,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: AppColors.containerBgColor,
+                            borderRadius: BorderRadius.circular(8),
+                            image:
+                                episode.info?.movieImage != null &&
+                                    episode.info!.movieImage!.isNotEmpty
+                                ? DecorationImage(
+                                    image: NetworkImage(
+                                      episode.info!.movieImage!,
+                                    ),
+                                    fit: BoxFit.cover,
+                                    onError: (_, __) {},
+                                  )
+                                : null,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
-                            style: const TextStyle(
-                              color: AppColors.primaryGray,
-                              fontSize: 12,
-                            ),
+                          child:
+                              episode.info?.movieImage == null ||
+                                  episode.info!.movieImage!.isEmpty
+                              ? const Icon(
+                                  Icons.play_circle_outline,
+                                  color: AppColors.iconColor,
+                                )
+                              : isPlaying
+                              ? const Center(
+                                  child: Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                episode.title ??
+                                    "Episode ${episode.episodeNum}",
+                                style: TextStyle(
+                                  color: isPlaying
+                                      ? AppColors.red
+                                      : AppColors.primaryWhite,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'S${episode.season} E${episode.episodeNum} | ${episode.info?.duration ?? ""}',
+                                style: const TextStyle(
+                                  color: AppColors.primaryGray,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        if (isPlaying)
+                          const Icon(
+                            Icons.equalizer,
+                            color: AppColors.red,
+                            size: 20,
+                          ),
+                      ],
                     ),
-                    if (isPlaying)
-                      const Icon(
-                        Icons.equalizer,
-                        color: AppColors.red,
-                        size: 20,
-                      ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }),
             );
-          }),
-        );
           },
         );
       }),
@@ -1418,9 +1466,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 children: [
                                   Text(
                                     track.displayName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                   Container(
                                     width: 18,
@@ -1513,8 +1559,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                         itemCount: tracks.length,
                         itemBuilder: (context, index) {
                           final track = tracks[index];
-                          final isSelected =
-                              controller.isSubtitleEnabled.value
+                          final isSelected = controller.isSubtitleEnabled.value
                               ? controller.currentSubtitleTrack.value == track
                               : track == SubtitleTrack.no();
 
@@ -1534,9 +1579,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 children: [
                                   Text(
                                     track.displayName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                   Container(
                                     width: 18,

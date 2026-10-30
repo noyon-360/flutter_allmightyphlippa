@@ -34,6 +34,11 @@ class EpgTimelineChannelRow extends StatefulWidget {
   /// no-op when this row already sits inside a `LiveVideoPlayScreen`.
   final ValueChanged<int> onOpenChannel;
 
+  /// The channel currently being watched, if any. The matching row's channel
+  /// cell gets a border, tinted background, and a "Now Playing" badge so the
+  /// viewer can spot it at a glance.
+  final int? currentStreamId;
+
   const EpgTimelineChannelRow({
     super.key,
     required this.streamId,
@@ -41,6 +46,7 @@ class EpgTimelineChannelRow extends StatefulWidget {
     required this.channelLogo,
     required this.day,
     required this.onOpenChannel,
+    this.currentStreamId,
   });
 
   @override
@@ -82,6 +88,7 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
     final cache = Get.find<EpgTimelineCache>();
     final dayStart = widget.day;
     final dayEnd = dayStart.add(const Duration(days: 1));
+    final isPlayingChannel = widget.currentStreamId == widget.streamId;
 
     return SizedBox(
       height: _kRowHeight,
@@ -96,12 +103,36 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.containerBgColor,
+                  color: isPlayingChannel
+                      ? AppColors.red.withOpacity(0.18)
+                      : AppColors.containerBgColor,
                   borderRadius: BorderRadius.circular(8),
+                  border: isPlayingChannel
+                      ? Border.all(color: AppColors.red, width: 1.5)
+                      : null,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    if (isPlayingChannel)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.red,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const Text(
+                          'NOW PLAYING',
+                          style: TextStyle(
+                            color: AppColors.primaryWhite,
+                            fontSize: 7,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     Expanded(
                       child: widget.channelLogo.isNotEmpty
                           ? Image.network(
@@ -134,6 +165,10 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
             child: Obx(() {
               final isLoaded = cache.isLoaded(widget.streamId, widget.day);
               final programs = cache.peek(widget.streamId, widget.day);
+              // An empty row means one of two different things; say which.
+              final emptyLabel = cache.hasFailed(widget.streamId, widget.day)
+                  ? 'Guide unavailable from provider'
+                  : 'No program info';
 
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -143,15 +178,18 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                   width: EpgTimelineController.dayWidth,
                   height: _kRowHeight,
                   child: !isLoaded
-                      ? _RowShimmer()
+                      ? _PinnedToViewport(
+                          timelineCtrl: timelineCtrl,
+                          child: _RowShimmer(),
+                        )
                       : programs.isEmpty
-                      ? const Align(
-                          alignment: Alignment.centerLeft,
+                      ? _PinnedToViewport(
+                          timelineCtrl: timelineCtrl,
                           child: Padding(
-                            padding: EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.only(left: 8),
                             child: Text(
-                              'No program info',
-                              style: TextStyle(
+                              emptyLabel,
+                              style: const TextStyle(
                                 color: AppColors.primaryGray,
                                 fontSize: 12,
                               ),
@@ -281,6 +319,41 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Keeps a row's loading/empty placeholder at the left edge of what's
+/// currently visible. The day strip is 24h wide and now opens scrolled to the
+/// current time, so a placeholder laid out at the strip's own left edge would
+/// sit off-screen and the row would look blank.
+class _PinnedToViewport extends StatelessWidget {
+  final EpgTimelineController timelineCtrl;
+  final Widget child;
+
+  const _PinnedToViewport({required this.timelineCtrl, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final scroll = timelineCtrl.timelineScrollController;
+    return Stack(
+      children: [
+        AnimatedBuilder(
+          animation: scroll,
+          builder: (context, _) => Positioned(
+            // The controller drives the ruler and every row, so it has many
+            // positions; they're kept in lockstep, so any one will do.
+            left: scroll.hasClients ? scroll.positions.first.pixels : 0,
+            top: 0,
+            bottom: 0,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              widthFactor: 1,
+              child: child,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

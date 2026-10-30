@@ -8,5 +8,8 @@ abstract class SearchRepo {
     required String query,
     required ServerType type,
     required T Function(Map<String, dynamic>) fromJson,
+
+    /// Only titles with this person in the cast (an empty [query] is fine).
+    String? cast,
   });
 }
