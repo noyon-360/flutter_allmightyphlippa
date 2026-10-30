@@ -19,7 +19,7 @@ class ChangePasswordScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppColors.primaryWhite),
+          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
           onPressed: () => Get.back(),
         ),
         title: Text(

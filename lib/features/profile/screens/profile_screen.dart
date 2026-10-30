@@ -15,6 +15,7 @@ import '../../../core/services/watch_history_service.dart';
 import '../../epg/screens/epg_reminders_screen.dart';
 import '../../epg/services/epg_timeline_cache.dart';
 import '../../epg/services/live_tv_now_playing_cache.dart';
+import '../../tv/controllers/live_tv_controller.dart';
 
 import '../../../core/common/widgets/app_cached_image.dart';
 import '../../../core/common/widgets/button_widgets.dart';
@@ -32,6 +33,10 @@ import 'profile_update_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  /// How many channels "Update EPG" refetches up front — one request each,
+  /// so it stays around a screenful (see [LiveTvNowPlayingCache]).
+  static const _epgUpdateChannelLimit = 20;
 
   @override
   Widget build(BuildContext context) {
@@ -381,16 +386,7 @@ class ProfileScreen extends StatelessWidget {
                 iconAsset: '',
                 iconData: Icons.refresh,
                 title: "Update EPG",
-                onTap: () {
-                  Get.find<EpgTimelineCache>().clear();
-                  Get.find<LiveTvNowPlayingCache>().clear();
-                  Get.snackbar(
-                    'EPG',
-                    'TV guide will be refreshed the next time you open it.',
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                  );
-                },
+                onTap: _updateEpg,
               ),
               _buildMenuItem(
                 iconAsset: AssetsConstants.icons.lock,
@@ -574,6 +570,44 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// Drops the cached guide and refetches it for the channels already in the
+  /// Live TV list, so the result shown is that of a real fetch. Other
+  /// channels load fresh as they come into view, same as [LiveTvNowPlayingCache]
+  /// always does — EPG is per channel, so the whole catalog can't be fetched.
+  Future<void> _updateEpg() async {
+    Get.dialog(
+      const PopScope(
+        canPop: false,
+        child: Center(child: CircularProgressIndicator(color: AppColors.red)),
+      ),
+      barrierDismissible: false,
+    );
+
+    final nowPlaying = Get.find<LiveTvNowPlayingCache>();
+    Get.find<EpgTimelineCache>().clear();
+    nowPlaying.clear();
+
+    final streamIds = Get.find<LiveTvController>()
+        .liveTvList
+        .take(_epgUpdateChannelLimit)
+        .map((channel) => channel.streamId)
+        .toList();
+    await Future.wait(streamIds.map(nowPlaying.ensureLoaded));
+
+    Get.back();
+
+    final failed =
+        streamIds.isNotEmpty && streamIds.every(nowPlaying.hasFailed);
+    Get.snackbar(
+      'EPG',
+      failed
+          ? 'Could not update the TV guide. Please try again.'
+          : 'TV guide updated.',
+      backgroundColor: failed ? Colors.red : Colors.green,
+      colorText: Colors.white,
     );
   }
 

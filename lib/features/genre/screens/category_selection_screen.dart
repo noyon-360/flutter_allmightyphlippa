@@ -34,7 +34,7 @@ class CategorySelectionScreen extends StatelessWidget {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.primaryWhite),
+          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
           onPressed: () => Get.back(),
         ),
       ),

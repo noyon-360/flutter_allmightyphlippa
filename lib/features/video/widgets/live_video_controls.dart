@@ -251,7 +251,7 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 16),
       child: Row(
         children: [
-          _topIcon(Icons.arrow_back, widget.onBack, tooltip: 'Back'),
+          _topIcon(Icons.adaptive.arrow_back, widget.onBack, tooltip: 'Back'),
           Expanded(
             child: Text(
               widget.channelName,
@@ -283,7 +283,11 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
                     tooltip: 'Captions',
                   ),
                 if (showAudio)
-                  _topIcon(Icons.audiotrack, _showAudioTracks, tooltip: 'Audio'),
+                  _topIcon(
+                    Icons.audiotrack,
+                    _showAudioTracks,
+                    tooltip: 'Audio',
+                  ),
               ],
             );
           }),
@@ -334,10 +338,7 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.red,
                   borderRadius: BorderRadius.circular(3),
