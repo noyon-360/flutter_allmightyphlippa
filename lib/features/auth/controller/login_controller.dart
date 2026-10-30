@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/features/playlist/screens/playlist_list_screen.dart';
 import '/core/api/api_client.dart';
 import '/core/services/auth_storage_service.dart';
+import '/core/services/revenuecat_service.dart';
 import '/features/auth/models/login_request_model.dart';
 import '/features/auth/repo/auth_repo.dart';
 import 'package:get/get.dart';
@@ -68,8 +69,17 @@ class LoginController extends GetxController {
             role: data.role,
             userId: data.user?.id ?? '',
           );
+          // Tie purchases to this account so the backend's RevenueCat
+          // webhook can match them to the user (it keys on our user ID).
+          final userId = data.user?.id;
+          if (userId != null && userId.isNotEmpty) {
+            Get.find<RevenueCatService>().loginUser(userId);
+          }
 
-          Get.to(() => const PlaylistListScreen());
+          // Replace the stack: leaving LoginScreen underneath kept its
+          // LoginController alive, and a later Get.offAll(LoginScreen) on
+          // logout reused it, then disposed its text fields under the new screen.
+          Get.offAll(() => const PlaylistListScreen());
         },
       );
     }

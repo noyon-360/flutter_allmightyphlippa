@@ -26,6 +26,10 @@ class UserModel {
   final DateTime? subscriptionExpiresAt;
   final DateTime? subscriptionStartDate;
 
+  /// False once the user turned off auto-renew in the store; null if the
+  /// backend hasn't received a RevenueCat event for this user yet.
+  final bool? subscriptionWillRenew;
+
   UserModel({
     this.avatar,
     this.shopLogo,
@@ -53,7 +57,19 @@ class UserModel {
     this.subscriptionProductId,
     this.subscriptionExpiresAt,
     this.subscriptionStartDate,
+    this.subscriptionWillRenew,
   });
+
+  /// True only while the status says active AND the paid period hasn't ended.
+  /// The backend's expiry job runs once a day, so `subscriptionStatus` can
+  /// still read "active" for hours after the subscription actually lapsed.
+  bool get hasActiveSubscription {
+    final isActiveStatus =
+        subscriptionStatus == 'active' || subscriptionStatus == 'trialing';
+    final expiresAt = subscriptionExpiresAt;
+    return isActiveStatus &&
+        (expiresAt == null || expiresAt.isAfter(DateTime.now()));
+  }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -95,6 +111,7 @@ class UserModel {
       subscriptionStartDate: json['subscriptionStartDate'] != null
           ? DateTime.tryParse(json['subscriptionStartDate'])
           : null,
+      subscriptionWillRenew: json['subscriptionWillRenew'],
     );
   }
 
@@ -126,6 +143,7 @@ class UserModel {
       'subscriptionProductId': subscriptionProductId,
       'subscriptionExpiresAt': subscriptionExpiresAt?.toIso8601String(),
       'subscriptionStartDate': subscriptionStartDate?.toIso8601String(),
+      'subscriptionWillRenew': subscriptionWillRenew,
     };
   }
 }

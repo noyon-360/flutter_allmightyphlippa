@@ -35,6 +35,10 @@ class SubscriptionController extends GetxController {
   DateTime? get expirationDate => _service.expirationDate;
   String? get activeProductIdentifier => _service.activeProductIdentifier;
 
+  /// False once the user turns off auto-renew in the store. Null when the
+  /// store has no active entitlement for this device's account.
+  bool? get willRenew => _service.activeEntitlement?.willRenew;
+
   List<Package> get availablePackages => _service.availablePackages;
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
@@ -164,7 +168,8 @@ class SubscriptionController extends GetxController {
   }
 
   // ── Selection ────────────────────────────────────────────────────────────────
-  void selectProduct(String id) => selectedProductId.value = id;
+  void selectProduct(String id) =>
+      selectedProductId.value = RevenueCatService.baseProductId(id);
 
   /// Returns the [Package] for a given product ID, or null if not loaded yet.
   Package? getPackageByProductId(String productId) =>
@@ -175,8 +180,9 @@ class SubscriptionController extends GetxController {
     final user = Get.isRegistered<ProfileController>()
         ? Get.find<ProfileController>().userProfile.value
         : null;
-    if (user?.subscriptionStatus != 'active') return false;
-    return user?.subscriptionProductId == productId;
+    if (user == null || !user.hasActiveSubscription) return false;
+    return RevenueCatService.baseProductId(user.subscriptionProductId) ==
+        RevenueCatService.baseProductId(productId);
   }
 
   // ── Purchase History ─────────────────────────────────────────────────────────

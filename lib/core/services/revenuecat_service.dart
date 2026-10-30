@@ -7,7 +7,6 @@ import 'package:get/get.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../features/profile/controller/profile_controller.dart';
-import '../../features/subscription/repositories/subscription_repo.dart';
 import 'auth_storage_service.dart';
 
 /// Outcome of a purchase or restore attempt.
@@ -27,10 +26,12 @@ class RevenueCatService extends GetxService {
   static const String quarterlyProductId = 'premium_quarterly';
   static const String yearlyProductId = 'premium_t_yearly';
 
-  static const String _packageName = 'com.almightyflippa.labbytv';
+  /// Google Play reports subscriptions as `productId:basePlanId`
+  /// (e.g. "month_subscription:monthly-base-plan"); Apple uses the bare ID.
+  /// Strip the base plan so both platforms match the constants above.
+  static String baseProductId(String? id) => (id ?? '').split(':').first;
 
   // ── Dependencies ────────────────────────────────────────────────────────────
-  late final SubscriptionRepo _subscriptionRepo;
   late final AuthStorageService _authStorage;
 
   // ── Observable State ────────────────────────────────────────────────────────
@@ -59,7 +60,10 @@ class RevenueCatService extends GetxService {
     return raw != null ? DateTime.tryParse(raw) : null;
   }
 
-  String? get activeProductIdentifier => activeEntitlement?.productIdentifier;
+  String? get activeProductIdentifier {
+    final id = activeEntitlement?.productIdentifier;
+    return id == null ? null : baseProductId(id);
+  }
 
   List<Package> get availablePackages =>
       offerings.value?.current?.availablePackages ?? [];
@@ -68,7 +72,6 @@ class RevenueCatService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    _subscriptionRepo = Get.find<SubscriptionRepo>();
     _authStorage = Get.find<AuthStorageService>();
     _configure();
   }
@@ -142,10 +145,7 @@ class RevenueCatService extends GetxService {
       final entitled = result.customerInfo.entitlements.active.containsKey(
         entitlementId,
       );
-      // Always notify the backend — the payment happened on Apple/Google's side
-      // regardless of whether RevenueCat's entitlement is configured correctly.
-      await _verifyWithBackend(result.customerInfo, result.storeTransaction);
-      _refreshProfile();
+      _refreshProfileAfterPurchase();
       return entitled ? PurchaseOutcome.success : PurchaseOutcome.notEntitled;
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
@@ -170,7 +170,7 @@ class RevenueCatService extends GetxService {
       customerInfo.value = info;
       final entitled = info.entitlements.active.containsKey(entitlementId);
       if (entitled) {
-        _refreshProfile();
+        _refreshProfileAfterPurchase();
       }
       return entitled ? PurchaseOutcome.success : PurchaseOutcome.notEntitled;
     } catch (e) {
@@ -201,66 +201,36 @@ class RevenueCatService extends GetxService {
     }
   }
 
-  // ── Backend Verification ────────────────────────────────────────────────────
-  // RevenueCat validates receipts automatically on their servers. These calls
-  // notify your backend so it can update the user record. For the most robust
-  // integration, configure RevenueCat webhooks in the dashboard so the backend
-  // is notified server-to-server without relying on the client.
-
-  Future<void> _verifyWithBackend(
-    CustomerInfo info,
-    StoreTransaction transaction,
-  ) async {
-    try {
-      if (Platform.isIOS) {
-        // For a new iOS purchase, transactionIdentifier == originalTransactionId.
-        final txId = transaction.transactionIdentifier.isNotEmpty
-            ? transaction.transactionIdentifier
-            : info.originalAppUserId;
-        final result = await _subscriptionRepo.verifyApplePurchase(txId);
-        result.fold(
-          (f) => debugPrint('[RevenueCat] iOS verify failed: ${f.message}'),
-          (_) => debugPrint('[RevenueCat] iOS verify success'),
-        );
-      } else if (Platform.isAndroid) {
-        // The RevenueCat Flutter SDK does not expose the raw Google purchase
-        // token. Use RevenueCat server-to-server webhooks or call RevenueCat's
-        // REST API from your backend using the subscriber ID below.
-        debugPrint(
-          '[RevenueCat] Android subscriber: ${info.originalAppUserId} '
-          'product: ${transaction.productIdentifier}',
-        );
-        final result = await _subscriptionRepo.verifyGooglePurchase(
-          purchaseToken: transaction.transactionIdentifier,
-          subscriptionId: transaction.productIdentifier,
-          packageName: _packageName,
-        );
-        result.fold(
-          (f) => debugPrint('[RevenueCat] Android verify failed: ${f.message}'),
-          (_) => debugPrint('[RevenueCat] Android verify success'),
-        );
-      }
-    } catch (e) {
-      debugPrint('[RevenueCat] _verifyWithBackend error: $e');
-    }
-  }
-
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   /// Returns the [Package] for a given product identifier, or null if not found.
+  /// Matches on the base product ID, so Android's `product:basePlan`
+  /// identifiers resolve too.
   Package? getPackageByProductId(String productId) {
+    final wanted = baseProductId(productId);
     try {
       return availablePackages.firstWhere(
-        (p) => p.storeProduct.identifier == productId,
+        (p) => baseProductId(p.storeProduct.identifier) == wanted,
       );
     } catch (_) {
       return null;
     }
   }
 
-  void _refreshProfile() {
-    if (Get.isRegistered<ProfileController>()) {
-      Get.find<ProfileController>().refreshProfile();
+  /// The backend learns about purchases from RevenueCat's webhook, which can
+  /// land a few seconds after the store confirms. Refresh now and again
+  /// shortly after so the profile (plan banner, history) catches up.
+  void _refreshProfileAfterPurchase() {
+    for (final delay in const [
+      Duration.zero,
+      Duration(seconds: 4),
+      Duration(seconds: 12),
+    ]) {
+      Future.delayed(delay, () {
+        if (Get.isRegistered<ProfileController>()) {
+          Get.find<ProfileController>().refreshProfile();
+        }
+      });
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/revenuecat_service.dart';
 import '../../auth/models/user_response_model.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../controllers/subscription_controller.dart';
@@ -51,11 +52,19 @@ class SubscriptionScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Current plan banner driven by profile (no store dependency)
-              Obx(
-                () => _buildCurrentPlanBanner(
-                  profileController.userProfile.value,
-                ),
-              ),
+              Obx(() {
+                // Read customerInfo so the banner rebuilds when the store
+                // reports an auto-renew change.
+                controller.customerInfo.value;
+                final user = profileController.userProfile.value;
+                return _buildCurrentPlanBanner(
+                  user,
+                  // The store's live answer when this device has the
+                  // entitlement; otherwise what the backend last heard.
+                  willRenew:
+                      controller.willRenew ?? user?.subscriptionWillRenew,
+                );
+              }),
               const SizedBox(height: 32),
 
               // Plan cards
@@ -81,12 +90,11 @@ class SubscriptionScreen extends StatelessWidget {
                   SubscriptionController.quarterlyId,
                   SubscriptionController.yearlyId,
                 ];
+                int rank(Package p) => order.indexOf(
+                  RevenueCatService.baseProductId(p.storeProduct.identifier),
+                );
                 final sorted = [...packages]
-                  ..sort(
-                    (a, b) => order
-                        .indexOf(a.storeProduct.identifier)
-                        .compareTo(order.indexOf(b.storeProduct.identifier)),
-                  );
+                  ..sort((a, b) => rank(a).compareTo(rank(b)));
 
                 return Column(
                   children: sorted
@@ -105,8 +113,11 @@ class SubscriptionScreen extends StatelessWidget {
               _buildRestoreButton(controller),
               Obx(() {
                 final isActive =
-                    profileController.userProfile.value?.subscriptionStatus ==
-                    'active';
+                    profileController
+                        .userProfile
+                        .value
+                        ?.hasActiveSubscription ??
+                    false;
                 if (!isActive) return const SizedBox.shrink();
                 return _buildManageButton(controller);
               }),
@@ -124,9 +135,11 @@ class SubscriptionScreen extends StatelessWidget {
   /// Always shows the user's current LABBY membership status — Free,
   /// active Premium, or expired/canceled Premium — so a user never has to
   /// infer their plan from side effects like whether a watermark appears.
-  Widget _buildCurrentPlanBanner(UserModel? user) {
-    final isActive = user?.subscriptionStatus == 'active';
-    final wasPremium = user?.plan == 'premium';
+  Widget _buildCurrentPlanBanner(UserModel? user, {bool? willRenew}) {
+    final isActive = user?.hasActiveSubscription ?? false;
+    // The backend resets plan to "free" on expiry, so an expiry date is the
+    // reliable sign that this user had a subscription at some point.
+    final wasPremium = user?.subscriptionExpiresAt != null;
     final expiresAt = user?.subscriptionExpiresAt;
     final startDate = user?.subscriptionStartDate;
 
@@ -147,18 +160,12 @@ class SubscriptionScreen extends StatelessWidget {
       planName = _planNameFromProductId(user?.subscriptionProductId);
       statusLabel = 'Expired';
       statusColor = AppColors.red;
-      gradientColors = [
-        AppColors.containerBgColor,
-        AppColors.containerBgColor,
-      ];
+      gradientColors = [AppColors.containerBgColor, AppColors.containerBgColor];
     } else {
       planName = 'Free Plan';
       statusLabel = 'Free';
       statusColor = AppColors.primaryGray;
-      gradientColors = [
-        AppColors.containerBgColor,
-        AppColors.containerBgColor,
-      ];
+      gradientColors = [AppColors.containerBgColor, AppColors.containerBgColor];
     }
 
     return Container(
@@ -220,7 +227,11 @@ class SubscriptionScreen extends StatelessWidget {
             if (expiresAt != null) ...[
               const SizedBox(height: 2),
               Text(
-                '${isActive ? 'Renews' : 'Expired'}: ${_fmtDate(expiresAt)}',
+                '${!isActive
+                    ? 'Expired'
+                    : willRenew == false
+                    ? 'Expires'
+                    : 'Renews'}: ${_fmtDate(expiresAt)}',
                 style: TextStyle(
                   color: Colors.white.withAlpha((0.8 * 255).toInt()),
                   fontSize: 13,
@@ -261,7 +272,11 @@ class SubscriptionScreen extends StatelessWidget {
     Package package,
     SubscriptionController controller,
   ) {
-    final productId = package.storeProduct.identifier;
+    // Android identifiers carry the base plan ("month_subscription:monthly-
+    // base-plan"); compare and label by the bare product ID.
+    final productId = RevenueCatService.baseProductId(
+      package.storeProduct.identifier,
+    );
     final isSelected = controller.selectedProductId.value == productId;
     final isCurrentPlan = controller.isCurrentPlan(productId);
     final isPurchasing = controller.isLoading.value;
@@ -496,12 +511,13 @@ class SubscriptionScreen extends StatelessWidget {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  String _planNameFromProductId(String? productId) => switch (productId) {
-    SubscriptionController.monthlyId => 'Monthly Plan',
-    SubscriptionController.quarterlyId => 'Quarterly Plan',
-    SubscriptionController.yearlyId => 'Yearly Plan',
-    _ => 'Premium Plan',
-  };
+  String _planNameFromProductId(String? productId) =>
+      switch (RevenueCatService.baseProductId(productId)) {
+        SubscriptionController.monthlyId => 'Monthly Plan',
+        SubscriptionController.quarterlyId => 'Quarterly Plan',
+        SubscriptionController.yearlyId => 'Yearly Plan',
+        _ => 'Premium Plan',
+      };
 
   String _periodLabel(String productId) => switch (productId) {
     SubscriptionController.yearlyId => '/year',
@@ -509,7 +525,11 @@ class SubscriptionScreen extends StatelessWidget {
     _ => '/month',
   };
 
-  String _fmtDate(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
+  // Backend dates arrive as UTC; show them in the user's own timezone.
+  String _fmtDate(DateTime d) {
+    final local = d.toLocal();
+    return '${local.day} ${_month(local.month)} ${local.year}';
+  }
 
   String _month(int m) => const [
     '',

@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/api/network_stream.dart';
 import '../../../core/services/auth_storage_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/premium_service.dart';
+import '../../../core/services/revenuecat_service.dart';
 import '../../auth/models/user_response_model.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../../core/services/watch_history_service.dart';
@@ -19,6 +21,12 @@ class ProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Keep the global premium flag in sync with every profile load/refresh.
+    // Registered here (not in PremiumService) because this controller is
+    // lazily created and can be recreated, which would orphan a listener.
+    ever(userProfile, (_) {
+      if (Get.isRegistered<PremiumService>()) PremiumService.to.refresh();
+    });
     getProfile();
   }
 
@@ -64,7 +72,13 @@ class ProfileController extends GetxController {
     if (Get.isRegistered<NotificationService>()) {
       await Get.find<NotificationService>().onUserLogout();
     }
+    // Detach the purchase account first so the next user on this device
+    // doesn't inherit this user's subscription.
+    if (Get.isRegistered<RevenueCatService>()) {
+      await Get.find<RevenueCatService>().logoutUser();
+    }
     await _authStorageService.clearAuthData();
+    userProfile.value = null;
     Get.offAll(() => const LoginScreen());
   }
 }

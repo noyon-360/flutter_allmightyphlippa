@@ -4,7 +4,9 @@ import 'package:flutter_almightyflippa/features/auth/repo/auth_repo.dart';
 import 'package:get/get.dart';
 import 'package:flutx_core/flutx_core.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/services/auth_storage_service.dart';
+import '../../../core/services/revenuecat_service.dart';
 import '../../playlist/screens/playlist_list_screen.dart';
 
 class RegisterController extends GetxController {
@@ -88,6 +90,7 @@ class RegisterController extends GetxController {
           DPrint.log("Registration Fail : ${fail.message}");
         },
         (success) {
+          Get.find<ApiClient>().resetLogoutState();
           final data = success.data;
           _authStorageService.storeAuthData(
             accessToken: data.accessToken,
@@ -95,8 +98,16 @@ class RegisterController extends GetxController {
             role: data.role,
             userId: data.id ?? '',
           );
+          // Tie purchases to this account so the backend's RevenueCat
+          // webhook can match them to the user (it keys on our user ID).
+          final userId = data.id;
+          if (userId != null && userId.isNotEmpty) {
+            Get.find<RevenueCatService>().loginUser(userId);
+          }
 
-          Get.to(() => const PlaylistListScreen());
+          // Replace the stack so Login/Signup (and their controllers) don't
+          // linger underneath — see LoginController for why that breaks logout.
+          Get.offAll(() => const PlaylistListScreen());
         },
       );
     }

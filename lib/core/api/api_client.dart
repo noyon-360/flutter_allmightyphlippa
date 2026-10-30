@@ -17,6 +17,7 @@ import '../services/api_cache_service.dart';
 import '../services/auth_storage_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/request_queue_service.dart';
+import '../services/revenuecat_service.dart';
 import 'dio_error_handler.dart';
 import 'package:flutx_core/core/debug_print.dart';
 
@@ -171,9 +172,18 @@ class ApiClient {
     if (_isLoggingOut) return;
     _isLoggingOut = true;
     try {
+      if (Get.isRegistered<RevenueCatService>()) {
+        await Get.find<RevenueCatService>().logoutUser();
+      }
       await _authStorageService.clearAuthData();
       await Future.delayed(Duration.zero);
-      Get.offAll(() => LoginScreen(), transition: Transition.leftToRight);
+      // Requests still in flight when the user logs out come back 401 and land
+      // here while LoginScreen is already showing. Pushing a second one makes
+      // GetX delete the LoginController the visible screen is using (and
+      // dispose its text fields), so only navigate if we're not there yet.
+      if (Get.currentRoute != '/LoginScreen') {
+        Get.offAll(() => LoginScreen(), transition: Transition.leftToRight);
+      }
       // Intentionally NOT resetting _isLoggingOut here — guard stays active
       // until the user successfully logs in via resetLogoutState(), preventing
       // duplicate navigations from concurrent in-flight 403 responses.

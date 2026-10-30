@@ -15,10 +15,21 @@ class SubscriptionHistoryModel {
     this.platform,
   });
 
-  bool get isActive => status == 'active';
+  bool get isActive => effectiveStatus == 'active';
+
+  /// The stored status, except an "active" row whose period has already
+  /// ended reads as "expired" — older rows were never updated on expiry.
+  String? get effectiveStatus {
+    final end = endDate;
+    if (status == 'active' && end != null && end.isBefore(DateTime.now())) {
+      return 'expired';
+    }
+    return status;
+  }
 
   String get planLabel {
-    switch (productId) {
+    // Older rows may hold Android's "product:basePlan" form.
+    switch (productId?.split(':').first) {
       case 'month_subscription':
         return 'Monthly';
       case 'premium_quarterly':

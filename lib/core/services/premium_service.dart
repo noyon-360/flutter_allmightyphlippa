@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../features/profile/controller/profile_controller.dart';
@@ -52,16 +54,30 @@ class PremiumService extends GetxService {
     final user = Get.find<ProfileController>().userProfile.value;
     if (user == null) return false;
 
-    // Backend only sets plan="premium" when status is active/trialing,
-    // so this is the single most reliable field.
-    final isPremiumPlan = user.plan == 'premium';
+    // Mirrors the backend's isPremium middleware: premium plan, active status
+    // and an expiry date that hasn't passed yet (the backend only downgrades
+    // expired users once a day, so the plan field alone can be stale).
+    final isPremium = user.plan == 'premium' && user.hasActiveSubscription;
 
-    // Guard against stale data: backend has no auto-downgrade on expiry,
-    // so check the expiry date locally if it's present.
-    final notExpired =
-        user.subscriptionExpiresAt == null ||
-        user.subscriptionExpiresAt!.isAfter(DateTime.now());
+    _scheduleExpiryCheck(isPremium ? user.subscriptionExpiresAt : null);
+    return isPremium;
+  }
 
-    return isPremiumPlan && notExpired;
+  Timer? _expiryTimer;
+
+  /// Re-evaluates the moment the backend's expiry date passes, so premium
+  /// features switch off while the app stays open.
+  void _scheduleExpiryCheck(DateTime? expiresAt) {
+    _expiryTimer?.cancel();
+    if (expiresAt == null) return;
+    final delay = expiresAt.difference(DateTime.now());
+    if (delay.isNegative) return;
+    _expiryTimer = Timer(delay + const Duration(seconds: 1), _evaluate);
+  }
+
+  @override
+  void onClose() {
+    _expiryTimer?.cancel();
+    super.onClose();
   }
 }

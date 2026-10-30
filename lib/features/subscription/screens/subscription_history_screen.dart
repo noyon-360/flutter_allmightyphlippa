@@ -76,13 +76,16 @@ class SubscriptionHistoryScreen extends StatelessWidget {
     final Color statusColor;
     final String statusLabel;
 
-    switch (item.status) {
+    switch (item.effectiveStatus) {
       case 'active':
         statusColor = Colors.green;
         statusLabel = 'Active';
       case 'refunded':
         statusColor = Colors.orange;
         statusLabel = 'Refunded';
+      case 'canceled':
+        statusColor = Colors.white54;
+        statusLabel = 'Canceled';
       default:
         statusColor = Colors.white54;
         statusLabel = 'Expired';
@@ -163,7 +166,11 @@ class SubscriptionHistoryScreen extends StatelessWidget {
     return '';
   }
 
-  String _fmtDate(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
+  // Backend dates arrive as UTC; show them in the user's own timezone.
+  String _fmtDate(DateTime d) {
+    final local = d.toLocal();
+    return '${local.day} ${_month(local.month)} ${local.year}';
+  }
 
   String _month(int m) => const [
     '',
