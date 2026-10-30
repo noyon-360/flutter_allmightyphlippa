@@ -97,7 +97,11 @@ class VideoPlayController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    player = Player();
+    // media_kit's 32 MB default is under a minute of a 1080p stream, too
+    // little to ride out a slow patch from the provider.
+    player = Player(
+      configuration: const PlayerConfiguration(bufferSize: 128 * 1024 * 1024),
+    );
     videoController = VideoController(player);
     _setupTracksListener();
     _errorSubscription = player.stream.error.listen((error) {
@@ -509,6 +513,8 @@ class VideoPlayController extends GetxController {
         }
       }
 
+      await _applyStreamingProperties();
+
       DPrint.log("Opening video URL: $videoUrl");
       await player.open(Media(videoUrl), play: false);
 
@@ -545,6 +551,37 @@ class VideoPlayController extends GetxController {
     } catch (e) {
       debugPrint('Error initializing video player: $e');
       // Get.snackbar('Error', 'Failed to load video');
+    }
+  }
+
+  /// mpv settings that keep playback smooth on a slow or unsteady connection.
+  Future<void> _applyStreamingProperties() async {
+    const properties = {
+      // mpv resumes after a stall with only 1s buffered by default, so a
+      // connection just under the video's bitrate stalls again seconds later.
+      // Waiting for 5s means fewer interruptions, each slightly longer.
+      'cache-pause-wait': '5',
+      // Apply the same wait before the first frame, so a slow stream doesn't
+      // stall straight after it starts.
+      'cache-pause-initial': 'yes',
+      // bufferSize also sets the rewind buffer; keep that at the default so
+      // the larger forward buffer doesn't double memory use.
+      'demuxer-max-back-bytes': '${32 * 1024 * 1024}',
+      // Recover from a dropped connection instead of treating it as the end
+      // of the stream.
+      'stream-lavf-o':
+          'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=5',
+    };
+
+    for (final property in properties.entries) {
+      try {
+        await (player.platform as dynamic).setProperty(
+          property.key,
+          property.value,
+        );
+      } catch (e) {
+        DPrint.log("Error setting ${property.key}: $e");
+      }
     }
   }
 
