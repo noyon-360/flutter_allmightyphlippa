@@ -72,15 +72,20 @@ class _CastSectionState extends State<CastSection> {
                     children: [
                       ActorAvatar(name: name),
                       const SizedBox(height: 8),
-                      Text(
-                        name,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: context.palette.textSecondary,
-                          fontSize: 11,
-                          height: 1.2,
+                      // Flexible: on TV the focus frame and text scaling
+                      // leave less than the 104px row, so the name gives up a
+                      // line instead of overflowing.
+                      Flexible(
+                        child: Text(
+                          name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: context.palette.textSecondary,
+                            fontSize: 11,
+                            height: 1.2,
+                          ),
                         ),
                       ),
                     ],

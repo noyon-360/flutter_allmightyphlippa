@@ -19,6 +19,7 @@ import 'package:get/get.dart';
 import '../../cast/utils/cast_names.dart';
 import '../../cast/widgets/cast_section.dart';
 import '../controllers/video_play_controller.dart';
+import '../widgets/tv_vod_controls.dart';
 import 'package:flutter_almightyflippa/core/config/app_theme.dart';
 
 class VideoPlayScreen extends StatefulWidget {
@@ -43,7 +44,6 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   final controller = Get.put(VideoPlayController());
   final ScrollController _scrollController = ScrollController();
   final CastService _castService = Get.find<CastService>();
-  final GlobalKey<VideoState> _videoKey = GlobalKey<VideoState>();
 
   late final PiPService _pipService;
   PiPStatus _pipStatus = PiPStatus.disabled;
@@ -135,39 +135,6 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       data: AppTheme.dark,
       child: Builder(builder: (context) => _buildMainContent(context)),
     );
-  }
-
-  /// Remote keys for the TV player (see the desktop controls in the build).
-  /// Up/Down are deliberately left unbound so focus can still move to the
-  /// buttons above and the episodes/details below the embedded player.
-  Map<ShortcutActivator, VoidCallback> _tvPlayerKeys({
-    required bool fullscreen,
-  }) {
-    final player = controller.player;
-    void seekBy(Duration offset) => player.seek(player.state.position + offset);
-    // Embedded: OK goes fullscreen. Fullscreen: OK plays/pauses.
-    void onSelect() => fullscreen
-        ? player.playOrPause()
-        : _videoKey.currentState?.enterFullscreen();
-
-    return {
-      const SingleActivator(LogicalKeyboardKey.select): onSelect,
-      const SingleActivator(LogicalKeyboardKey.enter): onSelect,
-      const SingleActivator(LogicalKeyboardKey.gameButtonA): onSelect,
-      const SingleActivator(LogicalKeyboardKey.mediaPlayPause):
-          player.playOrPause,
-      const SingleActivator(LogicalKeyboardKey.mediaPlay): player.play,
-      const SingleActivator(LogicalKeyboardKey.mediaPause): player.pause,
-      const SingleActivator(LogicalKeyboardKey.space): player.playOrPause,
-      const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
-          seekBy(const Duration(seconds: -10)),
-      const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
-          seekBy(const Duration(seconds: 10)),
-      const SingleActivator(LogicalKeyboardKey.mediaRewind): () =>
-          seekBy(const Duration(seconds: -30)),
-      const SingleActivator(LogicalKeyboardKey.mediaFastForward): () =>
-          seekBy(const Duration(seconds: 30)),
-    };
   }
 
   Widget _buildMainContent(BuildContext context) {
@@ -364,39 +331,19 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   seekBarThumbSize: 18.0,
                                   seekBarHeight: 3.0,
                                 ),
-                                // On TV: media_kit's desktop controls, which
-                                // (unlike the touch ones) take key input,
-                                // driven by a remote-friendly key map.
-                                child: MaterialDesktopVideoControlsTheme(
-                                  normal: MaterialDesktopVideoControlsThemeData(
-                                    keyboardShortcuts: _tvPlayerKeys(
-                                      fullscreen: false,
-                                    ),
-                                  ),
-                                  fullscreen:
-                                      MaterialDesktopVideoControlsThemeData(
-                                        keyboardShortcuts: _tvPlayerKeys(
-                                          fullscreen: true,
-                                        ),
-                                      ),
-                                  // On TV this wrapper must not take focus
-                                  // itself: key events only bubble *up* from
-                                  // the focused node, so they'd never reach
-                                  // the desktop controls' key bindings below.
-                                  child: Focus(
-                                    autofocus: !TvDevice.isTv,
-                                    canRequestFocus: !TvDevice.isTv,
-                                    child: Video(
-                                      key: _videoKey,
-                                      controller: controller.videoController,
-                                      controls: TvDevice.isTv
-                                          ? MaterialDesktopVideoControls
-                                          : AdaptiveVideoControls,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                    ),
-                                  ),
+                                // On TV: our own remote-driven controls (see
+                                // TvVodControls for why not media_kit's).
+                                child: Video(
+                                  controller: controller.videoController,
+                                  controls: TvDevice.isTv
+                                      ? (state) => TvVodControls(
+                                          player: controller.player,
+                                          title: () => controller.title,
+                                        )
+                                      : AdaptiveVideoControls,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
                                 ),
                               ),
                               if (!controller.isVideoInitialized.value)
@@ -674,61 +621,69 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                             ),
                                           ),
                                         ),
-                                        Obx(() {
-                                          // No downloads on TV (little
-                                          // storage, nowhere to watch offline).
-                                          if (TvDevice.isTv ||
-                                              !controller
-                                                  .isVideoInitialized
-                                                  .value) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          final vid = controller.currentVideoId;
-                                          final vtype =
-                                              controller.currentVideoType;
-                                          final url = controller.currentPlayUrl;
-                                          if (vid == null ||
-                                              vtype == null ||
-                                              url == null) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 24,
-                                            ),
-                                            child: SizedBox(
-                                              width: 72,
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
-                                                children: [
-                                                  Center(
-                                                    child: DownloadButton(
-                                                      videoId: vid,
-                                                      videoType: vtype,
-                                                      title: controller.title,
-                                                      url: url,
-                                                      ext:
-                                                          controller.currentExt,
-                                                      thumbnail: controller
-                                                          .currentThumbnail,
-                                                      iconSize: 28,
-                                                    ),
-                                                  ),
-                                                  const Text(
-                                                    'Download',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 12,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ],
+                                        // No downloads on TV (little storage,
+                                        // nowhere to watch offline). Checked
+                                        // outside the Obx: inside it, isTv
+                                        // short-circuits before any Rx is
+                                        // read and GetX throws "improper use".
+                                        if (!TvDevice.isTv)
+                                          Obx(() {
+                                            if (!controller
+                                                .isVideoInitialized
+                                                .value) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            final vid =
+                                                controller.currentVideoId;
+                                            final vtype =
+                                                controller.currentVideoType;
+                                            final url =
+                                                controller.currentPlayUrl;
+                                            if (vid == null ||
+                                                vtype == null ||
+                                                url == null) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 24,
                                               ),
-                                            ),
-                                          );
-                                        }),
+                                              child: SizedBox(
+                                                width: 72,
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .stretch,
+                                                  children: [
+                                                    Center(
+                                                      child: DownloadButton(
+                                                        videoId: vid,
+                                                        videoType: vtype,
+                                                        title: controller.title,
+                                                        url: url,
+                                                        ext: controller
+                                                            .currentExt,
+                                                        thumbnail: controller
+                                                            .currentThumbnail,
+                                                        iconSize: 28,
+                                                      ),
+                                                    ),
+                                                    const Text(
+                                                      'Download',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 12,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          }),
                                       ],
                                     ),
                                   ),
@@ -1264,7 +1219,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                             _buildSettingRow(
                               label: "Audio Track",
                               value: Obx(() {
-                                final track = controller.currentAudioTrack.value;
+                                final track =
+                                    controller.currentAudioTrack.value;
                                 return Text(
                                   track == null ? "Default" : track.displayName,
                                   style: const TextStyle(color: Colors.white),
@@ -1280,7 +1236,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                             _buildSettingRow(
                               label: "Subtitles",
                               value: Obx(() {
-                                final track = controller.currentSubtitleTrack.value;
+                                final track =
+                                    controller.currentSubtitleTrack.value;
                                 if (!controller.isSubtitleEnabled.value ||
                                     track == null ||
                                     track == SubtitleTrack.no()) {
@@ -1574,7 +1531,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                     children: [
                                       Text(
                                         track.displayName,
-                                        style: const TextStyle(color: Colors.white),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
                                       ),
                                       Container(
                                         width: 18,
@@ -1592,10 +1551,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                                 child: Container(
                                                   width: 10,
                                                   height: 10,
-                                                  decoration: const BoxDecoration(
-                                                    color: AppColors.red,
-                                                    shape: BoxShape.circle,
-                                                  ),
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: AppColors.red,
+                                                        shape: BoxShape.circle,
+                                                      ),
                                                 ),
                                               )
                                             : null,
@@ -1674,8 +1634,10 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                             itemCount: tracks.length,
                             itemBuilder: (context, index) {
                               final track = tracks[index];
-                              final isSelected = controller.isSubtitleEnabled.value
-                                  ? controller.currentSubtitleTrack.value == track
+                              final isSelected =
+                                  controller.isSubtitleEnabled.value
+                                  ? controller.currentSubtitleTrack.value ==
+                                        track
                                   : track == SubtitleTrack.no();
 
                               return InkWell(
@@ -1694,7 +1656,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                     children: [
                                       Text(
                                         track.displayName,
-                                        style: const TextStyle(color: Colors.white),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
                                       ),
                                       Container(
                                         width: 18,
@@ -1712,10 +1676,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                                 child: Container(
                                                   width: 10,
                                                   height: 10,
-                                                  decoration: const BoxDecoration(
-                                                    color: AppColors.red,
-                                                    shape: BoxShape.circle,
-                                                  ),
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: AppColors.red,
+                                                        shape: BoxShape.circle,
+                                                      ),
                                                 ),
                                               )
                                             : null,
@@ -1834,7 +1799,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   SizedBox(height: 16),
                                   Text(
                                     "Searching for devices...",
-                                    style: TextStyle(color: AppColors.primaryGray),
+                                    style: TextStyle(
+                                      color: AppColors.primaryGray,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1893,7 +1860,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             itemCount: _castService.availableDevices.length,
                             itemBuilder: (context, index) {
-                              final device = _castService.availableDevices[index];
+                              final device =
+                                  _castService.availableDevices[index];
                               return TvFocusWrapper(
                                 onTap: () async {
                                   final url = controller.currentPlayUrl;
@@ -1946,7 +1914,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                       ),
                                       Obx(() {
                                         if (_castService.isConnecting.value &&
-                                            _castService.connectedDevice.value ==
+                                            _castService
+                                                    .connectedDevice
+                                                    .value ==
                                                 device) {
                                           return const SizedBox(
                                             width: 18,
@@ -2032,7 +2002,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 vertical: 12,
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     speed == 1.0 ? "1" : speed.toString(),

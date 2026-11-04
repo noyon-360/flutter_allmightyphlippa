@@ -22,7 +22,7 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 
 | Area | Done | Total |
 |---|---|---|
-| Client-reported bugs | 0 | 2 |
+| Client-reported bugs | 0 | 3 |
 | Playlist import & management | 2 | 7 |
 | Live TV | 6 | 7 |
 | VOD / movies / series | 5 | 7 |
@@ -32,7 +32,7 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 | Sync & cloud | 3 | 3 |
 | Monetisation | 2 | 5 |
 | Platforms & delivery | 3 | 6 |
-| **Total** | **29** | **50** |
+| **Total** | **29** | **51** |
 
 ---
 
@@ -47,6 +47,10 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
   - *Cause:* `LiveTvController` is created lazily. Its `onInit()` starts the default load, and the category request gets dropped by `if (isLoading) return;`.
   - *Fix:* in `live_tv_controller.dart`, let an explicit `categoryId` supersede an in-flight load (using a request generation counter). Fall back to `categoryIds.first` when `category_id` is empty.
   - *Status (4 Nov 2026):* **fixed in code, not committed.** Search passes the channel's category to `LiveVideoPlayScreen(categoryId:)` (`movie_series_item_widget.dart`, with the `categoryIds.first` fallback). The player loads it after the first frame and scrolls to the channel (`live_video_play_screen.dart`). `live_tv_controller.dart` has a `_generation` counter: an explicit category supersedes an in-flight load, and stale responses are dropped. Verified: with the list already loaded, the guide shows the channel's category and marks it NOW PLAYING (phone emulator). **Not verified:** the lazy-init race itself (search → channel before the first Live TV load finishes). There's no unit test yet, because the controller needs GetX repo fakes.
+- ⚠️ [ ] **Android TV: app closes when opening a movie or series.** The player page froze, then Android closed the app ("not responding").
+  - *Cause:* the Download button's `Obx` in `video_play_screen.dart` returned early on `TvDevice.isTv` before reading any Rx value, so GetX threw "improper use of GetX" on TV only. In a debug run the debugger paused on that exception. Dart runs on the Android main thread, so the remote's key presses got no answer and Android raised an ANR (confirmed from the ANR trace: `DRT_Throw → Debugger::PauseException`). Also a 4px overflow in the Cast row on TV (`cast_section.dart`).
+  - *Fix:* build the Download `Obx` only when not on TV; make the actor name `Flexible` so it shrinks instead of overflowing.
+  - *Status (4 Nov 2026):* **fixed in code, not committed.** Verified on the Android TV emulator: opening a series shows the player page with no exceptions, the D-pad works and the app stays open. `flutter analyze` shows nothing new; `flutter test` 57 pass (the 1 failure is the old template `widget_test.dart` counter test, failing before this change). **Not verified:** a release build on a real TV device.
 
 ---
 
@@ -107,7 +111,7 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 |---|---|---|
 | [x] | Chromecast | Custom implementation in `core/services/cast` |
 | [x] | AirPlay | `airplay_service.dart` |
-| [x] | Android TV interface | Leanback launcher, TV nav rail, focus widgets |
+| [x] | Android TV interface | Leanback launcher, TV nav rail, focus widgets. 4 Nov 2026: movie/series player has its own remote controls on TV (`features/video/widgets/tv_vod_controls.dart`), replacing media_kit's desktop controls, which only appear on mouse hover and so never showed on TV. Any key shows the bar (title, progress, time) and it hides after 5 s while playing. OK: fullscreen when embedded, play/pause in fullscreen. Left/Right ±10 s (hold to keep seeking), media keys work, Back exits fullscreen. Verified on the Android TV emulator; test `test/tv_vod_controls_test.dart`. The emulator shows a black picture (media_kit forces software rendering on emulators and the GL context fails); not yet checked on a real TV box. |
 | [ ] | Apple TV (tvOS) app | Needs a separate native Swift app (Flutter can't target tvOS). Build prompt ready: `docs/tvos_app_prompt.md` |
 
 ### 2.3 Personalisation
