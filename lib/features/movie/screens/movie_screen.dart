@@ -9,6 +9,7 @@ import '../../genre/screens/category_selection_screen.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../video/screens/video_play_screen.dart';
 import '../controllers/movie_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class MovieScreen extends StatefulWidget {
   const MovieScreen({super.key});
@@ -104,7 +105,7 @@ class _MovieScreenState extends State<MovieScreen> {
                               'Categories',
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(
-                                    color: AppColors.primaryWhite,
+                                    color: context.palette.textPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
@@ -160,7 +161,7 @@ class _MovieScreenState extends State<MovieScreen> {
                                     movieCtrl.getMovies(categoryId: categoryId);
                                   },
                                   borderRadius: 25,
-                                  focusColor: AppColors.primaryWhite,
+                                  focusColor: context.palette.textPrimary,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 20,
@@ -168,12 +169,12 @@ class _MovieScreenState extends State<MovieScreen> {
                                     decoration: BoxDecoration(
                                       color: isSelected
                                           ? AppColors.red
-                                          : AppColors.containerBgColor,
+                                          : context.palette.surface,
                                       borderRadius: BorderRadius.circular(25),
                                       border: Border.all(
                                         color: isSelected
                                             ? AppColors.red
-                                            : AppColors.primaryWhite
+                                            : context.palette.textPrimary
                                                   .withOpacity(0.1),
                                       ),
                                     ),
@@ -182,8 +183,8 @@ class _MovieScreenState extends State<MovieScreen> {
                                       categoryName,
                                       style: TextStyle(
                                         color: isSelected
-                                            ? AppColors.primaryWhite
-                                            : AppColors.primaryGray,
+                                            ? context.palette.textPrimary
+                                            : context.palette.textSecondary,
                                         fontWeight: isSelected
                                             ? FontWeight.bold
                                             : FontWeight.normal,
@@ -221,7 +222,7 @@ class _MovieScreenState extends State<MovieScreen> {
                             title,
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
-                                  color: AppColors.primaryWhite,
+                                  color: context.palette.textPrimary,
                                   fontWeight: FontWeight.bold,
                                 ),
                           );
@@ -259,7 +260,7 @@ class _MovieScreenState extends State<MovieScreen> {
                                     width: 100,
                                     height: 80,
                                     decoration: BoxDecoration(
-                                      color: AppColors.containerBgColor,
+                                      color: context.palette.surface,
                                       borderRadius: BorderRadius.circular(8),
                                       image: movie.streamIcon.isNotEmpty
                                           ? DecorationImage(
@@ -272,9 +273,9 @@ class _MovieScreenState extends State<MovieScreen> {
                                           : null,
                                     ),
                                     child: movie.streamIcon.isEmpty
-                                        ? const Icon(
+                                        ? Icon(
                                             Icons.movie,
-                                            color: AppColors.iconColor,
+                                            color: context.palette.textPrimary,
                                           )
                                         : null,
                                   ),
@@ -286,8 +287,8 @@ class _MovieScreenState extends State<MovieScreen> {
                                       children: [
                                         Text(
                                           movie.name,
-                                          style: const TextStyle(
-                                            color: AppColors.primaryWhite,
+                                          style: TextStyle(
+                                            color: context.palette.textPrimary,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -297,8 +298,8 @@ class _MovieScreenState extends State<MovieScreen> {
                                         const SizedBox(height: 8),
                                         Text(
                                           'Movie${movie.rating.isNotEmpty && movie.rating != '0' ? ' | ⭐ ${movie.rating}' : ''}',
-                                          style: const TextStyle(
-                                            color: AppColors.primaryGray,
+                                          style: TextStyle(
+                                            color: context.palette.textSecondary,
                                             fontSize: 12,
                                           ),
                                           maxLines: 1,
@@ -367,7 +368,7 @@ class _MovieScreenState extends State<MovieScreen> {
           Icon(
             error != null ? Icons.cloud_off : Icons.movie_outlined,
             size: 48,
-            color: AppColors.primaryGray,
+            color: context.palette.textSecondary,
           ),
           const SizedBox(height: 16),
           Text(
@@ -375,7 +376,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 ? "Couldn't load movies.\n$error"
                 : 'No movies available',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.primaryGray, fontSize: 14),
+            style: TextStyle(color: context.palette.textSecondary, fontSize: 14),
           ),
           if (error != null) ...[
             const SizedBox(height: 16),
@@ -402,7 +403,7 @@ class _MovieScreenState extends State<MovieScreen> {
           Container(
             height: 50,
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -411,7 +412,7 @@ class _MovieScreenState extends State<MovieScreen> {
             height: 24,
             width: 100,
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -425,7 +426,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 width: 160,
                 margin: const EdgeInsets.only(right: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.containerBgColor,
+                  color: context.palette.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -436,7 +437,7 @@ class _MovieScreenState extends State<MovieScreen> {
             height: 24,
             width: 120,
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -452,7 +453,7 @@ class _MovieScreenState extends State<MovieScreen> {
                       width: 100,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: AppColors.containerBgColor,
+                        color: context.palette.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -465,7 +466,7 @@ class _MovieScreenState extends State<MovieScreen> {
                             height: 16,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: AppColors.containerBgColor,
+                              color: context.palette.surface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -474,7 +475,7 @@ class _MovieScreenState extends State<MovieScreen> {
                             height: 12,
                             width: 150,
                             decoration: BoxDecoration(
-                              color: AppColors.containerBgColor,
+                              color: context.palette.surface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),

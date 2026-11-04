@@ -30,7 +30,9 @@ import '../../app/screens/terms_condition_screen.dart';
 import '../../auth/screens/change_password_screen.dart';
 import '../../downloads/screens/downloads_screen.dart';
 import '../../subscription/screens/subscription_screen.dart';
+import '../widgets/theme_picker_dialog.dart';
 import 'profile_update_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -59,7 +61,7 @@ class ProfileScreen extends StatelessWidget {
               Text(
                 "My Profile",
                 style: TextStyle(
-                  color: AppColors.primaryWhite,
+                  color: context.palette.textPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -84,8 +86,8 @@ class ProfileScreen extends StatelessWidget {
                               height: 80,
                               borderRadius: BorderRadius.circular(12),
                               fit: BoxFit.cover,
-                              shimmerBaseColor: AppColors.containerBgColor,
-                              shimmerHighlightColor: AppColors.containerBgColor,
+                              shimmerBaseColor: context.palette.surface,
+                              shimmerHighlightColor: context.palette.surface,
                               onTap: () {},
                             )
                           : ClipRRect(
@@ -104,7 +106,7 @@ class ProfileScreen extends StatelessWidget {
                           Text(
                             user?.name ?? "",
                             style: TextStyle(
-                              color: AppColors.primaryWhite,
+                              color: context.palette.textPrimary,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -112,7 +114,7 @@ class ProfileScreen extends StatelessWidget {
                           Text(
                             user?.email ?? "",
                             style: TextStyle(
-                              color: AppColors.primaryGray,
+                              color: context.palette.textSecondary,
                               fontSize: 14,
                             ),
                           ),
@@ -128,7 +130,7 @@ class ProfileScreen extends StatelessWidget {
                       },
                       icon: AppSvg(
                         asset: AssetsConstants.icons.edit05,
-                        color: AppColors.primaryWhite,
+                        color: context.palette.textPrimary,
                         width: 24,
                         height: 24,
                       ),
@@ -153,7 +155,7 @@ class ProfileScreen extends StatelessWidget {
                         Text(
                           "History",
                           style: TextStyle(
-                            color: AppColors.primaryWhite,
+                            color: context.palette.textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -164,7 +166,7 @@ class ProfileScreen extends StatelessWidget {
                           },
                           child: Text(
                             "See All",
-                            style: TextStyle(color: AppColors.primaryGray),
+                            style: TextStyle(color: context.palette.textSecondary),
                           ),
                         ),
                       ],
@@ -225,9 +227,9 @@ class ProfileScreen extends StatelessWidget {
                                                 imageUrl: history.thumbnail,
                                                 fit: BoxFit.cover,
                                                 shimmerBaseColor:
-                                                    AppColors.containerBgColor,
+                                                    context.palette.surface,
                                                 shimmerHighlightColor:
-                                                    AppColors.containerBgColor,
+                                                    context.palette.surface,
                                                 onTap: () {},
                                               ),
                                             )
@@ -235,10 +237,10 @@ class ProfileScreen extends StatelessWidget {
                                             Positioned.fill(
                                               child: Container(
                                                 color:
-                                                    AppColors.containerBgColor,
-                                                child: const Icon(
+                                                    context.palette.surface,
+                                                child: Icon(
                                                   Icons.movie,
-                                                  color: AppColors.iconColor,
+                                                  color: context.palette.textPrimary,
                                                   size: 40,
                                                 ),
                                               ),
@@ -294,8 +296,8 @@ class ProfileScreen extends StatelessWidget {
                                   Gap.h8,
                                   Text(
                                     history.name ?? 'Unknown',
-                                    style: const TextStyle(
-                                      color: AppColors.primaryWhite,
+                                    style: TextStyle(
+                                      color: context.palette.textPrimary,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -308,8 +310,8 @@ class ProfileScreen extends StatelessWidget {
                                         : history.videoType == 'live'
                                         ? 'Live TV'
                                         : 'Series',
-                                    style: const TextStyle(
-                                      color: AppColors.primaryGray,
+                                    style: TextStyle(
+                                      color: context.palette.textSecondary,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -327,6 +329,7 @@ class ProfileScreen extends StatelessWidget {
 
               // Menu Items
               _buildMenuItem(
+                context,
                 iconAsset: '', // Using Material Icon
                 title: "Subscription",
                 isSvg: false,
@@ -342,6 +345,7 @@ class ProfileScreen extends StatelessWidget {
               // No downloads on TV (little storage, nowhere to watch offline).
               if (!TvDevice.isTv)
                 _buildMenuItem(
+                  context,
                   iconAsset: '',
                   isSvg: false,
                   iconData: Icons.download_for_offline_outlined,
@@ -355,6 +359,7 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
               _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.favourite,
                 title: "Favourite",
                 onTap: () {
@@ -365,6 +370,7 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.playSquare,
                 title: "Playlist",
                 onTap: () {
@@ -375,6 +381,7 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: '',
                 iconData: Icons.notifications_active_outlined,
                 title: "My Alerts",
@@ -386,12 +393,21 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: '',
                 iconData: Icons.refresh,
                 title: "Update EPG",
                 onTap: _updateEpg,
               ),
               _buildMenuItem(
+                context,
+                iconAsset: '',
+                iconData: Icons.brightness_6_outlined,
+                title: "Appearance",
+                onTap: showThemePickerDialog,
+              ),
+              _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.lock,
                 title: "Change Password",
                 onTap: () {
@@ -402,6 +418,7 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.chartBreakoutCircle,
                 title: "About App",
                 onTap: () {
@@ -412,6 +429,7 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.fileShield,
                 title: "Privacy Policy",
                 onTap: () {
@@ -422,6 +440,7 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.shieldOff,
                 title: "Term & Condition",
                 isSvg: false,
@@ -433,12 +452,13 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.trash,
                 title: "Delete Account",
                 onTap: () {
                   Get.dialog(
                     Dialog(
-                      backgroundColor: AppColors.containerBgColor,
+                      backgroundColor: context.palette.surface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -447,20 +467,20 @@ class ProfileScreen extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               "Delete Account",
                               style: TextStyle(
-                                color: AppColors.primaryWhite,
+                                color: context.palette.textPrimary,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Gap.h16,
-                            const Text(
+                            Text(
                               "Are you sure you want to delete your account? This action is permanent and cannot be undone.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: AppColors.primaryGray,
+                                color: context.palette.textSecondary,
                                 fontSize: 14,
                                 height: 1.5,
                               ),
@@ -500,6 +520,7 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               _buildMenuItem(
+                context,
                 iconAsset: AssetsConstants.icons.logOut,
                 title: "Log Out",
                 titleColor: AppColors.red,
@@ -507,7 +528,7 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () {
                   Get.dialog(
                     Dialog(
-                      backgroundColor: AppColors.containerBgColor,
+                      backgroundColor: context.palette.surface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -516,20 +537,20 @@ class ProfileScreen extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               "Confirm Logout",
                               style: TextStyle(
-                                color: AppColors.primaryWhite,
+                                color: context.palette.textPrimary,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Gap.h16,
-                            const Text(
+                            Text(
                               "Are you sure you want to log out of your account?",
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: AppColors.primaryGray,
+                                color: context.palette.textSecondary,
                                 fontSize: 14,
                                 height: 1.5,
                               ),
@@ -614,7 +635,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem({
+  Widget _buildMenuItem(BuildContext context, {
     required String iconAsset,
     required String title,
     required VoidCallback onTap,
@@ -628,17 +649,17 @@ class ProfileScreen extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: iconData != null
-              ? Icon(iconData, color: iconColor ?? AppColors.primaryWhite, size: 24)
+              ? Icon(iconData, color: iconColor ?? context.palette.textPrimary, size: 24)
               : isSvg
                   ? AppSvg(
                       asset: iconAsset,
-                      color: iconColor ?? AppColors.primaryWhite,
+                      color: iconColor ?? context.palette.textPrimary,
                       width: 24,
                       height: 24,
                     )
                   : Image.asset(
                       iconAsset,
-                      color: iconColor ?? AppColors.primaryWhite,
+                      color: iconColor ?? context.palette.textPrimary,
                       width: 24,
                       height: 24,
                       fit: BoxFit.contain,
@@ -646,18 +667,18 @@ class ProfileScreen extends StatelessWidget {
           title: Text(
             title,
             style: TextStyle(
-              color: titleColor ?? AppColors.primaryWhite,
+              color: titleColor ?? context.palette.textPrimary,
               fontSize: 16,
             ),
           ),
-          trailing: const Icon(
+          trailing: Icon(
             Icons.arrow_forward_ios,
-            color: AppColors.primaryGray,
+            color: context.palette.textSecondary,
             size: 16,
           ),
           onTap: onTap,
         ),
-        const Divider(color: AppColors.containerBgColor, height: 1),
+        Divider(color: context.palette.surface, height: 1),
       ],
     );
   }

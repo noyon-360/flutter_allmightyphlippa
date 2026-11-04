@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
 
-import '../../constants/app_colors.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class PrimaryButton extends StatelessWidget {
   final Future<void> Function()? onApiPressed; // For API calls (with loading)
@@ -16,8 +16,8 @@ class PrimaryButton extends StatelessWidget {
 
   final double? width;
   final double? height;
-  final Color backgroundColor;
-  final Color textColor;
+  final Color? backgroundColor; // defaults to the theme's text colour
+  final Color? textColor; // defaults to the theme's background
   final double borderRadius;
   final FocusNode? focusNode;
 
@@ -31,8 +31,8 @@ class PrimaryButton extends StatelessWidget {
     this.iconRight,
     this.width,
     this.height = 50,
-    this.backgroundColor = AppColors.primaryWhite,
-    this.textColor = AppColors.primaryBlack,
+    this.backgroundColor,
+    this.textColor,
     this.borderRadius = 25.0,
     this.focusNode,
   });
@@ -42,6 +42,8 @@ class PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLoading = Get.put(false.obs, tag: _uniqueTag);
+    final bg = backgroundColor ?? context.palette.textPrimary;
+    final fg = textColor ?? context.palette.background;
 
     return TvFocusWrapper(
       focusNode: focusNode,
@@ -80,7 +82,7 @@ class PrimaryButton extends StatelessWidget {
               height: height ?? 50,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: backgroundColor,
+                color: bg,
                 borderRadius: BorderRadius.circular(borderRadius),
               ),
               child: isLoading.value
@@ -89,7 +91,7 @@ class PrimaryButton extends StatelessWidget {
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(fg),
                       ),
                     )
                   : Row(
@@ -104,7 +106,7 @@ class PrimaryButton extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
-                            color: textColor,
+                            color: fg,
                           ),
                         ),
                         if (iconRight != null) ...[
@@ -128,8 +130,8 @@ class SecondaryButton extends StatelessWidget {
   final String text;
   final double? width;
   final double? height;
-  final Color borderColor;
-  final Color textColor;
+  final Color? borderColor; // defaults to the theme's text colour
+  final Color? textColor;
   final Color? backgroundColor;
   final double borderRadius;
   final FocusNode? focusNode;
@@ -145,8 +147,8 @@ class SecondaryButton extends StatelessWidget {
     required this.text,
     this.width,
     this.height = 50,
-    this.borderColor = AppColors.primaryWhite,
-    this.textColor = AppColors.primaryWhite,
+    this.borderColor,
+    this.textColor,
     this.backgroundColor,
     this.borderRadius = 8.0,
     this.borderWidth = 1.0,
@@ -160,6 +162,8 @@ class SecondaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLoading = Get.put(false.obs, tag: _uniqueTag);
+    final border = borderColor ?? context.palette.textPrimary;
+    final fg = textColor ?? context.palette.textPrimary;
 
     return TvFocusWrapper(
       focusNode: focusNode,
@@ -200,7 +204,7 @@ class SecondaryButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: backgroundColor ?? Colors.transparent,
                 borderRadius: BorderRadius.circular(borderRadius),
-                border: Border.all(color: borderColor, width: borderWidth),
+                border: Border.all(color: border, width: borderWidth),
               ),
               child: isLoading.value
                   ? SizedBox(
@@ -208,7 +212,7 @@ class SecondaryButton extends StatelessWidget {
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(fg),
                       ),
                     )
                   : Row(
@@ -223,7 +227,7 @@ class SecondaryButton extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
-                            color: AppColors.primaryGray,
+                            color: context.palette.textSecondary,
                           ),
                         ),
                         if (iconRight != null) ...[

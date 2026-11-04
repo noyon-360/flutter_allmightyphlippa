@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../screens/search_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class SearchSectionWidget extends StatelessWidget {
   final ServerType type;
@@ -20,16 +20,16 @@ class SearchSectionWidget extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.containerBgColor,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.search, color: AppColors.iconColor),
+              Icon(Icons.search, color: context.palette.textPrimary),
               SizedBox(width: 8),
               Text(
                 'Search',
-                style: TextStyle(color: AppColors.hintText, fontSize: 16),
+                style: TextStyle(color: context.palette.hint, fontSize: 16),
               ),
             ],
           ),

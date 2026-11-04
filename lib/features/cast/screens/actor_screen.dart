@@ -7,6 +7,7 @@ import '../../search/widgets/movie_series_item_widget.dart';
 import '../controllers/actor_controller.dart';
 import '../services/cast_photo_service.dart';
 import '../widgets/actor_avatar.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Movies and series in the user's playlist featuring one actor.
 class ActorScreen extends StatelessWidget {
@@ -22,7 +23,7 @@ class ActorScreen extends StatelessWidget {
     CastPhotoService.to.ensureLoaded([name]);
 
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -48,17 +49,17 @@ class ActorScreen extends StatelessWidget {
                       children: [
                         Text(
                           name,
-                          style: const TextStyle(
-                            color: AppColors.primaryWhite,
+                          style: TextStyle(
+                            color: context.palette.textPrimary,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           'In your playlist',
                           style: TextStyle(
-                            color: AppColors.primaryGray,
+                            color: context.palette.textSecondary,
                             fontSize: 13,
                           ),
                         ),
@@ -83,22 +84,22 @@ class ActorScreen extends StatelessWidget {
                       ? "Couldn't load titles right now. Please try again."
                       : 'No movies or series with $name in your playlist.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.primaryGray,
+                  style: TextStyle(
+                    color: context.palette.textSecondary,
                     fontSize: 15,
                   ),
                 ),
               )
             else ...[
               if (ctrl.movies.isNotEmpty) ...[
-                _sectionTitle('Movies'),
+                _sectionTitle(context, 'Movies'),
                 for (final movie in ctrl.movies)
                   MovieSeriesItemWidget(item: movie, type: ServerType.movies),
                 if (ctrl.hasMoreMovies.value)
                   _loadMore(() => ctrl.loadMovies(more: true)),
               ],
               if (ctrl.series.isNotEmpty) ...[
-                _sectionTitle('Series'),
+                _sectionTitle(context, 'Series'),
                 for (final show in ctrl.series)
                   MovieSeriesItemWidget(item: show, type: ServerType.series),
                 if (ctrl.hasMoreSeries.value)
@@ -111,12 +112,12 @@ class ActorScreen extends StatelessWidget {
     );
   }
 
-  Widget _sectionTitle(String title) => Padding(
+  Widget _sectionTitle(BuildContext context, String title) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
     child: Text(
       title,
-      style: const TextStyle(
-        color: AppColors.primaryWhite,
+      style: TextStyle(
+        color: context.palette.textPrimary,
         fontSize: 18,
         fontWeight: FontWeight.w700,
       ),

@@ -19,4 +19,6 @@ class KeyConstants {
   static const String playlistData = 'playlist_data';
 
   static const String deviceId = 'device_id';
+
+  static const String themeMode = 'theme_mode';
 }

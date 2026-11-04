@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../controllers/subscription_controller.dart';
 import '../models/subscription_history_model.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class SubscriptionHistoryScreen extends StatelessWidget {
   const SubscriptionHistoryScreen({super.key});
@@ -12,23 +13,23 @@ class SubscriptionHistoryScreen extends StatelessWidget {
     final controller = Get.find<SubscriptionController>();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: context.palette.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: () => Get.back(),
         ),
-        title: const Text(
+        title: Text(
           'Purchase History',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: context.palette.textPrimary, fontWeight: FontWeight.bold),
         ),
       ),
       body: Obx(() {
         if (controller.isHistoryLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.white),
+          return Center(
+            child: CircularProgressIndicator(color: context.palette.textPrimary),
           );
         }
 
@@ -41,14 +42,14 @@ class SubscriptionHistoryScreen extends StatelessWidget {
               children: [
                 Icon(
                   Icons.receipt_long_outlined,
-                  color: Colors.white.withAlpha((0.3 * 255).toInt()),
+                  color: context.palette.textPrimary.withAlpha((0.3 * 255).toInt()),
                   size: 64,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No purchase history found.',
                   style: TextStyle(
-                    color: Colors.white.withAlpha((0.5 * 255).toInt()),
+                    color: context.palette.textPrimary.withAlpha((0.5 * 255).toInt()),
                     fontSize: 16,
                   ),
                 ),
@@ -58,21 +59,21 @@ class SubscriptionHistoryScreen extends StatelessWidget {
         }
 
         return RefreshIndicator(
-          color: Colors.white,
-          backgroundColor: Colors.grey[900],
+          color: context.palette.textPrimary,
+          backgroundColor: context.palette.surface,
           onRefresh: controller.loadPurchaseHistory,
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
             itemCount: history.length,
             itemBuilder: (context, index) =>
-                _buildHistoryCard(history[index]),
+                _buildHistoryCard(context, history[index]),
           ),
         );
       }),
     );
   }
 
-  Widget _buildHistoryCard(SubscriptionHistoryModel item) {
+  Widget _buildHistoryCard(BuildContext context, SubscriptionHistoryModel item) {
     final Color statusColor;
     final String statusLabel;
 
@@ -84,10 +85,10 @@ class SubscriptionHistoryScreen extends StatelessWidget {
         statusColor = Colors.orange;
         statusLabel = 'Refunded';
       case 'canceled':
-        statusColor = Colors.white54;
+        statusColor = context.palette.textPrimary.withValues(alpha: 0.54);
         statusLabel = 'Canceled';
       default:
-        statusColor = Colors.white54;
+        statusColor = context.palette.textPrimary.withValues(alpha: 0.54);
         statusLabel = 'Expired';
     }
 
@@ -96,8 +97,8 @@ class SubscriptionHistoryScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white.withAlpha((0.05 * 255).toInt()),
-        border: Border.all(color: Colors.white.withAlpha((0.15 * 255).toInt())),
+        color: context.palette.textPrimary.withAlpha((0.05 * 255).toInt()),
+        border: Border.all(color: context.palette.textPrimary.withAlpha((0.15 * 255).toInt())),
       ),
       child: Row(
         children: [
@@ -116,8 +117,8 @@ class SubscriptionHistoryScreen extends StatelessWidget {
               children: [
                 Text(
                   item.planLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.palette.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -127,7 +128,7 @@ class SubscriptionHistoryScreen extends StatelessWidget {
                   Text(
                     _formatDateRange(item.startDate, item.endDate),
                     style: TextStyle(
-                      color: Colors.white.withAlpha((0.55 * 255).toInt()),
+                      color: context.palette.textPrimary.withAlpha((0.55 * 255).toInt()),
                       fontSize: 12,
                     ),
                   ),

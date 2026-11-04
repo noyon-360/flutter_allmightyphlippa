@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../controllers/epg_controller.dart';
 import '../models/epg_reminder_model.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class EpgRemindersScreen extends StatelessWidget {
   const EpgRemindersScreen({super.key});
@@ -13,18 +14,18 @@ class EpgRemindersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = EpgController.to;
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: const Text(
+        leading: BackButton(color: context.palette.textPrimary),
+        title: Text(
           'My EPG Reminders',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: context.palette.textPrimary),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: context.palette.textPrimary),
             onPressed: ctrl.loadReminders,
           ),
         ],
@@ -37,20 +38,20 @@ class EpgRemindersScreen extends StatelessWidget {
         }
 
         if (ctrl.reminders.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.notifications_none, color: Colors.white38, size: 64),
+                Icon(Icons.notifications_none, color: context.palette.textPrimary.withValues(alpha: 0.38), size: 64),
                 SizedBox(height: 16),
                 Text(
                   'No upcoming reminders',
-                  style: TextStyle(color: Colors.white54, fontSize: 16),
+                  style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.54), fontSize: 16),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Open a live channel and tap the bell icon\nto set a program reminder.',
-                  style: TextStyle(color: Colors.white38, fontSize: 13),
+                  style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.38), fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -86,9 +87,9 @@ class _ReminderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.containerBgColor,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.palette.textPrimary.withValues(alpha: 0.07)),
       ),
       child: Row(
         children: [
@@ -112,8 +113,8 @@ class _ReminderCard extends StatelessWidget {
               children: [
                 Text(
                   reminder.programName,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.palette.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -123,18 +124,18 @@ class _ReminderCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   reminder.channelName,
-                  style: const TextStyle(color: AppColors.primaryGray, fontSize: 12),
+                  style: TextStyle(color: context.palette.textSecondary, fontSize: 12),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '$dateStr at $timeStr  •  ${reminder.notifyMinutesBefore} min before',
-                  style: const TextStyle(color: AppColors.primaryGray, fontSize: 11),
+                  style: TextStyle(color: context.palette.textSecondary, fontSize: 11),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white38),
+            icon: Icon(Icons.delete_outline, color: context.palette.textPrimary.withValues(alpha: 0.38)),
             onPressed: () => _confirmDelete(context),
           ),
         ],
@@ -146,16 +147,16 @@ class _ReminderCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.containerBgColor,
-        title: const Text('Delete Reminder', style: TextStyle(color: Colors.white)),
+        backgroundColor: context.palette.surface,
+        title: Text('Delete Reminder', style: TextStyle(color: context.palette.textPrimary)),
         content: Text(
           'Remove reminder for "${reminder.programName}"?',
-          style: const TextStyle(color: AppColors.primaryGray),
+          style: TextStyle(color: context.palette.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancel', style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.54))),
           ),
           TextButton(
             onPressed: () {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../services/cast_photo_service.dart';
 import '../utils/cast_names.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Round actor picture: the photo when the server knows one, otherwise the
 /// actor's initials on a coloured disc (always the same colour for a name).
@@ -24,7 +24,7 @@ class ActorAvatar extends StatelessWidget {
 
   Color get _color => _palette[name.hashCode.abs() % _palette.length];
 
-  Widget _initials() => Container(
+  Widget _initials(BuildContext context) => Container(
     width: size,
     height: size,
     alignment: Alignment.center,
@@ -36,7 +36,7 @@ class ActorAvatar extends StatelessWidget {
     child: Text(
       initialsOf(name),
       style: TextStyle(
-        color: AppColors.primaryWhite,
+        color: context.palette.textPrimary,
         fontSize: size * 0.34,
         fontWeight: FontWeight.w700,
       ),
@@ -47,7 +47,7 @@ class ActorAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final url = CastPhotoService.to.photos[name];
-      if (url == null || url.isEmpty) return _initials();
+      if (url == null || url.isEmpty) return _initials(context);
       return ClipOval(
         child: Image.network(
           url,
@@ -55,9 +55,9 @@ class ActorAvatar extends StatelessWidget {
           height: size,
           fit: BoxFit.cover,
           // A broken/blocked image should look like "no photo", not an error.
-          errorBuilder: (_, _, _) => _initials(),
+          errorBuilder: (_, _, _) => _initials(context),
           loadingBuilder: (context, child, progress) =>
-              progress == null ? child : _initials(),
+              progress == null ? child : _initials(context),
         ),
       );
     });

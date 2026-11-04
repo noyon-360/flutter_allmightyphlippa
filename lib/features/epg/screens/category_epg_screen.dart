@@ -11,6 +11,7 @@ import '../services/live_tv_now_playing_cache.dart';
 import '../widgets/epg_timeline_channel_row.dart';
 import '../widgets/epg_timeline_day_nav.dart';
 import '../widgets/epg_timeline_ruler.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Full TV guide for the Live TV category currently selected on the Live TV
 /// tab — Premium only (the tab only offers it to Premium users).
@@ -87,22 +88,22 @@ class _CategoryEpgScreenState extends State<CategoryEpgScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
+        leading: BackButton(color: context.palette.textPrimary),
         titleSpacing: 0,
         title: Text(
           widget.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: TextStyle(color: context.palette.textPrimary, fontSize: 18),
         ),
         actions: [
           IconButton(
             tooltip: 'Refresh guide',
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: context.palette.textPrimary),
             onPressed: _refresh,
           ),
         ],
@@ -116,9 +117,9 @@ class _CategoryEpgScreenState extends State<CategoryEpgScreen> {
             return Center(
               child: _liveTvCtrl.isLoading.value
                   ? const CircularProgressIndicator(color: AppColors.red)
-                  : const Text(
+                  : Text(
                       'No channels in this category.',
-                      style: TextStyle(color: Colors.white54),
+                      style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.54)),
                     ),
             );
           }
@@ -130,7 +131,7 @@ class _CategoryEpgScreenState extends State<CategoryEpgScreen> {
                 child: EpgTimelineDayNav(timelineCtrl: _timelineCtrl),
               ),
               EpgTimelineRuler(timelineCtrl: _timelineCtrl),
-              const Divider(color: Colors.white12, height: 1),
+              Divider(color: context.palette.textPrimary.withValues(alpha: 0.12), height: 1),
               Expanded(
                 child: Obx(() {
                   final day = _timelineCtrl.selectedDate.value;

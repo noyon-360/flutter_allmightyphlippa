@@ -5,6 +5,7 @@ import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../controllers/epg_controller.dart';
 import '../models/epg_program_model.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Bottom sheet showing a program's title, time range, and description
 /// (when available), plus a reminder toggle for programs that haven't
@@ -22,7 +23,7 @@ void showEpgProgramInfoSheet(
 
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppColors.containerBgColor,
+    backgroundColor: context.palette.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
@@ -34,8 +35,8 @@ void showEpgProgramInfoSheet(
         children: [
           Text(
             program.title,
-            style: const TextStyle(
-              color: AppColors.primaryWhite,
+            style: TextStyle(
+              color: context.palette.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -69,7 +70,7 @@ void showEpgProgramInfoSheet(
                           : Icons.notifications_none,
                       color: hasReminder
                           ? AppColors.red
-                          : AppColors.primaryGray,
+                          : context.palette.textSecondary,
                       size: 22,
                     ),
                   );
@@ -81,8 +82,8 @@ void showEpgProgramInfoSheet(
             const SizedBox(height: 12),
             Text(
               program.description,
-              style: const TextStyle(
-                color: AppColors.primaryGray,
+              style: TextStyle(
+                color: context.palette.textSecondary,
                 fontSize: 13,
                 height: 1.4,
               ),

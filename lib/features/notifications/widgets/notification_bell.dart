@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../screens/notifications_screen.dart';
 import '../services/notification_inbox_service.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Opens the notifications screen, with a badge for the unread count.
 class NotificationBell extends StatelessWidget {
@@ -23,9 +24,9 @@ class NotificationBell extends StatelessWidget {
           isLabelVisible: unread > 0,
           backgroundColor: AppColors.red,
           label: Text(unread > 99 ? '99+' : '$unread'),
-          child: const Icon(
+          child: Icon(
             Icons.notifications_none_outlined,
-            color: AppColors.primaryWhite,
+            color: context.palette.textPrimary,
             size: 28,
           ),
         );

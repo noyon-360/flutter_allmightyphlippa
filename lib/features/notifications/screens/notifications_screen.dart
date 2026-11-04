@@ -8,6 +8,7 @@ import '../../../core/services/notification_service.dart';
 import '../../../core/utils/tv_device.dart';
 import '../models/app_notification_model.dart';
 import '../services/notification_inbox_service.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -16,24 +17,24 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final inbox = NotificationInboxService.to;
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: Get.back,
         ),
-        title: const Text(
+        title: Text(
           'Notifications',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: context.palette.textPrimary),
         ),
         actions: [
           Obx(() {
             if (inbox.unreadCount == 0) return const SizedBox.shrink();
             return IconButton(
               tooltip: 'Mark all as read',
-              icon: const Icon(Icons.done_all, color: Colors.white),
+              icon: Icon(Icons.done_all, color: context.palette.textPrimary),
               onPressed: inbox.markAllRead,
             );
           }),
@@ -41,9 +42,9 @@ class NotificationsScreen extends StatelessWidget {
             if (inbox.items.isEmpty) return const SizedBox.shrink();
             return IconButton(
               tooltip: 'Clear all',
-              icon: const Icon(
+              icon: Icon(
                 Icons.delete_sweep_outlined,
-                color: Colors.white,
+                color: context.palette.textPrimary,
               ),
               onPressed: () => _confirmClear(context, inbox),
             );
@@ -52,15 +53,15 @@ class NotificationsScreen extends StatelessWidget {
       ),
       body: Obx(() {
         if (inbox.items.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.notifications_none, color: Colors.white38, size: 64),
+                Icon(Icons.notifications_none, color: context.palette.textPrimary.withValues(alpha: 0.38), size: 64),
                 SizedBox(height: 16),
                 Text(
                   'No notifications yet',
-                  style: TextStyle(color: Colors.white54, fontSize: 16),
+                  style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.54), fontSize: 16),
                 ),
               ],
             ),
@@ -106,21 +107,21 @@ class NotificationsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.containerBgColor,
-        title: const Text(
+        backgroundColor: context.palette.surface,
+        title: Text(
           'Clear Notifications',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: context.palette.textPrimary),
         ),
-        content: const Text(
+        content: Text(
           'Remove all notifications?',
-          style: TextStyle(color: AppColors.primaryGray),
+          style: TextStyle(color: context.palette.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.white54),
+              style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.54)),
             ),
           ),
           TextButton(
@@ -152,7 +153,7 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = _buildCard();
+    final card = _buildCard(context);
     // The InkWell's focus highlight is painted under the card's opaque
     // background, so on TV use the focus ring instead.
     if (TvDevice.isTv) {
@@ -165,16 +166,16 @@ class _NotificationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCard() {
+  Widget _buildCard(BuildContext context) {
     final isRead = notification.isRead;
     return Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.containerBgColor,
+          color: context.palette.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isRead
-                ? Colors.white.withValues(alpha: 0.07)
+                ? context.palette.textPrimary.withValues(alpha: 0.07)
                 : AppColors.red.withValues(alpha: 0.5),
           ),
         ),
@@ -203,7 +204,7 @@ class _NotificationCard extends StatelessWidget {
                     Text(
                       notification.title,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.palette.textPrimary,
                         fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -212,8 +213,8 @@ class _NotificationCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       notification.body,
-                      style: const TextStyle(
-                        color: AppColors.primaryGray,
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
                         fontSize: 13,
                       ),
                     ),
@@ -221,8 +222,8 @@ class _NotificationCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     DateFormat('MMM d, h:mm a').format(notification.receivedAt),
-                    style: const TextStyle(
-                      color: AppColors.primaryGray,
+                    style: TextStyle(
+                      color: context.palette.textSecondary,
                       fontSize: 11,
                     ),
                   ),

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../controllers/history_controller.dart';
 import '../utils/open_watch_history_item.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -38,14 +39,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'History',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: context.palette.textPrimary, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: AppColors.primaryBlack,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: context.palette.background,
+        iconTheme: IconThemeData(color: context.palette.textPrimary),
       ),
       body: Obx(() {
         if (historyCtrl.isLoading.value) {
@@ -55,10 +56,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
 
         if (historyCtrl.history.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               'No history found',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: context.palette.textPrimary),
             ),
           );
         }
@@ -81,8 +82,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     child: Text(
                       key,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.palette.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -108,7 +109,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               child: Container(
                                 width: 120,
                                 height: 68,
-                                color: AppColors.containerBgColor,
+                                color: context.palette.surface,
                                 child: Stack(
                                   children: [
                                     if (item.thumbnail.isNotEmpty)
@@ -148,8 +149,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 children: [
                                   Text(
                                     item.name ?? 'Unknown Title',
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: context.palette.textPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -159,8 +160,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   const SizedBox(height: 6),
                                   Text(
                                     _buildSubtitle(item),
-                                    style: const TextStyle(
-                                      color: AppColors.primaryGray,
+                                    style: TextStyle(
+                                      color: context.palette.textSecondary,
                                       fontSize: 12,
                                     ),
                                     maxLines: 1,

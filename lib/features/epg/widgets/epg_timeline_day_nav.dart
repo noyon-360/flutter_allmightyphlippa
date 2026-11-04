@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../controllers/epg_timeline_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Compact backward/forward day navigation for the EPG timeline —
 /// "< Today > Now", switching to the "EEE, MMM d" formatted date once the
@@ -24,26 +25,26 @@ class EpgTimelineDayNav extends StatelessWidget {
         children: [
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: const Icon(
+            icon: Icon(
               Icons.chevron_left,
-              color: AppColors.primaryWhite,
+              color: context.palette.textPrimary,
               size: 20,
             ),
             onPressed: timelineCtrl.goToPreviousDay,
           ),
           Text(
             isToday ? 'Today' : DateFormat('EEE, MMM d').format(day),
-            style: const TextStyle(
-              color: AppColors.primaryWhite,
+            style: TextStyle(
+              color: context.palette.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: const Icon(
+            icon: Icon(
               Icons.chevron_right,
-              color: AppColors.primaryWhite,
+              color: context.palette.textPrimary,
               size: 20,
             ),
             onPressed: timelineCtrl.goToNextDay,

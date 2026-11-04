@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../controllers/search_controller.dart' as sc;
 import '../widgets/movie_series_item_widget.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class SearchScreen extends StatefulWidget {
   final ServerType type;
@@ -48,7 +49,7 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: TextField(
@@ -57,11 +58,11 @@ class _SearchScreenState extends State<SearchScreen> {
           textInputAction: TextInputAction.search,
           onChanged: (val) => _searchCtrl.onQueryChanged(val, widget.type),
           onSubmitted: (val) => _searchCtrl.searchData(type: widget.type),
-          style: const TextStyle(color: AppColors.primaryWhite),
+          style: TextStyle(color: context.palette.textPrimary),
           cursorColor: AppColors.red,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Search movies, series...',
-            hintStyle: TextStyle(color: AppColors.hintText),
+            hintStyle: TextStyle(color: context.palette.hint),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 12),
           ),
@@ -70,9 +71,9 @@ class _SearchScreenState extends State<SearchScreen> {
           Obx(
             () => _state.query.value.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.clear,
-                      color: AppColors.primaryWhite,
+                      color: context.palette.textPrimary,
                     ),
                     onPressed: () {
                       _textController.clear();
@@ -99,21 +100,21 @@ class _SearchScreenState extends State<SearchScreen> {
                 Icon(
                   Icons.search_rounded,
                   size: 80,
-                  color: AppColors.primaryGray.withAlpha(100),
+                  color: context.palette.textSecondary.withAlpha(100),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Search for your favorites',
                   style: TextStyle(
-                    color: AppColors.primaryGray,
+                    color: context.palette.textSecondary,
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Enter a movie or series name above',
-                  style: TextStyle(color: AppColors.hintText, fontSize: 14),
+                  style: TextStyle(color: context.palette.hint, fontSize: 14),
                 ),
               ],
             ),
@@ -129,16 +130,16 @@ class _SearchScreenState extends State<SearchScreen> {
                 Text(
                   'No results found for "${_state.query.value}"',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.primaryWhite,
+                  style: TextStyle(
+                    color: context.palette.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Try searching for something else',
-                  style: TextStyle(color: AppColors.primaryGray),
+                  style: TextStyle(color: context.palette.textSecondary),
                 ),
               ],
             ),

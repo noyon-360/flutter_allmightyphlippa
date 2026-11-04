@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import '../controllers/playlist_controller.dart';
 import '../models/playlist_account_info.dart';
 import 'add_playlist_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class PlaylistListScreen extends StatelessWidget {
   final bool isEdit;
@@ -24,7 +25,7 @@ class PlaylistListScreen extends StatelessWidget {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.person),
-            color: AppColors.primaryBlack,
+            color: context.palette.background,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -34,13 +35,13 @@ class PlaylistListScreen extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, color: Colors.white, size: 20),
+                    Icon(Icons.logout, color: context.palette.textPrimary, size: 20),
                     Gap(w: 12),
-                    Text("Logout", style: TextStyle(color: Colors.white)),
+                    Text("Logout", style: TextStyle(color: context.palette.textPrimary)),
                   ],
                 ),
               ),
@@ -66,13 +67,13 @@ class PlaylistListScreen extends StatelessWidget {
                       Icon(
                         Icons.playlist_add,
                         size: 80,
-                        color: AppColors.primaryGray,
+                        color: context.palette.textSecondary,
                       ),
                       const Gap(h: 16),
                       Text(
                         "No playlists found",
                         style: TextStyle(
-                          color: AppColors.primaryGray,
+                          color: context.palette.textSecondary,
                           fontSize: 18,
                         ),
                       ),
@@ -94,12 +95,12 @@ class PlaylistListScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isActive
                             ? AppColors.red.withOpacity(0.08)
-                            : AppColors.primaryBlack.withOpacity(0.5),
+                            : context.palette.background.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isActive
                               ? AppColors.red.withOpacity(0.6)
-                              : AppColors.primaryWhite.withOpacity(0.1),
+                              : context.palette.textPrimary.withOpacity(0.1),
                         ),
                       ),
                       child: Row(
@@ -113,8 +114,8 @@ class PlaylistListScreen extends StatelessWidget {
                                     Flexible(
                                       child: Text(
                                         playlist.name ?? "Unnamed",
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: context.palette.textPrimary,
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -161,7 +162,7 @@ class PlaylistListScreen extends StatelessWidget {
                                 Text(
                                   playlist.url ?? "No URL",
                                   style: TextStyle(
-                                    color: AppColors.primaryGray,
+                                    color: context.palette.textSecondary,
                                     fontSize: 14,
                                   ),
                                   maxLines: 1,
@@ -184,12 +185,12 @@ class PlaylistListScreen extends StatelessWidget {
                           ),
                           const Gap(w: 12),
                           PopupMenuButton<String>(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.more_vert,
-                              color: Colors.white,
+                              color: context.palette.textPrimary,
                             ),
-                            style: AppTheme.focusStyle,
-                            color: AppColors.containerBgColor,
+                            style: AppTheme.focusStyleOf(context),
+                            color: context.palette.surface,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -214,12 +215,14 @@ class PlaylistListScreen extends StatelessWidget {
                               // refresh; "Select" already reloads any other.
                               if (isActive)
                                 _menuItem(
+                                context,
                                   'update',
                                   Icons.refresh,
                                   'Update Playlist',
                                 ),
-                              _menuItem('edit', Icons.edit_outlined, 'Edit'),
+                              _menuItem(context, 'edit', Icons.edit_outlined, 'Edit'),
                               _menuItem(
+                                context,
                                 'delete',
                                 Icons.delete_outline,
                                 'Delete',
@@ -260,18 +263,19 @@ class PlaylistListScreen extends StatelessWidget {
   }
 
   PopupMenuItem<String> _menuItem(
-    String value,
+    BuildContext context, String value,
     IconData icon,
     String label, {
-    Color color = Colors.white,
+    Color? color,
   }) {
+    final c = color ?? context.palette.textPrimary;
     return PopupMenuItem<String>(
       value: value,
       child: Row(
         children: [
-          Icon(icon, color: color, size: 20),
+          Icon(icon, color: c, size: 20),
           const Gap(w: 12),
-          Text(label, style: TextStyle(color: color)),
+          Text(label, style: TextStyle(color: c)),
         ],
       ),
     );
@@ -285,14 +289,14 @@ class PlaylistListScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.primaryBlack,
-        title: const Text(
+        backgroundColor: context.palette.background,
+        title: Text(
           "Delete Playlist",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: context.palette.textPrimary),
         ),
-        content: const Text(
+        content: Text(
           "Are you sure you want to delete this playlist?",
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.70)),
         ),
         actions: [
           TextButton(child: const Text("Cancel"), onPressed: () => Get.back()),
@@ -340,7 +344,7 @@ class _ExpiryBadgePlaceholderState extends State<_ExpiryBadgePlaceholder>
 
   @override
   Widget build(BuildContext context) {
-    final tint = AppColors.primaryGray;
+    final tint = context.palette.textSecondary;
 
     return FadeTransition(
       opacity: _opacity,
@@ -383,14 +387,14 @@ class _ExpiryBadgeUnavailable extends StatelessWidget {
           height: 8,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.primaryGray, width: 1.5),
+            border: Border.all(color: context.palette.textSecondary, width: 1.5),
           ),
         ),
         const Gap(w: 6),
         Text(
           'Status unavailable',
           style: TextStyle(
-            color: AppColors.primaryGray.withOpacity(0.8),
+            color: context.palette.textSecondary.withOpacity(0.8),
             fontSize: 13,
           ),
         ),
@@ -425,7 +429,7 @@ class _ExpiryBadge extends StatelessWidget {
           child: Text(
             info.label,
             style: TextStyle(
-              color: needsAttention ? color : AppColors.primaryGray,
+              color: needsAttention ? color : context.palette.textSecondary,
               fontSize: 13,
               fontWeight: needsAttention ? FontWeight.w600 : FontWeight.w400,
             ),

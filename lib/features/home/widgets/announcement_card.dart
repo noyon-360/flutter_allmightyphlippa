@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../models/announcement_model.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// The announcement banner at the top of Home: an icon and colour per type,
 /// title, message, an optional action button, and a close button.
@@ -76,8 +77,8 @@ class AnnouncementCard extends StatelessWidget {
                 children: [
                   Text(
                     announcement.title,
-                    style: const TextStyle(
-                      color: AppColors.primaryWhite,
+                    style: TextStyle(
+                      color: context.palette.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -86,7 +87,7 @@ class AnnouncementCard extends StatelessWidget {
                   Text(
                     announcement.message,
                     style: TextStyle(
-                      color: AppColors.primaryWhite.withValues(alpha: 0.8),
+                      color: context.palette.textPrimary.withValues(alpha: 0.8),
                       fontSize: 14,
                       height: 1.35,
                     ),
@@ -118,7 +119,7 @@ class AnnouncementCard extends StatelessWidget {
             icon: Icon(
               Icons.close,
               size: 18,
-              color: AppColors.primaryWhite.withValues(alpha: 0.6),
+              color: context.palette.textPrimary.withValues(alpha: 0.6),
             ),
           ),
         ],

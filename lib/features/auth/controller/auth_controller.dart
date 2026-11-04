@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/features/profile/controller/profile_controller.dart';
 import 'package:get/get.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../models/change_password_request_model.dart';
 import '../repo/auth_repo.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class AuthController extends GetxController {
   final _authRepo = Get.find<AuthRepo>();
@@ -74,10 +74,10 @@ class AuthController extends GetxController {
             "Success",
             "Password changed successfully",
             snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: AppColors.primaryBlack.withAlpha(
+            backgroundColor: AppPalette.current.background.withAlpha(
               (0.2 * 255).toInt(),
             ),
-            colorText: AppColors.primaryWhite,
+            colorText: AppPalette.current.textPrimary,
           );
           _clearFields();
         },

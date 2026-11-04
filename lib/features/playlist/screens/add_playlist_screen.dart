@@ -10,6 +10,7 @@ import '/core/constants/app_colors.dart';
 import '/core/extensions/input_decoration_extensions.dart';
 import '../controllers/playlist_controller.dart';
 import '../models/playlist_model.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class AddPlaylistScreen extends StatefulWidget {
   final bool isEdit;
@@ -88,7 +89,7 @@ class _AddPlaylistScreenState extends State<AddPlaylistScreen> {
                             : "Enter Your Playlist Details",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                           fontSize: 24,
                           fontWeight: FontWeight.w500,
                         ),
@@ -124,7 +125,7 @@ class _AddPlaylistScreenState extends State<AddPlaylistScreen> {
                         textInputAction: TextInputAction.next,
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                         ),
                         decoration: context.primaryInputDecoration.copyWith(
                           hintText: "Name",
@@ -150,7 +151,7 @@ class _AddPlaylistScreenState extends State<AddPlaylistScreen> {
                         textInputAction: TextInputAction.next,
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                         ),
                         decoration: context.primaryInputDecoration.copyWith(
                           hintText: "Username",
@@ -176,7 +177,7 @@ class _AddPlaylistScreenState extends State<AddPlaylistScreen> {
                         textInputAction: TextInputAction.next,
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                         ),
                         decoration: context.primaryInputDecoration.copyWith(
                           hintText: "Password",
@@ -203,7 +204,7 @@ class _AddPlaylistScreenState extends State<AddPlaylistScreen> {
                         textInputAction: TextInputAction.done,
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                         ),
                         decoration: context.primaryInputDecoration.copyWith(
                           hintText: "URL Link",

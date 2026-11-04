@@ -17,6 +17,7 @@ import '../../search/controllers/search_controller.dart';
 import '../../search/screens/search_screen.dart';
 import '../../video/screens/live_video_play_screen.dart';
 import '../controllers/live_tv_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class LiveTvScreen extends StatefulWidget {
   const LiveTvScreen({super.key});
@@ -94,8 +95,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         minChildSize: 0.35,
         maxChildSize: 0.9,
         builder: (ctx, scrollCtrl) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.containerBgColor,
+          decoration: BoxDecoration(
+            color: context.palette.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -105,7 +106,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: context.palette.textPrimary.withValues(alpha: 0.24),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -119,8 +120,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     Expanded(
                       child: Text(
                         channelName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.palette.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -128,15 +129,15 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Upcoming Programs',
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                      style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.54), fontSize: 12),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
-              const Divider(color: Colors.white12),
+              Divider(color: context.palette.textPrimary.withValues(alpha: 0.12)),
               Expanded(
                 child: Obx(() {
                   if (epgCtrl.isLoadingEpg.value) {
@@ -145,10 +146,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     );
                   }
                   if (epgCtrl.programs.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
                         'No EPG data available for this channel.',
-                        style: TextStyle(color: Colors.white54),
+                        style: TextStyle(color: context.palette.textPrimary.withValues(alpha: 0.54)),
                       ),
                     );
                   }
@@ -157,7 +158,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                     itemCount: epgCtrl.programs.length,
                     separatorBuilder: (_, i) =>
-                        const Divider(color: Colors.white12, height: 1),
+                        Divider(color: context.palette.textPrimary.withValues(alpha: 0.12), height: 1),
                     itemBuilder: (_, index) {
                       final program = epgCtrl.programs[index];
                       return _EpgProgramTile(
@@ -223,22 +224,22 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                         child: Container(
                           height: 52,
                           decoration: BoxDecoration(
-                            color: AppColors.containerBgColor,
+                            color: context.palette.surface,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               SizedBox(
                                 width: 48,
                                 child: Icon(
                                   Icons.search,
-                                  color: AppColors.iconColor,
+                                  color: context.palette.textPrimary,
                                 ),
                               ),
                               Text(
                                 'Search Channel',
                                 style: TextStyle(
-                                  color: AppColors.hintText,
+                                  color: context.palette.hint,
                                   fontSize: 16,
                                 ),
                               ),
@@ -262,7 +263,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                 'Categories',
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
-                                      color: AppColors.primaryWhite,
+                                      color: context.palette.textPrimary,
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
@@ -331,7 +332,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                         );
                                       },
                                       borderRadius: 25,
-                                      focusColor: AppColors.primaryWhite,
+                                      focusColor: context.palette.textPrimary,
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 20,
@@ -339,14 +340,14 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                         decoration: BoxDecoration(
                                           color: isSelected
                                               ? AppColors.red
-                                              : AppColors.containerBgColor,
+                                              : context.palette.surface,
                                           borderRadius: BorderRadius.circular(
                                             25,
                                           ),
                                           border: Border.all(
                                             color: isSelected
                                                 ? AppColors.red
-                                                : AppColors.primaryWhite
+                                                : context.palette.textPrimary
                                                       .withOpacity(0.1),
                                           ),
                                         ),
@@ -355,8 +356,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                           categoryName,
                                           style: TextStyle(
                                             color: isSelected
-                                                ? AppColors.primaryWhite
-                                                : AppColors.primaryGray,
+                                                ? context.palette.textPrimary
+                                                : context.palette.textSecondary,
                                             fontWeight: isSelected
                                                 ? FontWeight.bold
                                                 : FontWeight.normal,
@@ -404,7 +405,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                         .textTheme
                                         .titleLarge
                                         ?.copyWith(
-                                          color: AppColors.primaryWhite,
+                                          color: context.palette.textPrimary,
                                           fontWeight: FontWeight.bold,
                                         ),
                                   ),
@@ -484,10 +485,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                           borderRadius: 12,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppColors.containerBgColor,
+                              color: context.palette.surface,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.primaryWhite.withOpacity(0.05),
+                                color: context.palette.textPrimary.withOpacity(0.05),
                               ),
                             ),
                             clipBehavior: Clip.antiAlias,
@@ -503,16 +504,16 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                             fit: BoxFit.contain,
                                             errorBuilder:
                                                 (context, error, stackTrace) {
-                                                  return const Icon(
+                                                  return Icon(
                                                     Icons.tv,
-                                                    color: AppColors.iconColor,
+                                                    color: context.palette.textPrimary,
                                                     size: 40,
                                                   );
                                                 },
                                           )
-                                        : const Icon(
+                                        : Icon(
                                             Icons.tv,
-                                            color: AppColors.iconColor,
+                                            color: context.palette.textPrimary,
                                             size: 40,
                                           ),
                                   ),
@@ -537,7 +538,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
                                       channel.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppColors.primaryWhite,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
@@ -620,7 +621,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           Icon(
             error != null ? Icons.cloud_off : Icons.live_tv_outlined,
             size: 48,
-            color: AppColors.primaryGray,
+            color: context.palette.textSecondary,
           ),
           const SizedBox(height: 16),
           Text(
@@ -628,7 +629,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 ? "Couldn't load channels.\n$error"
                 : 'No channels available',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.primaryGray, fontSize: 14),
+            style: TextStyle(color: context.palette.textSecondary, fontSize: 14),
           ),
           if (error != null) ...[
             const SizedBox(height: 16),
@@ -666,11 +667,11 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
   Widget _buildSingleShimmerItem() {
     return Shimmer.fromColors(
-      baseColor: AppColors.containerBgColor,
-      highlightColor: AppColors.primaryWhite.withValues(alpha: 0.1),
+      baseColor: context.palette.surface,
+      highlightColor: context.palette.textPrimary.withValues(alpha: 0.1),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.containerBgColor,
+          color: context.palette.surface,
           borderRadius: BorderRadius.circular(12),
         ),
       ),
@@ -724,7 +725,7 @@ class _EpgProgramTile extends StatelessWidget {
               child: Text(
                 timeStr,
                 style: TextStyle(
-                  color: isNow ? AppColors.red : Colors.white54,
+                  color: isNow ? AppColors.red : context.palette.textPrimary.withValues(alpha: 0.54),
                   fontSize: 12,
                   fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -749,7 +750,7 @@ class _EpgProgramTile extends StatelessWidget {
                   Text(
                     program.title,
                     style: TextStyle(
-                      color: isNow ? Colors.white : Colors.white70,
+                      color: isNow ? context.palette.textPrimary : context.palette.textPrimary.withValues(alpha: 0.70),
                       fontWeight: isNow ? FontWeight.bold : FontWeight.normal,
                       fontSize: 14,
                     ),
@@ -781,7 +782,7 @@ class _EpgProgramTile extends StatelessWidget {
                       hasReminder
                           ? Icons.notifications_active
                           : Icons.notifications_none,
-                      color: hasReminder ? AppColors.red : Colors.white38,
+                      color: hasReminder ? AppColors.red : context.palette.textPrimary.withValues(alpha: 0.38),
                       size: 20,
                     ),
                   ),

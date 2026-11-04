@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_almightyflippa/core/constants/app_colors.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart';
 import 'package:flutter_almightyflippa/core/utils/tv_device.dart';
 import '../../home/screens/home_screen.dart';

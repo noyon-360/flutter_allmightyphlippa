@@ -13,6 +13,7 @@ import '/core/constants/app_colors.dart';
 import '/core/extensions/input_decoration_extensions.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -50,7 +51,7 @@ class LoginScreen extends StatelessWidget {
                           "Login To Your Account",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: AppColors.primaryWhite,
+                            color: context.palette.textPrimary,
                             fontSize: 24,
                             fontWeight: FontWeight.w500,
                           ),
@@ -79,7 +80,7 @@ class LoginScreen extends StatelessWidget {
                           textInputAction: TextInputAction.next,
                           style: TextStyle(
                             fontSize: 16,
-                            color: AppColors.primaryWhite,
+                            color: context.palette.textPrimary,
                           ),
                           decoration: context.primaryInputDecoration.copyWith(
                             hintText: "Email",
@@ -98,7 +99,7 @@ class LoginScreen extends StatelessWidget {
                             focusNode: loginCtrl.passwordFocus,
                             obscureText: loginCtrl.obscurePassword.value,
                             textInputAction: TextInputAction.done,
-                            style: TextStyle(color: AppColors.primaryWhite),
+                            style: TextStyle(color: context.palette.textPrimary),
                             decoration: context.primaryInputDecoration.copyWith(
                               hintText: "Enter your Password",
                               suffixIcon: IconButton(
@@ -106,7 +107,7 @@ class LoginScreen extends StatelessWidget {
                                   loginCtrl.obscurePassword.value
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: AppColors.primaryGray,
+                                  color: context.palette.textSecondary,
                                 ),
                                 onPressed: () =>
                                     loginCtrl.toggleObscurePassword(),
@@ -146,7 +147,7 @@ class LoginScreen extends StatelessWidget {
                                 child: Text(
                                   "Forget Password",
                                   style: TextStyle(
-                                    color: AppColors.primaryWhite,
+                                    color: context.palette.textPrimary,
                                   ),
                                 ),
                               ),
@@ -171,14 +172,14 @@ class LoginScreen extends StatelessWidget {
                             children: [
                               Text(
                                 "Don’t have an account? ",
-                                style: TextStyle(color: AppColors.primaryGray),
+                                style: TextStyle(color: context.palette.textSecondary),
                               ),
                               TvFocusWrapper(
                                 onTap: () => Get.to(() => const SignupScreen()),
                                 child: Text(
                                   'Sign Up',
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: context.palette.textPrimary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

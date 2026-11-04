@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/common/widgets/app_cached_image.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class ProfileUpdateScreen extends StatefulWidget {
   const ProfileUpdateScreen({super.key});
@@ -80,15 +81,15 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlack,
+        backgroundColor: context.palette.background,
         elevation: 0,
         leading: BackButton(),
-        title: const Text(
+        title: Text(
           'My Profile',
           style: TextStyle(
-            color: AppColors.primaryWhite,
+            color: context.palette.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -115,7 +116,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.containerBgColor,
+                            color: context.palette.surface,
                             width: 2,
                           ),
                         ),
@@ -149,17 +150,17 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryWhite,
+                              color: context.palette.textPrimary,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.primaryBlack,
+                                color: context.palette.background,
                                 width: 2,
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.camera_alt,
                               size: 18,
-                              color: AppColors.primaryBlack,
+                              color: context.palette.background,
                             ),
                           ),
                         ),
@@ -176,7 +177,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                   child: Text(
                     'Name',
                     style: TextStyle(
-                      color: AppColors.primaryGray,
+                      color: context.palette.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -185,18 +186,18 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                 Gap.h8,
                 TextFormField(
                   controller: _nameController,
-                  style: const TextStyle(
-                    color: AppColors.primaryWhite,
+                  style: TextStyle(
+                    color: context.palette.textPrimary,
                     fontSize: 16,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Enter your name',
                     hintStyle: TextStyle(
-                      color: AppColors.primaryGray.withOpacity(0.5),
+                      color: context.palette.textSecondary.withOpacity(0.5),
                       fontSize: 16,
                     ),
                     filled: true,
-                    fillColor: AppColors.containerBgColor,
+                    fillColor: context.palette.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -247,7 +248,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                   child: Text(
                     'Email',
                     style: TextStyle(
-                      color: AppColors.primaryGray,
+                      color: context.palette.textSecondary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -258,18 +259,18 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                   readOnly: true,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(
-                    color: AppColors.primaryWhite,
+                  style: TextStyle(
+                    color: context.palette.textPrimary,
                     fontSize: 16,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Enter your email',
                     hintStyle: TextStyle(
-                      color: AppColors.primaryGray.withOpacity(0.5),
+                      color: context.palette.textSecondary.withOpacity(0.5),
                       fontSize: 16,
                     ),
                     filled: true,
-                    fillColor: AppColors.containerBgColor,
+                    fillColor: context.palette.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,

@@ -9,6 +9,7 @@ import '/core/common/widgets/tv_focus_wrapper.dart';
 import '/core/constants/app_colors.dart';
 import '/core/extensions/input_decoration_extensions.dart';
 import '/features/auth/controller/forgot_password_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Step 2 of forgot password: enter the emailed OTP and a new password.
 /// Pushed by [ForgotPasswordController.sendOtp], which owns the controller.
@@ -26,7 +27,7 @@ class ResetPasswordScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: () => Get.back(),
         ),
       ),
@@ -45,7 +46,7 @@ class ResetPasswordScreen extends StatelessWidget {
                     "Reset Password",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppColors.primaryWhite,
+                      color: context.palette.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.w500,
                     ),
@@ -54,7 +55,7 @@ class ResetPasswordScreen extends StatelessWidget {
                   Text(
                     "Enter the code sent to ${ctrl.email} and choose a new password.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.primaryGray),
+                    style: TextStyle(color: context.palette.textSecondary),
                   ),
                   Gap.h24,
                   Obx(
@@ -83,7 +84,7 @@ class ResetPasswordScreen extends StatelessWidget {
                     ],
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.primaryWhite,
+                      color: context.palette.textPrimary,
                       letterSpacing: 4,
                     ),
                     decoration: context.primaryInputDecoration.copyWith(
@@ -109,7 +110,7 @@ class ResetPasswordScreen extends StatelessWidget {
                       focusNode: ctrl.passwordFocus,
                       obscureText: ctrl.obscurePassword.value,
                       textInputAction: TextInputAction.next,
-                      style: TextStyle(color: AppColors.primaryWhite),
+                      style: TextStyle(color: context.palette.textPrimary),
                       decoration: context.primaryInputDecoration.copyWith(
                         hintText: "New Password",
                         suffixIcon: IconButton(
@@ -117,7 +118,7 @@ class ResetPasswordScreen extends StatelessWidget {
                             ctrl.obscurePassword.value
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
-                            color: AppColors.primaryGray,
+                            color: context.palette.textSecondary,
                           ),
                           onPressed: ctrl.toggleObscurePassword,
                         ),
@@ -146,7 +147,7 @@ class ResetPasswordScreen extends StatelessWidget {
                       focusNode: ctrl.confirmPasswordFocus,
                       obscureText: ctrl.obscureConfirmPassword.value,
                       textInputAction: TextInputAction.done,
-                      style: TextStyle(color: AppColors.primaryWhite),
+                      style: TextStyle(color: context.palette.textPrimary),
                       decoration: context.primaryInputDecoration.copyWith(
                         hintText: "Confirm New Password",
                         suffixIcon: IconButton(
@@ -154,7 +155,7 @@ class ResetPasswordScreen extends StatelessWidget {
                             ctrl.obscureConfirmPassword.value
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
-                            color: AppColors.primaryGray,
+                            color: context.palette.textSecondary,
                           ),
                           onPressed: ctrl.toggleObscureConfirmPassword,
                         ),
@@ -181,7 +182,7 @@ class ResetPasswordScreen extends StatelessWidget {
                     children: [
                       Text(
                         "Didn't get the code? ",
-                        style: TextStyle(color: AppColors.primaryGray),
+                        style: TextStyle(color: context.palette.textSecondary),
                       ),
                       Obx(
                         () => TvFocusWrapper(
@@ -190,8 +191,8 @@ class ResetPasswordScreen extends StatelessWidget {
                               : () => ctrl.resendOtp(),
                           child: Text(
                             ctrl.isResending.value ? "Sending..." : "Resend",
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: context.palette.textPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

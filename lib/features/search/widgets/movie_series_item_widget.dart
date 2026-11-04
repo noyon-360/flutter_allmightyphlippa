@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
 import 'package:get/get.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../movie/models/movie_response_model.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../series/models/series_response_model.dart';
 import '../../tv/models/live_tv_reponse_model.dart';
 import '../../video/screens/live_video_play_screen.dart';
 import '../../video/screens/video_play_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class MovieSeriesItemWidget extends StatelessWidget {
   final dynamic item;
@@ -59,7 +59,7 @@ class MovieSeriesItemWidget extends StatelessWidget {
                 channelName: name,
                 channelLogo: image,
                 // So the guide shows this channel's category.
-                categoryId: (item as LiveTvModel).categoryId,
+                categoryId: _channelCategory(item as LiveTvModel),
               ),
             );
           } else {
@@ -78,7 +78,7 @@ class MovieSeriesItemWidget extends StatelessWidget {
               width: 100,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.containerBgColor,
+                color: context.palette.surface,
                 borderRadius: BorderRadius.circular(8),
                 image: image.isNotEmpty
                     ? DecorationImage(
@@ -89,7 +89,7 @@ class MovieSeriesItemWidget extends StatelessWidget {
                     : null,
               ),
               child: image.isEmpty
-                  ? const Icon(Icons.movie, color: AppColors.iconColor)
+                  ? Icon(Icons.movie, color: context.palette.textPrimary)
                   : null,
             ),
             const SizedBox(width: 16),
@@ -99,8 +99,8 @@ class MovieSeriesItemWidget extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(
-                      color: AppColors.primaryWhite,
+                    style: TextStyle(
+                      color: context.palette.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -110,8 +110,8 @@ class MovieSeriesItemWidget extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: AppColors.primaryGray,
+                    style: TextStyle(
+                      color: context.palette.textSecondary,
                       fontSize: 12,
                     ),
                     maxLines: 1,
@@ -125,4 +125,15 @@ class MovieSeriesItemWidget extends StatelessWidget {
       ),
     );
   }
+
+  /// The channel's category: `category_id`, or the first of `category_ids`
+  /// when the provider leaves the single field empty.
+  static String? _channelCategory(LiveTvModel channel) {
+    if (channel.categoryId.isNotEmpty) return channel.categoryId;
+    if (channel.categoryIds.isNotEmpty) {
+      return channel.categoryIds.first.toString();
+    }
+    return null;
+  }
 }
+

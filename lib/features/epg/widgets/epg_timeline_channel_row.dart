@@ -8,6 +8,7 @@ import '../controllers/epg_timeline_controller.dart';
 import '../models/epg_program_model.dart';
 import '../services/epg_timeline_cache.dart';
 import 'epg_program_info_sheet.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 const double _kRowHeight = 64;
 const double _kMinBlockWidth = 36;
@@ -105,7 +106,7 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                 decoration: BoxDecoration(
                   color: isPlayingChannel
                       ? AppColors.red.withOpacity(0.18)
-                      : AppColors.containerBgColor,
+                      : context.palette.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: isPlayingChannel
                       ? Border.all(color: AppColors.red, width: 1.5)
@@ -124,10 +125,10 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                           color: AppColors.red,
                           borderRadius: BorderRadius.circular(3),
                         ),
-                        child: const Text(
+                        child: Text(
                           'NOW PLAYING',
                           style: TextStyle(
-                            color: AppColors.primaryWhite,
+                            color: context.palette.textPrimary,
                             fontSize: 7,
                             fontWeight: FontWeight.bold,
                           ),
@@ -138,17 +139,17 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                           ? Image.network(
                               widget.channelLogo,
                               fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(
+                              errorBuilder: (_, __, ___) => Icon(
                                 Icons.tv,
-                                color: AppColors.iconColor,
+                                color: context.palette.textPrimary,
                               ),
                             )
-                          : const Icon(Icons.tv, color: AppColors.iconColor),
+                          : Icon(Icons.tv, color: context.palette.textPrimary),
                     ),
                     Text(
                       widget.channelName,
-                      style: const TextStyle(
-                        color: AppColors.primaryWhite,
+                      style: TextStyle(
+                        color: context.palette.textPrimary,
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
@@ -189,8 +190,8 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                             padding: const EdgeInsets.only(left: 8),
                             child: Text(
                               emptyLabel,
-                              style: const TextStyle(
-                                color: AppColors.primaryGray,
+                              style: TextStyle(
+                                color: context.palette.textSecondary,
                                 fontSize: 12,
                               ),
                             ),
@@ -250,12 +251,12 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                                     decoration: BoxDecoration(
                                       color: isCurrent
                                           ? AppColors.red.withOpacity(0.85)
-                                          : AppColors.containerBgColor,
+                                          : context.palette.surface,
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(
                                         color: isCurrent
                                             ? AppColors.red
-                                            : AppColors.primaryWhite
+                                            : context.palette.textPrimary
                                                   .withOpacity(0.08),
                                       ),
                                     ),
@@ -269,8 +270,8 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                                           program.title,
                                           style: TextStyle(
                                             color: isPast
-                                                ? AppColors.primaryGray
-                                                : AppColors.primaryWhite,
+                                                ? context.palette.textSecondary
+                                                : context.palette.textPrimary,
                                             fontSize: 11,
                                             fontWeight: isCurrent
                                                 ? FontWeight.bold
@@ -283,9 +284,9 @@ class _EpgTimelineChannelRowState extends State<EpgTimelineChannelRow> {
                                           program.timeRange,
                                           style: TextStyle(
                                             color: isCurrent
-                                                ? AppColors.primaryWhite
+                                                ? context.palette.textPrimary
                                                       .withOpacity(0.85)
-                                                : AppColors.primaryGray,
+                                                : context.palette.textSecondary,
                                             fontSize: 9,
                                           ),
                                           maxLines: 1,
@@ -362,8 +363,8 @@ class _RowShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: AppColors.containerBgColor,
-      highlightColor: AppColors.primaryWhite.withOpacity(0.08),
+      baseColor: context.palette.surface,
+      highlightColor: context.palette.textPrimary.withOpacity(0.08),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Container(
@@ -371,7 +372,7 @@ class _RowShimmer extends StatelessWidget {
           height: _kRowHeight - 16,
           margin: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.containerBgColor,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(6),
           ),
         ),

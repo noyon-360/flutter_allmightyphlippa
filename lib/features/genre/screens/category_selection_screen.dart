@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../genre/controllers/genre_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class CategorySelectionScreen extends StatelessWidget {
   final String title;
@@ -23,19 +24,19 @@ class CategorySelectionScreen extends StatelessWidget {
     final genreCtrl = Get.find<GenreController>(tag: genreTag);
 
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlack,
+        backgroundColor: context.palette.background,
         elevation: 0,
         title: Text(
           title,
-          style: const TextStyle(
-            color: AppColors.primaryWhite,
+          style: TextStyle(
+            color: context.palette.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: () => Get.back(),
         ),
       ),
@@ -66,17 +67,17 @@ class CategorySelectionScreen extends StatelessWidget {
                 // Remote users start on the current category.
                 autofocus: isSelected,
                 borderRadius: 12,
-                focusColor: AppColors.primaryWhite,
+                focusColor: context.palette.textPrimary,
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.red
-                        : AppColors.containerBgColor,
+                        : context.palette.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
                           ? AppColors.red
-                          : AppColors.primaryWhite.withOpacity(0.1),
+                          : context.palette.textPrimary.withOpacity(0.1),
                     ),
                   ),
                   alignment: Alignment.center,
@@ -84,8 +85,8 @@ class CategorySelectionScreen extends StatelessWidget {
                     categoryName,
                     style: TextStyle(
                       color: isSelected
-                          ? AppColors.primaryWhite
-                          : AppColors.primaryGray,
+                          ? context.palette.textPrimary
+                          : context.palette.textSecondary,
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.normal,

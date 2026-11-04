@@ -14,6 +14,7 @@ import '/core/extensions/input_decoration_extensions.dart';
 import 'package:flutter/gestures.dart';
 import '../../app/screens/privacy_policy_screen.dart';
 import '../../app/screens/terms_condition_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
@@ -57,7 +58,7 @@ class SignupScreen extends StatelessWidget {
                         'Create Your Account',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                           fontWeight: FontWeight.w700,
                           fontSize: 24,
                         ),
@@ -84,7 +85,7 @@ class SignupScreen extends StatelessWidget {
                         textInputAction: TextInputAction.next,
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                         ),
                         decoration: context.primaryInputDecoration.copyWith(
                           hintText: "Name",
@@ -104,7 +105,7 @@ class SignupScreen extends StatelessWidget {
                         textInputAction: TextInputAction.next,
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.primaryWhite,
+                          color: context.palette.textPrimary,
                         ),
                         decoration: context.primaryInputDecoration.copyWith(
                           hintText: "Email",
@@ -124,7 +125,7 @@ class SignupScreen extends StatelessWidget {
                           focusNode: registerCtrl.passwordFocus,
                           obscureText: registerCtrl.obscurePassword.value,
                           textInputAction: TextInputAction.next,
-                          style: TextStyle(color: AppColors.primaryWhite),
+                          style: TextStyle(color: context.palette.textPrimary),
                           decoration: context.primaryInputDecoration.copyWith(
                             hintText: "Password",
                             suffixIcon: IconButton(
@@ -132,7 +133,7 @@ class SignupScreen extends StatelessWidget {
                                 registerCtrl.obscurePassword.value
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: AppColors.primaryGray,
+                                color: context.palette.textSecondary,
                               ),
                               onPressed: () =>
                                   registerCtrl.toggleObscurePassword(),
@@ -154,7 +155,7 @@ class SignupScreen extends StatelessWidget {
                           obscureText:
                               registerCtrl.obscureConfirmPassword.value,
                           textInputAction: TextInputAction.done,
-                          style: TextStyle(color: AppColors.primaryWhite),
+                          style: TextStyle(color: context.palette.textPrimary),
                           decoration: context.primaryInputDecoration.copyWith(
                             hintText: "Confirm Password",
                             suffixIcon: IconButton(
@@ -162,7 +163,7 @@ class SignupScreen extends StatelessWidget {
                                 registerCtrl.obscureConfirmPassword.value
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: AppColors.primaryGray,
+                                color: context.palette.textSecondary,
                               ),
                               onPressed: () =>
                                   registerCtrl.toggleObscureConfirmPassword(),
@@ -190,6 +191,7 @@ class SignupScreen extends StatelessWidget {
                                 children: [
                                   const TextSpan(text: "I agree to "),
                                   _link(
+                                    context,
                                     "Terms & Conditions",
                                     () => Get.to(
                                       () => const TermsConditionScreen(),
@@ -197,6 +199,7 @@ class SignupScreen extends StatelessWidget {
                                   ),
                                   const TextSpan(text: " and "),
                                   _link(
+                                    context,
                                     "Privacy Policy",
                                     () => Get.to(
                                       () => const PrivacyPolicyScreen(),
@@ -204,19 +207,19 @@ class SignupScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              style: const TextStyle(
-                                color: AppColors.primaryWhite,
+                              style: TextStyle(
+                                color: context.palette.textPrimary,
                                 fontSize: 14,
                               ),
                             ),
                             controlAffinity: ListTileControlAffinity.leading,
                             contentPadding: EdgeInsets.zero,
                             activeColor: AppColors.red,
-                            checkColor: AppColors.primaryBlack,
+                            checkColor: context.palette.background,
                           ),
                         ),
                       ),
-                      if (TvDevice.isTv) _tvLinks(),
+                      if (TvDevice.isTv) _tvLinks(context),
                       Gap.h16,
 
                       // Sign Up button
@@ -232,14 +235,14 @@ class SignupScreen extends StatelessWidget {
                         children: [
                           Text(
                             "Already have an account? ",
-                            style: TextStyle(color: AppColors.primaryGray),
+                            style: TextStyle(color: context.palette.textSecondary),
                           ),
                           TvFocusWrapper(
                             onTap: () => Get.back(),
                             child: Text(
                               'Sign in',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: context.palette.textPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -258,8 +261,8 @@ class SignupScreen extends StatelessWidget {
     );
   }
 
-  static const _linkStyle = TextStyle(
-    color: AppColors.primaryWhite,
+  TextStyle _linkStyle(BuildContext context) => TextStyle(
+    color: context.palette.textPrimary,
     fontWeight: FontWeight.bold,
     decoration: TextDecoration.underline,
   );
@@ -267,10 +270,10 @@ class SignupScreen extends StatelessWidget {
   /// An underlined link inside the "I agree to ..." sentence: tappable on
   /// phones. A remote can't reach a link inside text, so on TV it's plain
   /// text here and [_tvLinks] adds focusable buttons below instead.
-  InlineSpan _link(String text, VoidCallback onTap) {
+  InlineSpan _link(BuildContext context, String text, VoidCallback onTap) {
     return TextSpan(
       text: text,
-      style: _linkStyle,
+      style: _linkStyle(context),
       recognizer: TvDevice.isTv
           ? null
           : (TapGestureRecognizer()..onTap = onTap),
@@ -278,13 +281,13 @@ class SignupScreen extends StatelessWidget {
   }
 
   /// TV only: the Terms / Privacy links as buttons the remote can reach.
-  Widget _tvLinks() {
+  Widget _tvLinks(BuildContext context) {
     Widget button(String text, VoidCallback onTap) => TvFocusWrapper(
       onTap: onTap,
       borderRadius: 6,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Text(text, style: _linkStyle),
+        child: Text(text, style: _linkStyle(context)),
       ),
     );
     return Row(

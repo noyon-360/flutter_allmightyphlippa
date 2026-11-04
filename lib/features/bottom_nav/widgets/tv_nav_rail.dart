@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/assest_const.dart';
 import '../../../core/utils/app_svg.dart';
 import 'floating_nav_bar.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Android TV's main navigation: a vertical rail down the left edge, the
 /// layout TV apps are expected to use (the phone's [FloatingNavBar] at the
@@ -33,10 +34,12 @@ class TvNavRail extends StatelessWidget {
     return Container(
       width: width + safe.left,
       decoration: BoxDecoration(
-        color: const Color(0xFF0E0E0E),
+        color: context.isDarkTheme
+            ? const Color(0xFF0E0E0E)
+            : context.palette.surface,
         border: Border(
           right: BorderSide(
-            color: AppColors.primaryWhite.withValues(alpha: 0.08),
+            color: context.palette.textPrimary.withValues(alpha: 0.08),
           ),
         ),
       ),
@@ -63,13 +66,13 @@ class TvNavRail extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Flexible(
+                Flexible(
                   child: Text(
                     'LABBY TV',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: AppColors.primaryWhite,
+                      color: context.palette.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -110,7 +113,7 @@ class _RailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? AppColors.primaryWhite : AppColors.primaryGray;
+    final color = isSelected ? context.palette.textPrimary : context.palette.textSecondary;
     return TvFocusWrapper(
       onTap: onTap,
       autofocus: autofocus,

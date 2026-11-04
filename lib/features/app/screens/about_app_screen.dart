@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/common/widgets/tv_key_scroll.dart';
 import 'package:flutx_core/flutx_core.dart';
-import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/assest_const.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({super.key});
@@ -10,15 +10,15 @@ class AboutAppScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlack,
+        backgroundColor: context.palette.background,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: const Text(
+        leading: BackButton(color: context.palette.textPrimary),
+        title: Text(
           'About App',
           style: TextStyle(
-            color: AppColors.primaryWhite,
+            color: context.palette.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -39,52 +39,52 @@ class AboutAppScreen extends StatelessWidget {
                 ),
               ),
               Gap.h24,
-              const Text(
+              Text(
                 'LABBY TV',
                 style: TextStyle(
-                  color: AppColors.primaryWhite,
+                  color: context.palette.textPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Text(
+              Text(
                 'Version 1.0.0',
-                style: TextStyle(color: AppColors.primaryGray, fontSize: 14),
+                style: TextStyle(color: context.palette.textSecondary, fontSize: 14),
               ),
               Gap.h48,
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'About Us',
                   style: TextStyle(
-                    color: AppColors.primaryWhite,
+                    color: context.palette.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               Gap.h16,
-              const Text(
+              Text(
                 'Welcome to LABBY TV, your ultimate destination for high-quality video streaming. We provide a vast collection of movies and series for your entertainment.',
                 style: TextStyle(
-                  color: AppColors.primaryGray,
+                  color: context.palette.textSecondary,
                   fontSize: 14,
                   height: 1.6,
                 ),
               ),
               Gap.h24,
-              const Text(
+              Text(
                 'Our mission is to deliver a seamless and enjoyable viewing experience to our users worldwide. Thank you for choosing LABBY TV.',
                 style: TextStyle(
-                  color: AppColors.primaryGray,
+                  color: context.palette.textSecondary,
                   fontSize: 14,
                   height: 1.6,
                 ),
               ),
               Gap.h48,
-              const Text(
+              Text(
                 '© 2026 LABBY TV. All rights reserved.',
-                style: TextStyle(color: AppColors.primaryGray, fontSize: 12),
+                style: TextStyle(color: context.palette.textSecondary, fontSize: 12),
               ),
             ],
           ),

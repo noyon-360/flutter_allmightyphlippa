@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../controllers/playlist_controller.dart';
 import '../models/playlist_sync_step.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Blocking status dialog shown while a playlist's content is loaded or
 /// refreshed, so the user can always tell whether it's working, stuck,
@@ -26,7 +27,7 @@ class PlaylistSyncDialog extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 420),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Obx(() {
@@ -75,8 +76,8 @@ class PlaylistSyncDialog extends StatelessWidget {
                         ? 'Some content couldn\'t be loaded'
                         : (running?.activeText ?? 'Connecting to Server…'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.palette.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -84,8 +85,8 @@ class PlaylistSyncDialog extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     steps.isEmpty ? '' : '$doneCount of ${steps.length} done',
-                    style: const TextStyle(
-                      color: AppColors.primaryGray,
+                    style: TextStyle(
+                      color: context.palette.textSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -99,8 +100,8 @@ class PlaylistSyncDialog extends StatelessWidget {
                           child: OutlinedButton(
                             onPressed: playlistCtrl.continueAfterFailedSync,
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white54),
+                              foregroundColor: context.palette.textPrimary,
+                              side: BorderSide(color: context.palette.textPrimary.withValues(alpha: 0.54)),
                             ),
                             child: const Text('Continue'),
                           ),
@@ -157,9 +158,9 @@ class _StepRow extends StatelessWidget {
             strokeWidth: 2,
           ),
         ),
-        SyncStepState.pending => const Icon(
+        SyncStepState.pending => Icon(
           Icons.radio_button_unchecked,
-          color: AppColors.primaryGray,
+          color: context.palette.textSecondary,
           size: 16,
         ),
       };
@@ -175,8 +176,8 @@ class _StepRow extends StatelessWidget {
                 step.label,
                 style: TextStyle(
                   color: state == SyncStepState.pending
-                      ? AppColors.primaryGray
-                      : Colors.white,
+                      ? context.palette.textSecondary
+                      : context.palette.textPrimary,
                   fontSize: 13,
                 ),
               ),

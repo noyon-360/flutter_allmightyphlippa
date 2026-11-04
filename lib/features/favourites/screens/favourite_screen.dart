@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../playlist/models/server_request_model.dart';
 import '../../video/screens/video_play_screen.dart';
 import '../controllers/favourite_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class FavouriteScreen extends StatefulWidget {
   const FavouriteScreen({super.key});
@@ -39,14 +40,14 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         elevation: 0,
         leading: BackButton(),
-        title: const Text(
+        title: Text(
           'Favourites',
           style: TextStyle(
-            color: AppColors.primaryWhite,
+            color: context.palette.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -67,10 +68,10 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
         }
 
         if (controller.favourites.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               'No favourites yet',
-              style: TextStyle(color: AppColors.primaryGray),
+              style: TextStyle(color: context.palette.textSecondary),
             ),
           );
         }
@@ -152,7 +153,7 @@ class _FavouriteScreenState extends State<FavouriteScreen> {
                                     ),
                                     Text(
                                       item.videoType.capitalizeFirst ?? '',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppColors.primaryGray,
                                         fontSize: 12,
                                       ),

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
 
 import '../../../core/constants/app_colors.dart';
+import 'package:flutter_almightyflippa/core/config/app_theme.dart';
 
 /// Human-readable names for the tracks a stream reports. Streams label them
 /// inconsistently (language code, free-text title, or nothing), so fall back
@@ -109,117 +110,124 @@ Future<void> showTrackPickerDialog<T>({
     context: context,
     barrierDismissible: true,
     barrierLabel: title,
-    pageBuilder: (dialogContext, _, _) {
-      return SafeArea(
-        child: Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(dialogContext).size.width * 0.7,
-              constraints: BoxConstraints(
-                maxWidth: 420,
-                maxHeight: MediaQuery.of(dialogContext).size.height * 0.7,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.containerBgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+    pageBuilder: (dialogContext, _, _) => Theme(
+      // Players stay dark in both themes, and showGeneralDialog doesn't
+      // carry the caller's Theme into the dialog.
+      data: AppTheme.dark,
+      child: Builder(
+        builder: (dialogContext) {
+          return SafeArea(
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(dialogContext).size.width * 0.7,
+                  constraints: BoxConstraints(
+                    maxWidth: 420,
+                    maxHeight: MediaQuery.of(dialogContext).size.height * 0.7,
                   ),
-                  Flexible(
-                    child: Obx(() {
-                      if (tracks.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            emptyText,
-                            style: const TextStyle(
-                              color: AppColors.primaryGray,
-                            ),
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      }
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: tracks.length,
-                        itemBuilder: (_, index) {
-                          final track = tracks[index];
-                          final selected = isSelected(track);
-                          return InkWell(
-                            onTap: () {
-                              onSelect(track);
-                              Navigator.pop(dialogContext);
+                        ),
+                      ),
+                      Flexible(
+                        child: Obx(() {
+                          if (tracks.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                emptyText,
+                                style: const TextStyle(
+                                  color: AppColors.primaryGray,
+                                ),
+                              ),
+                            );
+                          }
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: tracks.length,
+                            itemBuilder: (_, index) {
+                              final track = tracks[index];
+                              final selected = isSelected(track);
+                              return InkWell(
+                                onTap: () {
+                                  onSelect(track);
+                                  Navigator.pop(dialogContext);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          labelFor(track),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Container(
+                                        width: 18,
+                                        height: 18,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: selected
+                                                ? AppColors.red
+                                                : Colors.grey,
+                                          ),
+                                        ),
+                                        child: selected
+                                            ? Center(
+                                                child: Container(
+                                                  width: 10,
+                                                  height: 10,
+                                                  decoration: const BoxDecoration(
+                                                    color: AppColors.red,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      labelFor(track),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: selected
-                                            ? AppColors.red
-                                            : Colors.grey,
-                                      ),
-                                    ),
-                                    child: selected
-                                        ? Center(
-                                            child: Container(
-                                              width: 10,
-                                              height: 10,
-                                              decoration: const BoxDecoration(
-                                                color: AppColors.red,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                            ),
                           );
-                        },
-                      );
-                    }),
+                        }),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      );
-    },
+          );
+        },
+      ),
+    ),
   );
 }

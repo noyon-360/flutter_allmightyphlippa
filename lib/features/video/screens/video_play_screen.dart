@@ -19,6 +19,7 @@ import 'package:get/get.dart';
 import '../../cast/utils/cast_names.dart';
 import '../../cast/widgets/cast_section.dart';
 import '../controllers/video_play_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_theme.dart';
 
 class VideoPlayScreen extends StatefulWidget {
   final int streamId;
@@ -129,7 +130,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
 
   @override
   Widget build(BuildContext context) {
-    return _buildMainContent(context);
+    // The player is dark in both app themes, like every video app.
+    return Theme(
+      data: AppTheme.dark,
+      child: Builder(builder: (context) => _buildMainContent(context)),
+    );
   }
 
   /// Remote keys for the TV player (see the desktop controls in the build).
@@ -1149,201 +1154,208 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
-      pageBuilder: (context, anim1, anim2) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.8,
-              decoration: BoxDecoration(
-                color: AppColors.containerBgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF3D3D3D),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "More Settings",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TvFocusWrapper(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.black,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+      pageBuilder: (context, anim1, anim2) => Theme(
+        // Players stay dark in both themes, and showGeneralDialog doesn't
+        // carry the caller's Theme into the dialog.
+        data: AppTheme.dark,
+        child: Builder(
+          builder: (context) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        // Quality
-                        // _buildSettingRow(
-                        //   label: "Quality",
-                        //   value: Obx(() {
-                        //     final currentTrack =
-                        //         controller.currentVideoTrack.value;
-                        //     if (currentTrack == null ||
-                        //         currentTrack == VideoTrack.auto()) {
-                        //       return const Text(
-                        //         "Auto",
-                        //         style: TextStyle(color: Colors.white),
-                        //       );
-                        //     }
-                        //     return Text(
-                        //       currentTrack.displayName,
-                        //       style: const TextStyle(color: Colors.white),
-                        //     );
-                        //   }),
-                        //   onTap: () {
-                        //     Navigator.pop(context);
-                        //     _showQualityDialog(context);
-                        //   },
-                        // ),
-                        // const SizedBox(height: 16),
-                        // Playback Speed
-                        _buildSettingRow(
-                          label: "Playback Speed",
-                          value: Obx(() {
-                            final speed = controller.playbackSpeed.value;
-                            return Text(
-                              speed == 1.0 ? "1" : speed.toString(),
-                              style: const TextStyle(color: Colors.white),
-                            );
-                          }),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _showSpeedDialog(context);
-                          },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                        const SizedBox(height: 16),
-                        // Audio Track
-                        _buildSettingRow(
-                          label: "Audio Track",
-                          value: Obx(() {
-                            final track = controller.currentAudioTrack.value;
-                            return Text(
-                              track == null ? "Default" : track.displayName,
-                              style: const TextStyle(color: Colors.white),
-                            );
-                          }),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _showAudioTrackDialog(context);
-                          },
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF3D3D3D),
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        // Subtitles
-                        _buildSettingRow(
-                          label: "Subtitles",
-                          value: Obx(() {
-                            final track = controller.currentSubtitleTrack.value;
-                            if (!controller.isSubtitleEnabled.value ||
-                                track == null ||
-                                track == SubtitleTrack.no()) {
-                              return const Text(
-                                "Off",
-                                style: TextStyle(color: Colors.white),
-                              );
-                            }
-                            return Text(
-                              track.displayName,
-                              style: const TextStyle(color: Colors.white),
-                            );
-                          }),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _showSubtitleDialog(context);
-                          },
-                        ),
-                        // Casting from a TV makes no sense — hide it there.
-                        if (!TvDevice.isTv) ...[
-                          const SizedBox(height: 16),
-                          // Google Cast
-                          _buildSettingRow(
-                            label: "Google Cast",
-                            value: Obx(
-                              () => Text(
-                                _castService.isCasting.value
-                                    ? "Connected"
-                                    : "Off",
-                                style: const TextStyle(color: Colors.white),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "More Settings",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            onTap: () {
-                              if (_castService.isCasting.value) {
-                                _castService.stopCasting();
-                                Navigator.pop(context);
-                              } else {
-                                Navigator.pop(context);
-                                _showCastPickerDialog(outerContext);
-                              }
-                            },
-                          ),
-                        ],
-                        if (Platform.isIOS) ...[
-                          const SizedBox(height: 16),
-                          _buildSettingRow(
-                            label: "AirPlay",
-                            value: const Text(
-                              "Available",
-                              style: TextStyle(color: Colors.white),
+                            TvFocusWrapper(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
                             ),
-                            onTap: () async {
-                              Navigator.pop(context);
-                              final ok = await AirPlayService.instance
-                                  .showAirPlayPicker();
-                              if (!ok) {
-                                Get.snackbar(
-                                  'AirPlay',
-                                  'Could not open the AirPlay picker. Please try again.',
+                          ],
+                        ),
+                      ),
+
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            // Quality
+                            // _buildSettingRow(
+                            //   label: "Quality",
+                            //   value: Obx(() {
+                            //     final currentTrack =
+                            //         controller.currentVideoTrack.value;
+                            //     if (currentTrack == null ||
+                            //         currentTrack == VideoTrack.auto()) {
+                            //       return const Text(
+                            //         "Auto",
+                            //         style: TextStyle(color: Colors.white),
+                            //       );
+                            //     }
+                            //     return Text(
+                            //       currentTrack.displayName,
+                            //       style: const TextStyle(color: Colors.white),
+                            //     );
+                            //   }),
+                            //   onTap: () {
+                            //     Navigator.pop(context);
+                            //     _showQualityDialog(context);
+                            //   },
+                            // ),
+                            // const SizedBox(height: 16),
+                            // Playback Speed
+                            _buildSettingRow(
+                              label: "Playback Speed",
+                              value: Obx(() {
+                                final speed = controller.playbackSpeed.value;
+                                return Text(
+                                  speed == 1.0 ? "1" : speed.toString(),
+                                  style: const TextStyle(color: Colors.white),
                                 );
-                              }
-                            },
-                          ),
-                        ],
-                      ],
-                    ),
+                              }),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _showSpeedDialog(context);
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            // Audio Track
+                            _buildSettingRow(
+                              label: "Audio Track",
+                              value: Obx(() {
+                                final track = controller.currentAudioTrack.value;
+                                return Text(
+                                  track == null ? "Default" : track.displayName,
+                                  style: const TextStyle(color: Colors.white),
+                                );
+                              }),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _showAudioTrackDialog(context);
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            // Subtitles
+                            _buildSettingRow(
+                              label: "Subtitles",
+                              value: Obx(() {
+                                final track = controller.currentSubtitleTrack.value;
+                                if (!controller.isSubtitleEnabled.value ||
+                                    track == null ||
+                                    track == SubtitleTrack.no()) {
+                                  return const Text(
+                                    "Off",
+                                    style: TextStyle(color: Colors.white),
+                                  );
+                                }
+                                return Text(
+                                  track.displayName,
+                                  style: const TextStyle(color: Colors.white),
+                                );
+                              }),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _showSubtitleDialog(context);
+                              },
+                            ),
+                            // Casting from a TV makes no sense — hide it there.
+                            if (!TvDevice.isTv) ...[
+                              const SizedBox(height: 16),
+                              // Google Cast
+                              _buildSettingRow(
+                                label: "Google Cast",
+                                value: Obx(
+                                  () => Text(
+                                    _castService.isCasting.value
+                                        ? "Connected"
+                                        : "Off",
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                onTap: () {
+                                  if (_castService.isCasting.value) {
+                                    _castService.stopCasting();
+                                    Navigator.pop(context);
+                                  } else {
+                                    Navigator.pop(context);
+                                    _showCastPickerDialog(outerContext);
+                                  }
+                                },
+                              ),
+                            ],
+                            if (Platform.isIOS) ...[
+                              const SizedBox(height: 16),
+                              _buildSettingRow(
+                                label: "AirPlay",
+                                value: const Text(
+                                  "Available",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onTap: () async {
+                                  Navigator.pop(context);
+                                  final ok = await AirPlayService.instance
+                                      .showAirPlayPicker();
+                                  if (!ok) {
+                                    Get.snackbar(
+                                      'AirPlay',
+                                      'Could not open the AirPlay picker. Please try again.',
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -1493,110 +1505,117 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
-      pageBuilder: (context, anim1, anim2) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.7,
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.containerBgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      "Audio Track",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+      pageBuilder: (context, anim1, anim2) => Theme(
+        // Players stay dark in both themes, and showGeneralDialog doesn't
+        // carry the caller's Theme into the dialog.
+        data: AppTheme.dark,
+        child: Builder(
+          builder: (context) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.7,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.6,
                   ),
-                  Flexible(
-                    child: Obx(() {
-                      final tracks = controller.availableAudioTracks;
-                      if (tracks.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text(
-                            "No audio tracks available",
-                            style: TextStyle(color: AppColors.primaryGray),
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                          "Audio Track",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      }
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: tracks.length,
-                        itemBuilder: (context, index) {
-                          final track = tracks[index];
-                          final isSelected =
-                              controller.currentAudioTrack.value == track;
+                        ),
+                      ),
+                      Flexible(
+                        child: Obx(() {
+                          final tracks = controller.availableAudioTracks;
+                          if (tracks.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                "No audio tracks available",
+                                style: TextStyle(color: AppColors.primaryGray),
+                              ),
+                            );
+                          }
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: tracks.length,
+                            itemBuilder: (context, index) {
+                              final track = tracks[index];
+                              final isSelected =
+                                  controller.currentAudioTrack.value == track;
 
-                          return InkWell(
-                            onTap: () {
-                              controller.setAudioTrack(track);
-                              Navigator.pop(context);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    track.displayName,
-                                    style: const TextStyle(color: Colors.white),
+                              return InkWell(
+                                onTap: () {
+                                  controller.setAudioTrack(track);
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
                                   ),
-                                  Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? AppColors.red
-                                            : Colors.grey,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        track.displayName,
+                                        style: const TextStyle(color: Colors.white),
                                       ),
-                                    ),
-                                    child: isSelected
-                                        ? Center(
-                                            child: Container(
-                                              width: 10,
-                                              height: 10,
-                                              decoration: const BoxDecoration(
-                                                color: AppColors.red,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                          )
-                                        : null,
+                                      Container(
+                                        width: 18,
+                                        height: 18,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.red
+                                                : Colors.grey,
+                                          ),
+                                        ),
+                                        child: isSelected
+                                            ? Center(
+                                                child: Container(
+                                                  width: 10,
+                                                  height: 10,
+                                                  decoration: const BoxDecoration(
+                                                    color: AppColors.red,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              );
+                            },
                           );
-                        },
-                      );
-                    }),
+                        }),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -1605,111 +1624,118 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
-      pageBuilder: (context, anim1, anim2) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.7,
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.containerBgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      "Subtitles",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+      pageBuilder: (context, anim1, anim2) => Theme(
+        // Players stay dark in both themes, and showGeneralDialog doesn't
+        // carry the caller's Theme into the dialog.
+        data: AppTheme.dark,
+        child: Builder(
+          builder: (context) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.7,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.6,
                   ),
-                  Flexible(
-                    child: Obx(() {
-                      final tracks = controller.availableSubtitleTracks;
-                      if (tracks.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text(
-                            "No subtitles available",
-                            style: TextStyle(color: AppColors.primaryGray),
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                          "Subtitles",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      }
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: tracks.length,
-                        itemBuilder: (context, index) {
-                          final track = tracks[index];
-                          final isSelected = controller.isSubtitleEnabled.value
-                              ? controller.currentSubtitleTrack.value == track
-                              : track == SubtitleTrack.no();
+                        ),
+                      ),
+                      Flexible(
+                        child: Obx(() {
+                          final tracks = controller.availableSubtitleTracks;
+                          if (tracks.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                "No subtitles available",
+                                style: TextStyle(color: AppColors.primaryGray),
+                              ),
+                            );
+                          }
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: tracks.length,
+                            itemBuilder: (context, index) {
+                              final track = tracks[index];
+                              final isSelected = controller.isSubtitleEnabled.value
+                                  ? controller.currentSubtitleTrack.value == track
+                                  : track == SubtitleTrack.no();
 
-                          return InkWell(
-                            onTap: () {
-                              controller.setSubtitleTrack(track);
-                              Navigator.pop(context);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    track.displayName,
-                                    style: const TextStyle(color: Colors.white),
+                              return InkWell(
+                                onTap: () {
+                                  controller.setSubtitleTrack(track);
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
                                   ),
-                                  Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? AppColors.red
-                                            : Colors.grey,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        track.displayName,
+                                        style: const TextStyle(color: Colors.white),
                                       ),
-                                    ),
-                                    child: isSelected
-                                        ? Center(
-                                            child: Container(
-                                              width: 10,
-                                              height: 10,
-                                              decoration: const BoxDecoration(
-                                                color: AppColors.red,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                          )
-                                        : null,
+                                      Container(
+                                        width: 18,
+                                        height: 18,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.red
+                                                : Colors.grey,
+                                          ),
+                                        ),
+                                        child: isSelected
+                                            ? Center(
+                                                child: Container(
+                                                  width: 10,
+                                                  height: 10,
+                                                  decoration: const BoxDecoration(
+                                                    color: AppColors.red,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              );
+                            },
                           );
-                        },
-                      );
-                    }),
+                        }),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -1719,229 +1745,236 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Cast',
-      pageBuilder: (ctx, _, _) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(ctx).size.width * 0.8,
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(ctx).size.height * 0.6,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.containerBgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF3D3D3D),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Row(
+      pageBuilder: (ctx, _, _) => Theme(
+        // Players stay dark in both themes, and showGeneralDialog doesn't
+        // carry the caller's Theme into the dialog.
+        data: AppTheme.dark,
+        child: Builder(
+          builder: (ctx) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(ctx).size.width * 0.8,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF3D3D3D),
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.cast, color: Colors.white, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              "Cast to device",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                            const Row(
+                              children: [
+                                Icon(Icons.cast, color: Colors.white, size: 18),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Cast to device",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            TvFocusWrapper(
+                              onTap: () => Navigator.pop(ctx),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        TvFocusWrapper(
-                          onTap: () => Navigator.pop(ctx),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.black,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: Obx(() {
-                      if (_castService.isScanning.value &&
-                          _castService.availableDevices.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  color: AppColors.red,
-                                  strokeWidth: 3,
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                "Searching for devices...",
-                                style: TextStyle(color: AppColors.primaryGray),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      if (_castService.availableDevices.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.cast,
-                                color: AppColors.primaryGray,
-                                size: 36,
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                "No Chromecast devices found nearby. "
-                                "Make sure your device is on the same WiFi network.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.primaryGray,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TvFocusWrapper(
-                                onTap: () => _castService.startScan(),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.red,
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: const Text(
-                                    "Retry",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _castService.availableDevices.length,
-                        itemBuilder: (context, index) {
-                          final device = _castService.availableDevices[index];
-                          return TvFocusWrapper(
-                            onTap: () async {
-                              final url = controller.currentPlayUrl;
-                              if (url == null || url.isEmpty) {
-                                Get.snackbar(
-                                  'Cast',
-                                  'No video is currently playing.',
-                                );
-                                return;
-                              }
-                              try {
-                                await _castService.connectToDevice(
-                                  device,
-                                  url: url,
-                                  title: controller.title,
-                                  imageUrl: controller.currentThumbnail,
-                                );
-                                if (ctx.mounted) Navigator.pop(ctx);
-                              } catch (_) {
-                                if (ctx.mounted) Navigator.pop(ctx);
-                                Get.snackbar(
-                                  'Cast',
-                                  'Failed to connect to ${device.name}.',
-                                );
-                              }
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
+                      ),
+                      Flexible(
+                        child: Obx(() {
+                          if (_castService.isScanning.value &&
+                              _castService.availableDevices.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
-                                    Icons.tv,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Text(
-                                      device.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.red,
+                                      strokeWidth: 3,
                                     ),
                                   ),
-                                  Obx(() {
-                                    if (_castService.isConnecting.value &&
-                                        _castService.connectedDevice.value ==
-                                            device) {
-                                      return const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          color: AppColors.red,
-                                          strokeWidth: 2,
-                                        ),
-                                      );
-                                    }
-                                    return const SizedBox.shrink();
-                                  }),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "Searching for devices...",
+                                    style: TextStyle(color: AppColors.primaryGray),
+                                  ),
                                 ],
                               ),
-                            ),
+                            );
+                          }
+
+                          if (_castService.availableDevices.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.cast,
+                                    color: AppColors.primaryGray,
+                                    size: 36,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    "No Chromecast devices found nearby. "
+                                    "Make sure your device is on the same WiFi network.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.primaryGray,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TvFocusWrapper(
+                                    onTap: () => _castService.startScan(),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.red,
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: const Text(
+                                        "Retry",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: _castService.availableDevices.length,
+                            itemBuilder: (context, index) {
+                              final device = _castService.availableDevices[index];
+                              return TvFocusWrapper(
+                                onTap: () async {
+                                  final url = controller.currentPlayUrl;
+                                  if (url == null || url.isEmpty) {
+                                    Get.snackbar(
+                                      'Cast',
+                                      'No video is currently playing.',
+                                    );
+                                    return;
+                                  }
+                                  try {
+                                    await _castService.connectToDevice(
+                                      device,
+                                      url: url,
+                                      title: controller.title,
+                                      imageUrl: controller.currentThumbnail,
+                                    );
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                  } catch (_) {
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                    Get.snackbar(
+                                      'Cast',
+                                      'Failed to connect to ${device.name}.',
+                                    );
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.tv,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Text(
+                                          device.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Obx(() {
+                                        if (_castService.isConnecting.value &&
+                                            _castService.connectedDevice.value ==
+                                                device) {
+                                          return const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              color: AppColors.red,
+                                              strokeWidth: 2,
+                                            ),
+                                          );
+                                        }
+                                        return const SizedBox.shrink();
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
-                        },
-                      );
-                    }),
+                        }),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -1950,92 +1983,99 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
-      pageBuilder: (context, anim1, anim2) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.6,
-              decoration: BoxDecoration(
-                color: AppColors.containerBgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      "Playback Speed",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+      pageBuilder: (context, anim1, anim2) => Theme(
+        // Players stay dark in both themes, and showGeneralDialog doesn't
+        // carry the caller's Theme into the dialog.
+        data: AppTheme.dark,
+        child: Builder(
+          builder: (context) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  decoration: BoxDecoration(
+                    color: AppColors.containerBgColor,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: controller.availableSpeeds.length,
-                    itemBuilder: (context, index) {
-                      final speed = controller.availableSpeeds[index];
-                      final isSelected =
-                          controller.playbackSpeed.value == speed;
-
-                      return TvFocusWrapper(
-                        onTap: () {
-                          controller.setPlaybackSpeed(speed);
-                          Navigator.pop(context);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                speed == 1.0 ? "1" : speed.toString(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              Container(
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.red
-                                        : Colors.grey,
-                                  ),
-                                ),
-                                child: isSelected
-                                    ? Center(
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            color: AppColors.red,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                            ],
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                          "Playback Speed",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      );
-                    },
+                      ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: controller.availableSpeeds.length,
+                        itemBuilder: (context, index) {
+                          final speed = controller.availableSpeeds[index];
+                          final isSelected =
+                              controller.playbackSpeed.value == speed;
+
+                          return TvFocusWrapper(
+                            onTap: () {
+                              controller.setPlaybackSpeed(speed);
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    speed == 1.0 ? "1" : speed.toString(),
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.red
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                    child: isSelected
+                                        ? Center(
+                                            child: Container(
+                                              width: 10,
+                                              height: 10,
+                                              decoration: const BoxDecoration(
+                                                color: AppColors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }

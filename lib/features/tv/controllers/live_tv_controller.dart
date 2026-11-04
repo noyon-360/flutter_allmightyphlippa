@@ -23,6 +23,10 @@ class LiveTvController extends GetxController {
   int _currentPage = 1;
   final int _limit = 10;
 
+  /// Bumped by every fresh (non load-more) load. A response that comes back
+  /// after a newer load started is stale and dropped.
+  int _generation = 0;
+
   @override
   void onInit() {
     super.onInit();
@@ -32,8 +36,16 @@ class LiveTvController extends GetxController {
   }
 
   Future<void> getLiveTvList({bool isLoadMore = false, String? categoryId}) async {
-    if (isLoading.value || isMoreLoading.value) return;
-    if (isLoadMore && !hasMore.value) return;
+    if (isLoadMore) {
+      if (isLoading.value || isMoreLoading.value || !hasMore.value) return;
+    } else if (isLoading.value && categoryId == null) {
+      // Plain refresh while something is already loading: nothing to add.
+      return;
+    }
+    // An explicit category (a chip, or a channel opened from search) always
+    // wins: it supersedes the in-flight load instead of being dropped by it
+    // (e.g. the default "All" load this controller starts in onInit()).
+    final generation = isLoadMore ? _generation : ++_generation;
 
     if (categoryId != null) {
       selectedCategoryId.value = categoryId;
@@ -62,6 +74,13 @@ class LiveTvController extends GetxController {
             page: _currentPage,
             limit: _limit,
           ));
+
+    // A newer load started while this one was waiting: drop this result
+    // (the newer load owns isLoading and will clear it).
+    if (generation != _generation) {
+      if (isLoadMore) isMoreLoading.value = false;
+      return;
+    }
 
     result.fold(
       (fail) {

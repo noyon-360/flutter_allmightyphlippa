@@ -10,6 +10,7 @@ import 'package:flutter_almightyflippa/features/series/controllers/series_contro
 import 'package:get/get.dart';
 
 import '../../../core/constants/app_colors.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class SeriesScreen extends StatefulWidget {
   const SeriesScreen({super.key});
@@ -109,14 +110,14 @@ class _SeriesScreenState extends State<SeriesScreen> {
                     //           'Genres',
                     //           style: Theme.of(context).textTheme.titleLarge
                     //               ?.copyWith(
-                    //                 color: AppColors.primaryWhite,
+                    //                 color: context.palette.textPrimary,
                     //                 fontWeight: FontWeight.bold,
                     //               ),
                     //         ),
                     //         Text(
                     //           'See All',
                     //           style: Theme.of(context).textTheme.bodyMedium
-                    //               ?.copyWith(color: AppColors.primaryGray),
+                    //               ?.copyWith(color: context.palette.textSecondary),
                     //         ),
                     //       ],
                     //     ),
@@ -138,7 +139,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                   'Categories',
                                   style: Theme.of(context).textTheme.titleLarge
                                       ?.copyWith(
-                                        color: AppColors.primaryWhite,
+                                        color: context.palette.textPrimary,
                                         fontWeight: FontWeight.bold,
                                       ),
                                 ),
@@ -208,7 +209,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                           );
                                         },
                                         borderRadius: 25,
-                                        focusColor: AppColors.primaryWhite,
+                                        focusColor: context.palette.textPrimary,
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 20,
@@ -216,14 +217,14 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                           decoration: BoxDecoration(
                                             color: isSelected
                                                 ? AppColors.red
-                                                : AppColors.containerBgColor,
+                                                : context.palette.surface,
                                             borderRadius: BorderRadius.circular(
                                               25,
                                             ),
                                             border: Border.all(
                                               color: isSelected
                                                   ? AppColors.red
-                                                  : AppColors.primaryWhite
+                                                  : context.palette.textPrimary
                                                         .withOpacity(0.1),
                                             ),
                                           ),
@@ -232,8 +233,8 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                             categoryName,
                                             style: TextStyle(
                                               color: isSelected
-                                                  ? AppColors.primaryWhite
-                                                  : AppColors.primaryGray,
+                                                  ? context.palette.textPrimary
+                                                  : context.palette.textSecondary,
                                               fontWeight: isSelected
                                                   ? FontWeight.bold
                                                   : FontWeight.normal,
@@ -280,7 +281,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                 title,
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
-                                      color: AppColors.primaryWhite,
+                                      color: context.palette.textPrimary,
                                       fontWeight: FontWeight.bold,
                                     ),
                               );
@@ -321,7 +322,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                     width: 100,
                                     height: 80,
                                     decoration: BoxDecoration(
-                                      color: AppColors.containerBgColor,
+                                      color: context.palette.surface,
                                       borderRadius: BorderRadius.circular(8),
                                       image: series.cover.isNotEmpty
                                           ? DecorationImage(
@@ -332,9 +333,9 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                           : null,
                                     ),
                                     child: series.cover.isEmpty
-                                        ? const Icon(
+                                        ? Icon(
                                             Icons.movie,
-                                            color: AppColors.iconColor,
+                                            color: context.palette.textPrimary,
                                           )
                                         : null,
                                   ),
@@ -346,8 +347,8 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                       children: [
                                         Text(
                                           series.name ?? "",
-                                          style: const TextStyle(
-                                            color: AppColors.primaryWhite,
+                                          style: TextStyle(
+                                            color: context.palette.textPrimary,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -359,15 +360,15 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                           children: [
                                             Icon(
                                               Icons.star,
-                                              color: AppColors.primaryWhite,
+                                              color: context.palette.textPrimary,
                                               size: 12,
                                             ),
                                             const SizedBox(width: 4),
                                             Text(
                                               // Formatting date and duration if available, else placeholder
                                               '${series.rating5Based}',
-                                              style: const TextStyle(
-                                                color: AppColors.primaryGray,
+                                              style: TextStyle(
+                                                color: context.palette.textSecondary,
                                                 fontSize: 12,
                                               ),
                                               maxLines: 1,
@@ -438,7 +439,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
           Icon(
             error != null ? Icons.cloud_off : Icons.video_library_outlined,
             size: 48,
-            color: AppColors.primaryGray,
+            color: context.palette.textSecondary,
           ),
           const SizedBox(height: 16),
           Text(
@@ -446,7 +447,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                 ? "Couldn't load series.\n$error"
                 : 'No series available',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.primaryGray, fontSize: 14),
+            style: TextStyle(color: context.palette.textSecondary, fontSize: 14),
           ),
           if (error != null) ...[
             const SizedBox(height: 16),
@@ -473,7 +474,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
           Container(
             height: 50,
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -482,7 +483,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
             height: 24,
             width: 100,
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -496,7 +497,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                 width: 160,
                 margin: const EdgeInsets.only(right: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.containerBgColor,
+                  color: context.palette.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -507,7 +508,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
             height: 24,
             width: 120,
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -523,7 +524,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                       width: 100,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: AppColors.containerBgColor,
+                        color: context.palette.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -536,7 +537,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                             height: 16,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: AppColors.containerBgColor,
+                              color: context.palette.surface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -545,7 +546,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                             height: 12,
                             width: 150,
                             decoration: BoxDecoration(
-                              color: AppColors.containerBgColor,
+                              color: context.palette.surface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),

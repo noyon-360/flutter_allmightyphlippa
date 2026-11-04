@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class PinCode extends StatelessWidget {
   const PinCode({super.key, required this.otpController});
@@ -8,6 +9,7 @@ class PinCode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = context.isDarkTheme;
     return MaterialPinField(
       pinController: otpController,
       length: 4,
@@ -30,9 +32,11 @@ class PinCode extends StatelessWidget {
         focusedBorderColor: Colors.red,
         filledBorderColor: Colors.transparent,
 
-        fillColor: const Color(0xFF2E2E2E),
-        focusedFillColor: const Color(0xFF3D3D3D),
-        filledFillColor: const Color(0xFF2E2E2E),
+        fillColor: dark ? const Color(0xFF2E2E2E) : context.palette.surface,
+        focusedFillColor: dark
+            ? const Color(0xFF3D3D3D)
+            : context.palette.surfaceHigh,
+        filledFillColor: dark ? const Color(0xFF2E2E2E) : context.palette.surface,
 
         cursorColor: Colors.black,
         entryAnimation: MaterialPinAnimation.fade,

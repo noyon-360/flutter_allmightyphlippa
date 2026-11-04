@@ -7,6 +7,7 @@ import '/core/common/widgets/button_widgets.dart';
 import '/core/constants/app_colors.dart';
 import '/core/extensions/input_decoration_extensions.dart';
 import '/features/auth/controller/forgot_password_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Step 1 of forgot password: enter the account email to receive an OTP.
 class ForgotPasswordScreen extends StatelessWidget {
@@ -28,7 +29,7 @@ class ForgotPasswordScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: () => Get.back(),
         ),
       ),
@@ -47,7 +48,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                     "Forgot Password",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppColors.primaryWhite,
+                      color: context.palette.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.w500,
                     ),
@@ -56,7 +57,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                   Text(
                     "Enter your account email and we'll send you a verification code.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.primaryGray),
+                    style: TextStyle(color: context.palette.textSecondary),
                   ),
                   Gap.h24,
                   Obx(
@@ -79,7 +80,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                     textInputAction: TextInputAction.done,
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.primaryWhite,
+                      color: context.palette.textPrimary,
                     ),
                     decoration: context.primaryInputDecoration.copyWith(
                       hintText: "Email",

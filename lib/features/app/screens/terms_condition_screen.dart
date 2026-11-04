@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/common/widgets/tv_key_scroll.dart';
 import 'package:flutx_core/flutx_core.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class TermsConditionScreen extends StatelessWidget {
   const TermsConditionScreen({super.key});
@@ -9,15 +9,15 @@ class TermsConditionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlack,
+        backgroundColor: context.palette.background,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
-        title: const Text(
+        leading: BackButton(color: context.palette.textPrimary),
+        title: Text(
           'Terms & Conditions',
           style: TextStyle(
-            color: AppColors.primaryWhite,
+            color: context.palette.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -28,45 +28,50 @@ class TermsConditionScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Terms & Conditions',
                 style: TextStyle(
-                  color: AppColors.primaryWhite,
+                  color: context.palette.textPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Gap.h8,
-              const Text(
+              Text(
                 'Last updated: January 27, 2026',
-                style: TextStyle(color: AppColors.primaryGray, fontSize: 12),
+                style: TextStyle(color: context.palette.textSecondary, fontSize: 12),
               ),
               Gap.h24,
               _buildSection(
+                context,
                 '1. Acceptance of Terms',
                 'By accessing or using LABBY TV, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.',
               ),
               _buildSection(
+                context,
                 '2. Use License',
                 'Permission is granted to temporarily download one copy of the materials (information or software) on LABBY TV for personal, non-commercial transitory viewing only.',
               ),
               _buildSection(
+                context,
                 '3. Disclaimer',
                 'The materials on LABBY TV are provided on an "as is" basis. LABBY TV makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.',
               ),
               _buildSection(
+                context,
                 '4. Limitations',
                 'In no event shall LABBY TV or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials.',
               ),
               _buildSection(
+                context,
                 '5. Governing Law',
                 'These terms and conditions are governed by and construed in accordance with the laws and you irrevocably submit to the exclusive jurisdiction of the courts in that State or location.',
               ),
               Gap.h24,
-              const Text(
+              Text(
                 'If you do not agree with any of these terms, you are prohibited from using or accessing this site.',
                 style: TextStyle(
-                  color: AppColors.primaryWhite,
+                  color: context.palette.textPrimary,
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
                 ),
@@ -79,14 +84,14 @@ class TermsConditionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, String content) {
+  Widget _buildSection(BuildContext context, String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: AppColors.primaryWhite,
+          style: TextStyle(
+            color: context.palette.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -94,8 +99,8 @@ class TermsConditionScreen extends StatelessWidget {
         Gap.h8,
         Text(
           content,
-          style: const TextStyle(
-            color: AppColors.primaryGray,
+          style: TextStyle(
+            color: context.palette.textSecondary,
             fontSize: 14,
             height: 1.5,
           ),

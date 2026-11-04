@@ -20,6 +20,7 @@ import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
     hide Icons;
 
 import '../../profile/controller/profile_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: context.palette.background,
       body: RefreshIndicator.adaptive(
         onRefresh: () => homeCtrl.refreshData(),
         color: AppColors.red,
@@ -141,17 +142,17 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.primaryWhite,
+            style: TextStyle(
+              color: context.palette.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
           TvFocusWrapper(
             onTap: onSeeAll,
-            child: const Text(
+            child: Text(
               'See All',
-              style: TextStyle(color: AppColors.primaryGray, fontSize: 14),
+              style: TextStyle(color: context.palette.textSecondary, fontSize: 14),
             ),
           ),
         ],
@@ -170,12 +171,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final movies = _uniqueByName(movieCtrl.movies, (m) => m.name);
 
       if (movies.isEmpty) {
-        return const SizedBox(
+        return SizedBox(
           height: 200,
           child: Center(
             child: Text(
               'No movies available',
-              style: TextStyle(color: AppColors.primaryGray),
+              style: TextStyle(color: context.palette.textSecondary),
             ),
           ),
         );
@@ -221,8 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       movie.name,
-                      style: const TextStyle(
-                        color: AppColors.primaryWhite,
+                      style: TextStyle(
+                        color: context.palette.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -231,8 +232,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Text(
                       'Movie',
-                      style: const TextStyle(
-                        color: AppColors.primaryGray,
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -258,12 +259,12 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if (seriesList.isEmpty) {
-        return const SizedBox(
+        return SizedBox(
           height: 200,
           child: Center(
             child: Text(
               'No series available',
-              style: TextStyle(color: AppColors.primaryGray),
+              style: TextStyle(color: context.palette.textSecondary),
             ),
           ),
         );
@@ -311,8 +312,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       series.name ?? '',
-                      style: const TextStyle(
-                        color: AppColors.primaryWhite,
+                      style: TextStyle(
+                        color: context.palette.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -321,8 +322,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Text(
                       'Series',
-                      style: const TextStyle(
-                        color: AppColors.primaryGray,
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -395,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //                       Text(
   //                         channel.name ?? 'Live TV',
   //                         style: const TextStyle(
-  //                           color: AppColors.primaryWhite,
+  //                           color: context.palette.textPrimary,
   //                           fontSize: 14,
   //                           fontWeight: FontWeight.w600,
   //                         ),
@@ -405,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //                       const Text(
   //                         'Live TV',
   //                         style: TextStyle(
-  //                           color: AppColors.primaryGray,
+  //                           color: context.palette.textSecondary,
   //                           fontSize: 12,
   //                         ),
   //                       ),
@@ -438,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.containerBgColor,
+                      color: context.palette.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
@@ -448,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 14,
                   width: 100,
                   decoration: BoxDecoration(
-                    color: AppColors.containerBgColor,
+                    color: context.palette.surface,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -457,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 12,
                   width: 60,
                   decoration: BoxDecoration(
-                    color: AppColors.containerBgColor,
+                    color: context.palette.surface,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -471,9 +472,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: AppColors.containerBgColor,
-      child: const Center(
-        child: Icon(Icons.movie, color: AppColors.iconColor, size: 40),
+      color: context.palette.surface,
+      child: Center(
+        child: Icon(Icons.movie, color: context.palette.textPrimary, size: 40),
       ),
     );
   }

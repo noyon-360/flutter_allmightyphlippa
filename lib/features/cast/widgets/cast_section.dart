@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
-import '../../../core/constants/app_colors.dart';
 import '../screens/actor_screen.dart';
 import '../services/cast_photo_service.dart';
 import '../utils/cast_names.dart';
 import 'actor_avatar.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// "Cast" row for a movie or series: a picture and name per actor; tapping one
 /// opens [ActorScreen] with everything in the user's playlist they appear in.
@@ -46,10 +46,10 @@ class _CastSectionState extends State<CastSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Cast',
           style: TextStyle(
-            color: AppColors.primaryWhite,
+            color: context.palette.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -77,8 +77,8 @@ class _CastSectionState extends State<CastSection> {
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.primaryGray,
+                        style: TextStyle(
+                          color: context.palette.textSecondary,
                           fontSize: 11,
                           height: 1.2,
                         ),

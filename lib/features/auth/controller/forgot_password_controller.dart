@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
-import '/core/constants/app_colors.dart';
 import '/features/auth/controller/login_controller.dart';
 import '/features/auth/repo/auth_repo.dart';
 import '/features/auth/screens/reset_password_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Drives the two-step forgot-password flow:
 /// 1. [ForgotPasswordScreen] — email → `POST /auth/forget` (OTP is emailed)
@@ -134,8 +134,8 @@ class ForgotPasswordController extends GetxController {
       title,
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.primaryBlack.withAlpha((0.2 * 255).toInt()),
-      colorText: AppColors.primaryWhite,
+      backgroundColor: AppPalette.current.background.withAlpha((0.2 * 255).toInt()),
+      colorText: AppPalette.current.textPrimary,
     );
   }
 }

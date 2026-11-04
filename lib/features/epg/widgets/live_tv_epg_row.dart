@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
-import '../../../core/constants/app_colors.dart';
 import '../services/live_tv_now_playing_cache.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// A single Live TV channel row showing the channel logo/name plus whatever
 /// is currently airing on it, fetched lazily and cached via
@@ -45,9 +45,9 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AppColors.containerBgColor,
+          color: context.palette.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryWhite.withOpacity(0.05)),
+          border: Border.all(color: context.palette.textPrimary.withOpacity(0.05)),
         ),
         child: Row(
           children: [
@@ -55,7 +55,7 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppColors.primaryBlack,
+                color: context.palette.background,
                 borderRadius: BorderRadius.circular(8),
               ),
               clipBehavior: Clip.antiAlias,
@@ -65,13 +65,13 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
                       child: Image.network(
                         widget.channelLogo,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, __, ___) => Icon(
                           Icons.tv,
-                          color: AppColors.iconColor,
+                          color: context.palette.textPrimary,
                         ),
                       ),
                     )
-                  : const Icon(Icons.tv, color: AppColors.iconColor),
+                  : Icon(Icons.tv, color: context.palette.textPrimary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -80,8 +80,8 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
                 children: [
                   Text(
                     widget.channelName,
-                    style: const TextStyle(
-                      color: AppColors.primaryWhite,
+                    style: TextStyle(
+                      color: context.palette.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -101,16 +101,16 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
                         cache.hasFailed(widget.streamId)
                             ? 'Guide unavailable from provider'
                             : 'No program info',
-                        style: const TextStyle(
-                          color: AppColors.primaryGray,
+                        style: TextStyle(
+                          color: context.palette.textSecondary,
                           fontSize: 12,
                         ),
                       );
                     }
                     return Text(
                       '${program.title} • ${program.timeRange}',
-                      style: const TextStyle(
-                        color: AppColors.primaryGray,
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -120,9 +120,9 @@ class _LiveTvEpgRowState extends State<LiveTvEpgRow> {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.play_circle_outline,
-              color: AppColors.iconColor,
+              color: context.palette.textPrimary,
               size: 22,
             ),
           ],
@@ -141,7 +141,7 @@ class _EpgLineShimmer extends StatelessWidget {
       width: 120,
       height: 11,
       decoration: BoxDecoration(
-        color: AppColors.primaryWhite.withOpacity(0.08),
+        color: context.palette.textPrimary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(4),
       ),
     );

@@ -16,6 +16,15 @@ import 'package:flutter/services.dart';
 class PiPService {
   static const _channel = MethodChannel('com.labbytv/pip');
 
+  /// Android auto-PiP, handled in MainActivity for every Android version
+  /// (the `floating` package's OnLeavePiP only works on Android 12+).
+  static const _androidChannel = MethodChannel('labby/pip');
+
+  /// The PiPService that armed auto-PiP last. Switching channels replaces
+  /// one video screen with another; the old screen's dispose() runs after
+  /// the new one armed, so only the current owner may disarm.
+  static PiPService? _autoEnterOwner;
+
   // Android
   Floating? _floating;
   bool _androidAvailable = false;
@@ -112,19 +121,23 @@ class PiPService {
   /// session, not shrink the app into a window nobody can see.
   Future<void> armAutoEnter() async {
     if (!Platform.isAndroid || _floating == null || !_androidAvailable) return;
+    _autoEnterOwner = this;
     try {
-      await _floating!.enable(
-        const OnLeavePiP(aspectRatio: Rational.landscape()),
-      );
+      await _androidChannel.invokeMethod<void>('setAutoEnter', {
+        'enabled': true,
+      });
     } catch (e) {
       debugPrint('PiPService Android armAutoEnter: $e');
     }
   }
 
   Future<void> disarmAutoEnter() async {
-    if (!Platform.isAndroid || _floating == null) return;
+    if (!Platform.isAndroid || !identical(_autoEnterOwner, this)) return;
+    _autoEnterOwner = null;
     try {
-      await _floating!.cancelOnLeavePiP();
+      await _androidChannel.invokeMethod<void>('setAutoEnter', {
+        'enabled': false,
+      });
     } catch (_) {}
   }
 

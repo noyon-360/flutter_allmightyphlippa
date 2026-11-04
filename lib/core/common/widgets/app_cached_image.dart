@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_almightyflippa/core/constants/app_colors.dart';
 import 'tv_focus_wrapper.dart';
 import '../shimmer/shimmer_loader.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class AppCachedImage extends StatelessWidget {
   final String? imageUrl; // network image
@@ -60,7 +60,7 @@ class AppCachedImage extends StatelessWidget {
           child: Container(
             width: width,
             height: height,
-            color: AppColors.containerBgColor,
+            color: context.palette.surface,
             child: Center(
               child: Icon(
                 icon,
@@ -97,13 +97,13 @@ class AppCachedImage extends StatelessWidget {
         fit: fit,
         placeholder: (context, url) => ShimmerLoader(
           isLoading: true,
-          baseColor: shimmerBaseColor ?? const Color(0xFF383838),
-          highlightColor: shimmerHighlightColor ?? const Color(0xFF484848),
+          baseColor: shimmerBaseColor ?? context.palette.shimmerBase,
+          highlightColor: shimmerHighlightColor ?? context.palette.shimmerHighlight,
           child: Container(
             width: width,
             height: height,
             decoration: BoxDecoration(
-              color: AppColors.containerBgColor,
+              color: context.palette.surface,
               borderRadius: borderRadius,
             ),
           ),
@@ -111,7 +111,7 @@ class AppCachedImage extends StatelessWidget {
         errorWidget: (context, url, error) => Container(
           width: width,
           height: height,
-          color: AppColors.containerBgColor,
+          color: context.palette.surface,
           child: Icon(
             icon,
             color: iconColor,

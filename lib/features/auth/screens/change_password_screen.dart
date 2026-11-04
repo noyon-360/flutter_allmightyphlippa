@@ -6,6 +6,7 @@ import '../../../core/common/widgets/button_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/extensions/input_decoration_extensions.dart';
 import '../controller/auth_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class ChangePasswordScreen extends StatelessWidget {
   const ChangePasswordScreen({super.key});
@@ -19,12 +20,12 @@ class ChangePasswordScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: Text(
           "Change Password",
-          style: TextStyle(color: AppColors.primaryWhite),
+          style: TextStyle(color: context.palette.textPrimary),
         ),
       ),
       body: Align(
@@ -60,7 +61,7 @@ class ChangePasswordScreen extends StatelessWidget {
                           focusNode: authCtrl.oldPasswordFocus,
                           obscureText: authCtrl.obscureOldPassword.value,
                           textInputAction: TextInputAction.next,
-                          style: TextStyle(color: AppColors.primaryWhite),
+                          style: TextStyle(color: context.palette.textPrimary),
                           decoration: context.primaryInputDecoration.copyWith(
                             hintText: "Old Password",
                             suffixIcon: IconButton(
@@ -68,7 +69,7 @@ class ChangePasswordScreen extends StatelessWidget {
                                 authCtrl.obscureOldPassword.value
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: AppColors.primaryGray,
+                                color: context.palette.textSecondary,
                               ),
                               onPressed: authCtrl.toggleObscureOldPassword,
                             ),
@@ -93,7 +94,7 @@ class ChangePasswordScreen extends StatelessWidget {
                           focusNode: authCtrl.newPasswordFocus,
                           obscureText: authCtrl.obscureNewPassword.value,
                           textInputAction: TextInputAction.next,
-                          style: TextStyle(color: AppColors.primaryWhite),
+                          style: TextStyle(color: context.palette.textPrimary),
                           decoration: context.primaryInputDecoration.copyWith(
                             hintText: "New Password",
                             suffixIcon: IconButton(
@@ -101,7 +102,7 @@ class ChangePasswordScreen extends StatelessWidget {
                                 authCtrl.obscureNewPassword.value
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: AppColors.primaryGray,
+                                color: context.palette.textSecondary,
                               ),
                               onPressed: authCtrl.toggleObscureNewPassword,
                             ),
@@ -129,7 +130,7 @@ class ChangePasswordScreen extends StatelessWidget {
                           focusNode: authCtrl.confirmPasswordFocus,
                           obscureText: authCtrl.obscureConfirmPassword.value,
                           textInputAction: TextInputAction.done,
-                          style: TextStyle(color: AppColors.primaryWhite),
+                          style: TextStyle(color: context.palette.textPrimary),
                           decoration: context.primaryInputDecoration.copyWith(
                             hintText: "Confirm New Password",
                             suffixIcon: IconButton(
@@ -137,7 +138,7 @@ class ChangePasswordScreen extends StatelessWidget {
                                 authCtrl.obscureConfirmPassword.value
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: AppColors.primaryGray,
+                                color: context.palette.textSecondary,
                               ),
                               onPressed: authCtrl.toggleObscureConfirmPassword,
                             ),

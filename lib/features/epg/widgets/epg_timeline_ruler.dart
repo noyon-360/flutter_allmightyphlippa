@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../controllers/epg_timeline_controller.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// Horizontal time axis shared with every `EpgTimelineChannelRow` via
 /// [EpgTimelineController.timelineScrollController] — dragging any row
@@ -33,13 +34,13 @@ class EpgTimelineRuler extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(width: leadingWidth),
-          Expanded(child: _buildScrollableTicks()),
+          Expanded(child: _buildScrollableTicks(context)),
         ],
       ),
     );
   }
 
-  Widget _buildScrollableTicks() {
+  Widget _buildScrollableTicks(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       controller: timelineCtrl.timelineScrollController,
@@ -62,8 +63,8 @@ class EpgTimelineRuler extends StatelessWidget {
                   bottom: 0,
                   child: Text(
                     _tickFormat.format(tickTime),
-                    style: const TextStyle(
-                      color: AppColors.primaryGray,
+                    style: TextStyle(
+                      color: context.palette.textSecondary,
                       fontSize: 10,
                     ),
                   ),

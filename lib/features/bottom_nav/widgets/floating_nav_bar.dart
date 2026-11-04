@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/app_svg.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 /// One tab of the [FloatingNavBar].
 class FloatingNavItem {
@@ -52,19 +53,19 @@ class FloatingNavBar extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: 0),
-            Colors.black.withValues(alpha: 0.85),
+            context.palette.background.withValues(alpha: 0),
+            context.palette.background.withValues(alpha: 0.85),
           ],
         ),
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, 12, 16, bottomMargin),
-        child: _bar(),
+        child: _bar(context),
       ),
     );
   }
 
-  Widget _bar() {
+  Widget _bar(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(_radius),
@@ -85,10 +86,13 @@ class FloatingNavBar extends StatelessWidget {
             height: _height,
             padding: const EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF141414).withValues(alpha: 0.88),
+              color: (context.isDarkTheme
+                      ? const Color(0xFF141414)
+                      : context.palette.surface)
+                  .withValues(alpha: 0.88),
               borderRadius: BorderRadius.circular(_radius),
               border: Border.all(
-                color: AppColors.primaryWhite.withValues(alpha: 0.1),
+                color: context.palette.textPrimary.withValues(alpha: 0.1),
               ),
             ),
             child: Row(
@@ -143,8 +147,8 @@ class _NavItem extends StatelessWidget {
               width: 22,
               height: 22,
               color: isSelected
-                  ? AppColors.primaryWhite
-                  : AppColors.primaryGray,
+                  ? context.palette.textPrimary
+                  : context.palette.textSecondary,
             ),
             const SizedBox(height: 3),
             Text(
@@ -153,8 +157,8 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 color: isSelected
-                    ? AppColors.primaryWhite
-                    : AppColors.primaryGray,
+                    ? context.palette.textPrimary
+                    : context.palette.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),

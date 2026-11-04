@@ -9,6 +9,7 @@ import '../../auth/models/user_response_model.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../controllers/subscription_controller.dart';
 import 'subscription_history_screen.dart';
+import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({super.key});
@@ -19,17 +20,17 @@ class SubscriptionScreen extends StatelessWidget {
     final profileController = Get.find<ProfileController>();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: context.palette.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
+          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
           onPressed: () => Get.back(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history, color: Colors.white),
+            icon: Icon(Icons.history, color: context.palette.textPrimary),
             tooltip: 'Purchase History',
             onPressed: () => Get.to(() => const SubscriptionHistoryScreen()),
           ),
@@ -42,10 +43,10 @@ class SubscriptionScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Subscription',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: context.palette.textPrimary,
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),
@@ -59,7 +60,7 @@ class SubscriptionScreen extends StatelessWidget {
                 controller.customerInfo.value;
                 final user = profileController.userProfile.value;
                 return _buildCurrentPlanBanner(
-                  user,
+                  context, user,
                   // The store's live answer when this device has the
                   // entitlement; otherwise what the backend last heard.
                   willRenew:
@@ -74,16 +75,16 @@ class SubscriptionScreen extends StatelessWidget {
                 final packages = controller.availablePackages;
 
                 if (isOfferingsLoading) {
-                  return const Center(
+                  return Center(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 32),
-                      child: CircularProgressIndicator(color: Colors.white),
+                      child: CircularProgressIndicator(color: context.palette.textPrimary),
                     ),
                   );
                 }
 
                 if (packages.isEmpty) {
-                  return _buildEmptyState(controller);
+                  return _buildEmptyState(context, controller);
                 }
 
                 const order = [
@@ -101,17 +102,17 @@ class SubscriptionScreen extends StatelessWidget {
                   children: sorted
                       .map(
                         (pkg) =>
-                            Obx(() => _buildSubscriptionCard(pkg, controller)),
+                            Obx(() => _buildSubscriptionCard(context, pkg, controller)),
                       )
                       .toList(),
                 );
               }),
 
               const SizedBox(height: 8),
-              _buildSubscribeButton(controller),
+              _buildSubscribeButton(context, controller),
               const SizedBox(height: 8),
 
-              _buildRestoreButton(controller),
+              _buildRestoreButton(context, controller),
               Obx(() {
                 final isActive =
                     profileController
@@ -120,9 +121,9 @@ class SubscriptionScreen extends StatelessWidget {
                         ?.hasActiveSubscription ??
                     false;
                 if (!isActive) return const SizedBox.shrink();
-                return _buildManageButton(controller);
+                return _buildManageButton(context, controller);
               }),
-              _buildRefundButton(controller),
+              _buildRefundButton(context, controller),
               const SizedBox(height: 32),
             ],
           ),
@@ -136,7 +137,7 @@ class SubscriptionScreen extends StatelessWidget {
   /// Always shows the user's current LABBY membership status — Free,
   /// active Premium, or expired/canceled Premium — so a user never has to
   /// infer their plan from side effects like whether a watermark appears.
-  Widget _buildCurrentPlanBanner(UserModel? user, {bool? willRenew}) {
+  Widget _buildCurrentPlanBanner(BuildContext context, UserModel? user, {bool? willRenew}) {
     final isActive = user?.hasActiveSubscription ?? false;
     // The backend resets plan to "free" on expiry, so an expiry date is the
     // reliable sign that this user had a subscription at some point.
@@ -161,13 +162,15 @@ class SubscriptionScreen extends StatelessWidget {
       planName = _planNameFromProductId(user?.subscriptionProductId);
       statusLabel = 'Expired';
       statusColor = AppColors.red;
-      gradientColors = [AppColors.containerBgColor, AppColors.containerBgColor];
+      gradientColors = [context.palette.surface, context.palette.surface];
     } else {
       planName = 'Free Plan';
       statusLabel = 'Free';
-      statusColor = AppColors.primaryGray;
-      gradientColors = [AppColors.containerBgColor, AppColors.containerBgColor];
+      statusColor = context.palette.textSecondary;
+      gradientColors = [context.palette.surface, context.palette.surface];
     }
+    // White reads on the red Premium gradient; the plain cards follow the theme.
+    final onBanner = isActive ? Colors.white : context.palette.textPrimary;
 
     return Container(
       width: double.infinity,
@@ -188,8 +191,8 @@ class SubscriptionScreen extends StatelessWidget {
             children: [
               Text(
                 planName,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: onBanner,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -221,7 +224,7 @@ class SubscriptionScreen extends StatelessWidget {
               Text(
                 'Started: ${_fmtDate(startDate)}',
                 style: TextStyle(
-                  color: Colors.white.withAlpha((0.8 * 255).toInt()),
+                  color: onBanner.withAlpha((0.8 * 255).toInt()),
                   fontSize: 13,
                 ),
               ),
@@ -234,7 +237,7 @@ class SubscriptionScreen extends StatelessWidget {
                     ? 'Expires'
                     : 'Renews'}: ${_fmtDate(expiresAt)}',
                 style: TextStyle(
-                  color: Colors.white.withAlpha((0.8 * 255).toInt()),
+                  color: onBanner.withAlpha((0.8 * 255).toInt()),
                   fontSize: 13,
                 ),
               ),
@@ -247,14 +250,14 @@ class SubscriptionScreen extends StatelessWidget {
 
   // ── Empty State ─────────────────────────────────────────────────────────────
 
-  Widget _buildEmptyState(SubscriptionController controller) {
+  Widget _buildEmptyState(BuildContext context, SubscriptionController controller) {
     return Column(
       children: [
         const Icon(Icons.error_outline, color: Colors.grey, size: 48),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'No plans available right now',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: context.palette.textPrimary),
         ),
         TextButton(
           onPressed: controller.retryFetchOfferings,
@@ -270,7 +273,7 @@ class SubscriptionScreen extends StatelessWidget {
   // ── Plan Cards ──────────────────────────────────────────────────────────────
 
   Widget _buildSubscriptionCard(
-    Package package,
+    BuildContext context, Package package,
     SubscriptionController controller,
   ) {
     // Android identifiers carry the base plan ("month_subscription:monthly-
@@ -289,17 +292,17 @@ class SubscriptionScreen extends StatelessWidget {
         // Remote users start on the preselected plan.
         autofocus: isSelected,
         borderRadius: 18,
-        focusColor: Colors.white,
+        focusColor: context.palette.textPrimary,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: isSelected
                 ? AppColors.red.withAlpha((0.12 * 255).toInt())
-                : Colors.white.withAlpha((0.04 * 255).toInt()),
+                : context.palette.textPrimary.withAlpha((0.04 * 255).toInt()),
             border: Border.all(
               color: isSelected
                   ? AppColors.red
-                  : Colors.white.withAlpha((0.15 * 255).toInt()),
+                  : context.palette.textPrimary.withAlpha((0.15 * 255).toInt()),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -312,7 +315,7 @@ class SubscriptionScreen extends StatelessWidget {
                     Text(
                       _planNameFromProductId(productId),
                       style: TextStyle(
-                        color: isSelected ? AppColors.red : Colors.white70,
+                        color: isSelected ? AppColors.red : context.palette.textPrimary.withValues(alpha: 0.70),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.4,
@@ -349,7 +352,7 @@ class SubscriptionScreen extends StatelessWidget {
                         border: Border.all(
                           color: isSelected
                               ? AppColors.red
-                              : Colors.white.withAlpha((0.3 * 255).toInt()),
+                              : context.palette.textPrimary.withAlpha((0.3 * 255).toInt()),
                           width: 2,
                         ),
                       ),
@@ -374,8 +377,8 @@ class SubscriptionScreen extends StatelessWidget {
                         children: [
                           TextSpan(
                             text: package.storeProduct.priceString,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: context.palette.textPrimary,
                               fontSize: 36,
                               fontWeight: FontWeight.w600,
                             ),
@@ -383,7 +386,7 @@ class SubscriptionScreen extends StatelessWidget {
                           TextSpan(
                             text: ' ${_periodLabel(productId)}',
                             style: TextStyle(
-                              color: Colors.white.withAlpha(
+                              color: context.palette.textPrimary.withAlpha(
                                 (0.7 * 255).toInt(),
                               ),
                               fontSize: 18,
@@ -393,19 +396,19 @@ class SubscriptionScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Divider(color: Colors.white.withAlpha((0.2 * 255).toInt())),
+                    Divider(color: context.palette.textPrimary.withAlpha((0.2 * 255).toInt())),
                     const SizedBox(height: 16),
-                    _buildFeatureRow('Instant sync across devices'),
+                    _buildFeatureRow(context, 'Instant sync across devices'),
                     const SizedBox(height: 12),
-                    _buildFeatureRow('Unlimited EPG navigation'),
+                    _buildFeatureRow(context, 'Unlimited EPG navigation'),
                     const SizedBox(height: 12),
-                    _buildFeatureRow('EPG reminders'),
+                    _buildFeatureRow(context, 'EPG reminders'),
                     const SizedBox(height: 12),
-                    _buildFeatureRow('No watermarks'),
+                    _buildFeatureRow(context, 'No watermarks'),
                     const SizedBox(height: 12),
-                    _buildFeatureRow('No device limit'),
+                    _buildFeatureRow(context, 'No device limit'),
                     const SizedBox(height: 12),
-                    _buildFeatureRow('Offline playback'),
+                    _buildFeatureRow(context, 'Offline playback'),
                   ],
                 ),
               ),
@@ -416,15 +419,15 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureRow(String text) {
+  Widget _buildFeatureRow(BuildContext context, String text) {
     return Row(
       children: [
-        const Icon(Icons.check, color: Colors.white, size: 20),
+        Icon(Icons.check, color: context.palette.textPrimary, size: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(color: context.palette.textPrimary, fontSize: 16),
           ),
         ),
       ],
@@ -433,7 +436,7 @@ class SubscriptionScreen extends StatelessWidget {
 
   // ── Subscribe Button ────────────────────────────────────────────────────────
 
-  Widget _buildSubscribeButton(SubscriptionController controller) {
+  Widget _buildSubscribeButton(BuildContext context, SubscriptionController controller) {
     return Obx(() {
       final selectedId = controller.selectedProductId.value;
       final isCurrentPlan = controller.isCurrentPlan(selectedId);
@@ -451,7 +454,7 @@ class SubscriptionScreen extends StatelessWidget {
               : () => controller.subscribe(selectedPackage),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.red,
-            disabledBackgroundColor: Colors.white.withAlpha(
+            disabledBackgroundColor: context.palette.textPrimary.withAlpha(
               (0.1 * 255).toInt(),
             ),
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -471,7 +474,9 @@ class SubscriptionScreen extends StatelessWidget {
               : Text(
                   isCurrentPlan ? 'Current Plan' : 'Subscribe',
                   style: TextStyle(
-                    color: disabled ? Colors.white38 : Colors.white,
+                    color: disabled
+                        ? context.palette.textPrimary.withValues(alpha: 0.38)
+                        : Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -483,39 +488,39 @@ class SubscriptionScreen extends StatelessWidget {
 
   // ── Restore / Refund ────────────────────────────────────────────────────────
 
-  Widget _buildManageButton(SubscriptionController controller) {
+  Widget _buildManageButton(BuildContext context, SubscriptionController controller) {
     return TextButton(
       onPressed: controller.manageSubscription,
       child: Text(
         'Manage Subscription',
         style: TextStyle(
-          color: Colors.white.withAlpha((0.6 * 255).toInt()),
+          color: context.palette.textPrimary.withAlpha((0.6 * 255).toInt()),
           fontSize: 14,
         ),
       ),
     );
   }
 
-  Widget _buildRestoreButton(SubscriptionController controller) {
+  Widget _buildRestoreButton(BuildContext context, SubscriptionController controller) {
     return TextButton(
       onPressed: controller.restorePurchases,
       child: Text(
         'Restore Purchases',
         style: TextStyle(
-          color: Colors.white.withAlpha((0.5 * 255).toInt()),
+          color: context.palette.textPrimary.withAlpha((0.5 * 255).toInt()),
           fontSize: 14,
         ),
       ),
     );
   }
 
-  Widget _buildRefundButton(SubscriptionController controller) {
+  Widget _buildRefundButton(BuildContext context, SubscriptionController controller) {
     return TextButton(
       onPressed: controller.requestRefund,
       child: Text(
         'Request a Refund',
         style: TextStyle(
-          color: Colors.white.withAlpha((0.35 * 255).toInt()),
+          color: context.palette.textPrimary.withAlpha((0.35 * 255).toInt()),
           fontSize: 13,
         ),
       ),
