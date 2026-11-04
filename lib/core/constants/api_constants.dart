@@ -59,9 +59,11 @@ class AuthEndpoints {
   final String login = '$_base/login';
   final String register = '$_base/register';
 
-  // final String forgetPassSendOtp = '$_base/forget';
-  // final String verifyOtp = '$_base/verify-otp';
-  // final String resetPass = '$_base/reset-password';
+  // Forgot password: /forget emails an OTP, /reset-password takes
+  // {email, otp, password}. The backend's /verify route is not part of this
+  // flow (it checks different fields than /forget writes).
+  final String forgetPassSendOtp = '$_base/forget';
+  final String resetPass = '$_base/reset-password';
 
   final String changePassword = '$_base/change-password';
 

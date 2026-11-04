@@ -107,5 +107,27 @@ class AppTheme {
       titleTextStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
       centerTitle: false,
     ),
+
+    // Focus highlights only appear after remote/keyboard input (never on
+    // touch), so these only matter on Android TV — where the Material
+    // defaults are too faint to see on this dark theme from the sofa.
+    focusColor: _focusHighlight,
+    iconButtonTheme: IconButtonThemeData(style: focusStyle),
+    textButtonTheme: TextButtonThemeData(style: focusStyle),
+    elevatedButtonTheme: ElevatedButtonThemeData(style: focusStyle),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: focusStyle),
+  );
+
+  static const Color _focusHighlight = Color(0x52FFFFFF); // white, 32%
+
+  // Only the focused overlay is set; every other state resolves to null and
+  // falls back to each button's default. An IconButton given its own
+  // `color:` builds a style that outranks the theme, so pass this as its
+  // `style:` (e.g. a PopupMenuButton's) to keep the highlight visible.
+  static final ButtonStyle focusStyle = ButtonStyle(
+    overlayColor: WidgetStateProperty.resolveWith(
+      (states) =>
+          states.contains(WidgetState.focused) ? _focusHighlight : null,
+    ),
   );
 }

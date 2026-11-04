@@ -7,7 +7,7 @@ import '../../../core/constants/assest_const.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/secure_store_services.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
-import 'login_screen.dart';
+import '../../app/screens/app_decision_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -181,9 +181,11 @@ class WelcomeScreen extends StatelessWidget {
                   KeyConstants.onboardingStatus,
                   'true',
                 );
-                
-                Get.off(
-                  () => const LoginScreen(),
+
+                // Let the usual start-up routing decide: someone already
+                // logged in goes to their playlists/home, not to Login again.
+                Get.offAll(
+                  () => const AppDecisionScreen(),
                   transition: Transition.rightToLeft,
                 );
               },

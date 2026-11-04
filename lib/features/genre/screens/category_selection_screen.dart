@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../genre/controllers/genre_controller.dart';
 
@@ -57,14 +58,20 @@ class CategorySelectionScreen extends StatelessWidget {
             return Obx(() {
               final isSelected = selectedCategoryId.value == categoryId;
 
-              return GestureDetector(
+              return TvFocusWrapper(
                 onTap: () {
                   onCategorySelected(categoryId);
                   Get.back();
                 },
+                // Remote users start on the current category.
+                autofocus: isSelected,
+                borderRadius: 12,
+                focusColor: AppColors.primaryWhite,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.red : AppColors.containerBgColor,
+                    color: isSelected
+                        ? AppColors.red
+                        : AppColors.containerBgColor,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
@@ -79,7 +86,9 @@ class CategorySelectionScreen extends StatelessWidget {
                       color: isSelected
                           ? AppColors.primaryWhite
                           : AppColors.primaryGray,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,

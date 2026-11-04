@@ -41,6 +41,30 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
+  NetworkResult<void> forgetPassword(String email) {
+    return _apiClient.post(
+      endpoint: ApiConstants.auth.forgetPassSendOtp,
+      data: {'email': email},
+      fromJsonT: (json) => {},
+    );
+  }
+
+  @override
+  NetworkResult<void> resetPassword({
+    required String email,
+    required String otp,
+    required String password,
+  }) {
+    return _apiClient.post(
+      endpoint: ApiConstants.auth.resetPass,
+      // The backend compares the OTP with `!==` against a string, so it must
+      // be sent as a string, never parsed to an int.
+      data: {'email': email, 'otp': otp, 'password': password},
+      fromJsonT: (json) => {},
+    );
+  }
+
+  @override
   NetworkResult<void> deleteAccount() {
     return _apiClient.delete(
       endpoint: ApiConstants.user.deleteAccount,

@@ -115,7 +115,12 @@ class ApiClient {
       DPrint.info("Refreshing ...");
 
       if (refreshToken == null) {
-        await _logout();
+        // No refresh token and no access token means nobody was logged in
+        // (e.g. first launch, still on Welcome) — there's no session to end,
+        // and navigating to Login here would pull the user off Welcome.
+        if (await _authStorageService.getAccessToken() != null) {
+          await _logout();
+        }
         return false;
       }
 

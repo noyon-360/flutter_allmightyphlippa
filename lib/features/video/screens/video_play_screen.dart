@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_almightyflippa/core/services/airplay_service.dart';
+import 'package:flutter_almightyflippa/core/utils/tv_device.dart';
 import 'package:flutter_almightyflippa/core/services/premium_service.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/cast_airplay_buttons.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
@@ -40,9 +42,11 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   final controller = Get.put(VideoPlayController());
   final ScrollController _scrollController = ScrollController();
   final CastService _castService = Get.find<CastService>();
+  final GlobalKey<VideoState> _videoKey = GlobalKey<VideoState>();
 
   late final PiPService _pipService;
   PiPStatus _pipStatus = PiPStatus.disabled;
+  Worker? _pipArmWorker;
 
   @override
   void initState() {
@@ -55,7 +59,16 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
       },
     );
     _pipService.initialize().then((_) {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      setState(() {});
+      if (controller.isVideoInitialized.value) _pipService.armAutoEnter();
+    });
+    // Android: once there's a picture to show, let PiP start by itself when
+    // the user leaves the app (Home / app switcher). Asking for PiP from the
+    // lifecycle callback instead is too late on Android — the activity is
+    // already paused, the request is rejected and the whole app minimizes.
+    _pipArmWorker = ever(controller.isVideoInitialized, (ready) {
+      if (ready) _pipService.armAutoEnter();
     });
     // Pause local playback while casting, resume when the cast ends.
     _castService.onCastStarted = () {
@@ -78,7 +91,9 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if ((state == AppLifecycleState.hidden ||
+    // iOS only: Android enters PiP through the armed "leave" hint above.
+    if (Platform.isIOS &&
+        (state == AppLifecycleState.hidden ||
             state == AppLifecycleState.paused) &&
         _pipService.isAvailable &&
         controller.isVideoInitialized.value) {
@@ -103,6 +118,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   @override
   void dispose() {
     _scrollController.dispose();
+    _pipArmWorker?.dispose();
     _pipService.dispose();
     _castService.onCastStarted = null;
     _castService.onCastStopped = null;
@@ -114,6 +130,39 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
   @override
   Widget build(BuildContext context) {
     return _buildMainContent(context);
+  }
+
+  /// Remote keys for the TV player (see the desktop controls in the build).
+  /// Up/Down are deliberately left unbound so focus can still move to the
+  /// buttons above and the episodes/details below the embedded player.
+  Map<ShortcutActivator, VoidCallback> _tvPlayerKeys({
+    required bool fullscreen,
+  }) {
+    final player = controller.player;
+    void seekBy(Duration offset) => player.seek(player.state.position + offset);
+    // Embedded: OK goes fullscreen. Fullscreen: OK plays/pauses.
+    void onSelect() => fullscreen
+        ? player.playOrPause()
+        : _videoKey.currentState?.enterFullscreen();
+
+    return {
+      const SingleActivator(LogicalKeyboardKey.select): onSelect,
+      const SingleActivator(LogicalKeyboardKey.enter): onSelect,
+      const SingleActivator(LogicalKeyboardKey.gameButtonA): onSelect,
+      const SingleActivator(LogicalKeyboardKey.mediaPlayPause):
+          player.playOrPause,
+      const SingleActivator(LogicalKeyboardKey.mediaPlay): player.play,
+      const SingleActivator(LogicalKeyboardKey.mediaPause): player.pause,
+      const SingleActivator(LogicalKeyboardKey.space): player.playOrPause,
+      const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+          seekBy(const Duration(seconds: -10)),
+      const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+          seekBy(const Duration(seconds: 10)),
+      const SingleActivator(LogicalKeyboardKey.mediaRewind): () =>
+          seekBy(const Duration(seconds: -30)),
+      const SingleActivator(LogicalKeyboardKey.mediaFastForward): () =>
+          seekBy(const Duration(seconds: 30)),
+    };
   }
 
   Widget _buildMainContent(BuildContext context) {
@@ -144,10 +193,19 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                   // Fixed Video Player
                   ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight,
+                      // On a TV a full-width 16:9 player fills the whole
+                      // (landscape) screen and leaves the details, episodes
+                      // and related titles below with zero height — still
+                      // focusable, but invisible. Cap it and let the 16:9
+                      // box shrink and centre instead.
+                      maxHeight: TvDevice.isTv
+                          ? constraints.maxHeight * 0.55
+                          : constraints.maxHeight,
                     ),
                     child: Container(
-                      width: MediaQuery.of(context).size.width,
+                      width: TvDevice.isTv
+                          ? null
+                          : MediaQuery.of(context).size.width,
                       color: Colors.black,
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
@@ -198,6 +256,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                 ),
                                 Center(
                                   child: TvFocusWrapper(
+                                    // Remote users land on Play.
+                                    autofocus: TvDevice.isTv,
                                     onTap: () {
                                       if (controller.currentType.value ==
                                           ServerType.series) {
@@ -299,13 +359,38 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                   seekBarThumbSize: 18.0,
                                   seekBarHeight: 3.0,
                                 ),
-                                child: Focus(
-                                  autofocus: true,
-                                  child: Video(
-                                    controller: controller.videoController,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
+                                // On TV: media_kit's desktop controls, which
+                                // (unlike the touch ones) take key input,
+                                // driven by a remote-friendly key map.
+                                child: MaterialDesktopVideoControlsTheme(
+                                  normal: MaterialDesktopVideoControlsThemeData(
+                                    keyboardShortcuts: _tvPlayerKeys(
+                                      fullscreen: false,
+                                    ),
+                                  ),
+                                  fullscreen:
+                                      MaterialDesktopVideoControlsThemeData(
+                                        keyboardShortcuts: _tvPlayerKeys(
+                                          fullscreen: true,
+                                        ),
+                                      ),
+                                  // On TV this wrapper must not take focus
+                                  // itself: key events only bubble *up* from
+                                  // the focused node, so they'd never reach
+                                  // the desktop controls' key bindings below.
+                                  child: Focus(
+                                    autofocus: !TvDevice.isTv,
+                                    canRequestFocus: !TvDevice.isTv,
+                                    child: Video(
+                                      key: _videoKey,
+                                      controller: controller.videoController,
+                                      controls: TvDevice.isTv
+                                          ? MaterialDesktopVideoControls
+                                          : AdaptiveVideoControls,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -585,9 +670,12 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                           ),
                                         ),
                                         Obx(() {
-                                          if (!controller
-                                              .isVideoInitialized
-                                              .value) {
+                                          // No downloads on TV (little
+                                          // storage, nowhere to watch offline).
+                                          if (TvDevice.isTv ||
+                                              !controller
+                                                  .isVideoInitialized
+                                                  .value) {
                                             return const SizedBox.shrink();
                                           }
                                           final vid = controller.currentVideoId;
@@ -1201,28 +1289,31 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                             _showSubtitleDialog(context);
                           },
                         ),
-                        const SizedBox(height: 16),
-                        // Google Cast
-                        _buildSettingRow(
-                          label: "Google Cast",
-                          value: Obx(
-                            () => Text(
-                              _castService.isCasting.value
-                                  ? "Connected"
-                                  : "Off",
-                              style: const TextStyle(color: Colors.white),
+                        // Casting from a TV makes no sense — hide it there.
+                        if (!TvDevice.isTv) ...[
+                          const SizedBox(height: 16),
+                          // Google Cast
+                          _buildSettingRow(
+                            label: "Google Cast",
+                            value: Obx(
+                              () => Text(
+                                _castService.isCasting.value
+                                    ? "Connected"
+                                    : "Off",
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ),
+                            onTap: () {
+                              if (_castService.isCasting.value) {
+                                _castService.stopCasting();
+                                Navigator.pop(context);
+                              } else {
+                                Navigator.pop(context);
+                                _showCastPickerDialog(outerContext);
+                              }
+                            },
                           ),
-                          onTap: () {
-                            if (_castService.isCasting.value) {
-                              _castService.stopCasting();
-                              Navigator.pop(context);
-                            } else {
-                              Navigator.pop(context);
-                              _showCastPickerDialog(outerContext);
-                            }
-                          },
-                        ),
+                        ],
                         if (Platform.isIOS) ...[
                           const SizedBox(height: 16),
                           _buildSettingRow(

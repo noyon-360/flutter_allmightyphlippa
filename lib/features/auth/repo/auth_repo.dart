@@ -10,4 +10,10 @@ abstract class AuthRepo {
   NetworkResult<UserModel> register(RegisterRequestModel request);
   NetworkResult<void> changePassword(ChangePasswordRequestModel request);
   NetworkResult<void> deleteAccount();
+  NetworkResult<void> forgetPassword(String email);
+  NetworkResult<void> resetPassword({
+    required String email,
+    required String otp,
+    required String password,
+  });
 }

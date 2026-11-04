@@ -21,6 +21,11 @@
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
+    <!-- The Wi-Fi permissions above would otherwise make Wi-Fi a required
+         feature, hiding the app from Ethernet-only TV boxes on Google Play. -->
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
     
     <application
         android:label="LABBY"
@@ -81,6 +86,12 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Lets url_launcher's canLaunchUrl() see browsers / Google Play for
+             https links (subscription management) on Android 11+. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
         </intent>
     </queries>
 </manifest>

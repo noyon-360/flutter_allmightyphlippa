@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/utils/tv_device.dart';
 import '../models/app_notification_model.dart';
 import '../services/notification_inbox_service.dart';
 
@@ -88,6 +90,10 @@ class NotificationsScreen extends StatelessWidget {
                     notification.data,
                   );
                 },
+                // A remote can't swipe: give TV a delete button instead.
+                onDelete: TvDevice.isTv
+                    ? () => inbox.remove(notification.id)
+                    : null,
               ),
             );
           },
@@ -134,15 +140,34 @@ class _NotificationCard extends StatelessWidget {
   final AppNotificationModel notification;
   final VoidCallback onTap;
 
-  const _NotificationCard({required this.notification, required this.onTap});
+  /// Shown as a delete button when set (TV, where swipe-to-dismiss can't be
+  /// done with a remote).
+  final VoidCallback? onDelete;
+
+  const _NotificationCard({
+    required this.notification,
+    required this.onTap,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isRead = notification.isRead;
+    final card = _buildCard();
+    // The InkWell's focus highlight is painted under the card's opaque
+    // background, so on TV use the focus ring instead.
+    if (TvDevice.isTv) {
+      return TvFocusWrapper(onTap: onTap, borderRadius: 14, child: card);
+    }
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
-      child: Container(
+      child: card,
+    );
+  }
+
+  Widget _buildCard() {
+    final isRead = notification.isRead;
+    return Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.containerBgColor,
@@ -204,9 +229,14 @@ class _NotificationCard extends StatelessWidget {
                 ],
               ),
             ),
+            if (onDelete != null)
+              IconButton(
+                tooltip: 'Delete',
+                icon: const Icon(Icons.delete_outline, color: AppColors.red),
+                onPressed: onDelete,
+              ),
           ],
         ),
-      ),
     );
   }
 }

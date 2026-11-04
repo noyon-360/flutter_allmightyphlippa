@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../epg/models/epg_program_model.dart';
 import '../../epg/services/epg_timeline_cache.dart';
@@ -82,12 +83,19 @@ class _LiveChannelProgramStripState extends State<LiveChannelProgramStrip> {
       final loaded = cache.isLoadedAround(widget.streamId, now);
       final programs = cache.peekAround(widget.streamId, now);
 
+      // No guide data for this channel: show nothing. (An empty strip used
+      // to shrink to its padding and leave a stray grey sliver under the
+      // video.)
+      if (loaded && programs.isEmpty) return const SizedBox.shrink();
+
       final currentIndex = programs.indexWhere(
         (p) => p.startTime.isBefore(now) && p.endTime.isAfter(now),
       );
 
       return Container(
-        height: 58,
+        // Grows with the text size (larger fonts on TV, or the user's own
+        // font-size setting) so the two lines of each chip still fit.
+        height: MediaQuery.textScalerOf(context).scale(58),
         color: AppColors.containerBgColor,
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         child: !loaded
@@ -101,8 +109,6 @@ class _LiveChannelProgramStripState extends State<LiveChannelProgramStrip> {
                   ),
                 ),
               )
-            : programs.isEmpty
-            ? const SizedBox.shrink()
             : _buildStrip(programs, currentIndex, now),
       );
     });
@@ -147,7 +153,7 @@ class _LiveChannelProgramStripState extends State<LiveChannelProgramStrip> {
         final isPast = !isCurrent && program.endTime.isBefore(now);
         final isFuture = !isCurrent && !isPast;
 
-        return GestureDetector(
+        return TvFocusWrapper(
           onTap: () {
             showEpgProgramInfoSheet(
               context,
@@ -157,15 +163,21 @@ class _LiveChannelProgramStripState extends State<LiveChannelProgramStrip> {
               isFuture: isFuture,
             );
           },
+          borderRadius: 8,
+          focusColor: AppColors.primaryWhite,
           child: Container(
-            width: _kChipWidth,
+            // The focus ring takes 2px a side, keeping each item at
+            // _kChipWidth so the auto-scroll offset above stays right.
+            width: _kChipWidth - 4,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: isCurrent ? AppColors.red : AppColors.primaryBlack,
               borderRadius: BorderRadius.circular(6),
               border: isCurrent
                   ? null
-                  : Border.all(color: AppColors.primaryWhite.withValues(alpha: 0.08)),
+                  : Border.all(
+                      color: AppColors.primaryWhite.withValues(alpha: 0.08),
+                    ),
             ),
             alignment: Alignment.centerLeft,
             child: Column(
@@ -179,9 +191,7 @@ class _LiveChannelProgramStripState extends State<LiveChannelProgramStrip> {
                         ? AppColors.primaryGray
                         : AppColors.primaryWhite,
                     fontSize: 11,
-                    fontWeight: isCurrent
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

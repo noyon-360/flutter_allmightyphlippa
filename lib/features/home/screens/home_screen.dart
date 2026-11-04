@@ -11,6 +11,7 @@ import 'package:flutter_almightyflippa/features/video/screens/video_play_screen.
 import 'package:get/get.dart';
 
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import '../../../core/utils/tv_device.dart';
 import '../../../core/services/watch_history_service.dart';
 import '../../history/screens/history_screen.dart';
 import '../../notifications/widgets/notification_bell.dart';
@@ -70,6 +71,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Keeps the first item per (case-insensitive) name, in order. Items
+  /// without a name are always kept — they can't be told apart by name.
+  static List<T> _uniqueByName<T>(List<T> items, String Function(T) nameOf) {
+    final seen = <String>{};
+    return [
+      for (final item in items)
+        if (nameOf(item).trim().isEmpty ||
+            seen.add(nameOf(item).trim().toLowerCase()))
+          item,
+    ];
+  }
+
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -79,17 +92,21 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  AssetsConstants.images.logo,
-                  height: 45,
-                  width: 45,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.flash_on, color: Colors.amber, size: 40),
+              // On TV the navigation rail already shows the logo.
+              if (TvDevice.isTv)
+                const SizedBox.shrink()
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    AssetsConstants.images.logo,
+                    height: 45,
+                    width: 45,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.flash_on, color: Colors.amber, size: 40),
+                  ),
                 ),
-              ),
               const NotificationBell(),
             ],
           ),
@@ -148,7 +165,11 @@ class _HomeScreenState extends State<HomeScreen> {
         return _buildShimmerList();
       }
 
-      if (movieCtrl.movies.isEmpty) {
+      // The provider files the same film under several categories (separate
+      // stream IDs), so the same title can repeat — show it once here.
+      final movies = _uniqueByName(movieCtrl.movies, (m) => m.name);
+
+      if (movies.isEmpty) {
         return const SizedBox(
           height: 200,
           child: Center(
@@ -165,9 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: movieCtrl.movies.length,
+          itemCount: movies.length,
           itemBuilder: (context, index) {
-            final movie = movieCtrl.movies[index];
+            final movie = movies[index];
             return TvFocusWrapper(
               onTap: () {
                 Get.to(
@@ -231,7 +252,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return _buildShimmerList();
       }
 
-      if (seriesCtrl.series.isEmpty) {
+      final seriesList = _uniqueByName(
+        seriesCtrl.series,
+        (s) => s.name ?? '',
+      );
+
+      if (seriesList.isEmpty) {
         return const SizedBox(
           height: 200,
           child: Center(
@@ -248,9 +274,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: seriesCtrl.series.length,
+          itemCount: seriesList.length,
           itemBuilder: (context, index) {
-            final series = seriesCtrl.series[index];
+            final series = seriesList[index];
             return TvFocusWrapper(
               onTap: () {
                 if (series.seriesId != null) {

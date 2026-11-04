@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/tv_device.dart';
 import '../../epg/services/epg_timeline_cache.dart';
 import '../controllers/live_video_play_controller.dart';
 import 'track_picker_dialog.dart';
@@ -32,10 +34,16 @@ class LiveVideoControls extends StatefulWidget {
   final bool isFullScreen;
   final VoidCallback onToggleFullScreen;
   final VoidCallback onBack;
-  final VoidCallback onSettings;
+
+  /// Null hides the settings button (on TV it only offered casting).
+  final VoidCallback? onSettings;
 
   /// Null when picture-in-picture isn't available on this device.
   final VoidCallback? onPictureInPicture;
+
+  /// Remote/keyboard channel switching (next / previous in the channel list).
+  final VoidCallback? onNextChannel;
+  final VoidCallback? onPreviousChannel;
 
   const LiveVideoControls({
     super.key,
@@ -45,8 +53,10 @@ class LiveVideoControls extends StatefulWidget {
     required this.isFullScreen,
     required this.onToggleFullScreen,
     required this.onBack,
-    required this.onSettings,
+    this.onSettings,
     this.onPictureInPicture,
+    this.onNextChannel,
+    this.onPreviousChannel,
   });
 
   @override
@@ -58,6 +68,12 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
   Timer? _hideTimer;
   Timer? _tickTimer;
 
+  /// Wraps the whole video area. Holds focus while the overlay is hidden, so
+  /// remote keys land here instead of on a button nobody can see.
+  final FocusNode _videoFocus = FocusNode(debugLabel: 'LiveVideoControls');
+  final FocusNode _playPauseFocus = FocusNode(debugLabel: 'LivePlayPause');
+  Worker? _bufferingWorker;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +82,27 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
       DateTime.now(),
     );
     _resetHideTimer();
+    if (TvDevice.isTv) {
+      // Start a remote user on play/pause, with the overlay showing — or on
+      // the video area while the buffering spinner stands in for the button.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_playPauseFocus.context != null) {
+          _playPauseFocus.requestFocus();
+        } else {
+          _videoFocus.requestFocus();
+        }
+      });
+      // ...and hand focus to play/pause once buffering ends and it appears.
+      _bufferingWorker = ever(widget.controller.isBuffering, (buffering) {
+        if (buffering || !_controlsVisible) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _videoFocus.hasPrimaryFocus) {
+            _playPauseFocus.requestFocus();
+          }
+        });
+      });
+    }
     // The progress bar and current-program title advance with the wall
     // clock even when no video/player event fires — repaint periodically
     // so they don't go stale during a long-idle live view.
@@ -89,20 +126,105 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
   void dispose() {
     _hideTimer?.cancel();
     _tickTimer?.cancel();
+    _bufferingWorker?.dispose();
+    _videoFocus.dispose();
+    _playPauseFocus.dispose();
     super.dispose();
   }
 
   void _resetHideTimer() {
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 5), () {
-      if (mounted) setState(() => _controlsVisible = false);
+      if (mounted) _hideControls();
     });
   }
 
-  void _toggleControls() {
-    setState(() => _controlsVisible = !_controlsVisible);
-    if (_controlsVisible) _resetHideTimer();
+  void _showControls() {
+    setState(() => _controlsVisible = true);
+    _resetHideTimer();
+    // The overlay only becomes focusable again on the next frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _videoFocus.hasPrimaryFocus) {
+        _playPauseFocus.requestFocus();
+      }
+    });
   }
+
+  void _hideControls() {
+    // Focus inside the overlay that's about to become unfocusable moves to
+    // the video area itself; focus elsewhere (e.g. the program strip) stays.
+    if (_videoFocus.hasFocus) _videoFocus.requestFocus();
+    setState(() => _controlsVisible = false);
+  }
+
+  void _toggleControls() {
+    if (_controlsVisible) {
+      _hideControls();
+    } else {
+      _showControls();
+    }
+  }
+
+  /// Remote / keyboard handling for the video area. Key events from the
+  /// focused overlay button bubble up through here too.
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    // These act straight away, overlay or not.
+    if (key == LogicalKeyboardKey.mediaPlayPause ||
+        key == LogicalKeyboardKey.mediaPlay ||
+        key == LogicalKeyboardKey.mediaPause) {
+      if (event is KeyDownEvent) _togglePlayPause();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.channelUp ||
+        key == LogicalKeyboardKey.pageUp) {
+      if (event is KeyDownEvent) widget.onNextChannel?.call();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.channelDown ||
+        key == LogicalKeyboardKey.pageDown) {
+      if (event is KeyDownEvent) widget.onPreviousChannel?.call();
+      return KeyEventResult.handled;
+    }
+
+    if (_controlsVisible) {
+      _resetHideTimer();
+      // OK on the video area itself (no button focused) plays/pauses.
+      if (node.hasPrimaryFocus && _isSelectKey(key)) {
+        if (event is KeyDownEvent) _togglePlayPause();
+        return KeyEventResult.handled;
+      }
+      // Otherwise normal focus movement / activation.
+      return KeyEventResult.ignored;
+    }
+
+    // Overlay hidden. On TV, Up/Down surf channels like a set-top box.
+    if (TvDevice.isTv && key == LogicalKeyboardKey.arrowUp) {
+      if (event is KeyDownEvent) widget.onPreviousChannel?.call();
+      return KeyEventResult.handled;
+    }
+    if (TvDevice.isTv && key == LogicalKeyboardKey.arrowDown) {
+      if (event is KeyDownEvent) widget.onNextChannel?.call();
+      return KeyEventResult.handled;
+    }
+    // OK / Left / Right just bring the overlay back — never press a button
+    // the viewer can't see.
+    if (_isSelectKey(key) ||
+        key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight) {
+      if (event is KeyDownEvent) _showControls();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  static bool _isSelectKey(LogicalKeyboardKey key) =>
+      key == LogicalKeyboardKey.select ||
+      key == LogicalKeyboardKey.enter ||
+      key == LogicalKeyboardKey.numpadEnter ||
+      key == LogicalKeyboardKey.gameButtonA;
 
   void _togglePlayPause() {
     widget.controller.player.playOrPause();
@@ -141,92 +263,106 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Background tap-to-toggle layer, sized to the whole video area but
-        // placed *behind* everything below as a sibling — not wrapped
-        // around it. Nesting a full-area GestureDetector around the
-        // buttons made every button tap race the background toggle in the
-        // same gesture arena, which is what made play/pause feel like it
-        // "did nothing": tapping the button could also fire the toggle and
-        // instantly hide the whole overlay (button included) before the
-        // state change was visible. As siblings, an on-top button's own
-        // GestureDetector always claims its own taps first; only taps that
-        // land outside any button fall through to this layer.
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _toggleControls,
+    return Focus(
+      focusNode: _videoFocus,
+      onKeyEvent: _handleKey,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background tap-to-toggle layer, sized to the whole video area but
+          // placed *behind* everything below as a sibling — not wrapped
+          // around it. Nesting a full-area GestureDetector around the
+          // buttons made every button tap race the background toggle in the
+          // same gesture arena, which is what made play/pause feel like it
+          // "did nothing": tapping the button could also fire the toggle and
+          // instantly hide the whole overlay (button included) before the
+          // state change was visible. As siblings, an on-top button's own
+          // GestureDetector always claims its own taps first; only taps that
+          // land outside any button fall through to this layer.
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _toggleControls,
+            ),
           ),
-        ),
-        // One Center() shared by the spinner and the button (see the class
-        // doc comment) — only one of the two is ever present at a time.
-        Center(
-          child: Obx(
-            () => controller.isBuffering.value
-                ? const IgnorePointer(
-                    child: CircularProgressIndicator(color: AppColors.red),
-                  )
-                : AnimatedOpacity(
-                    opacity: _controlsVisible ? 1 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: IgnorePointer(
-                      ignoring: !_controlsVisible,
-                      child: Material(
-                        color: Colors.black45,
-                        shape: const CircleBorder(),
-                        child: IconButton(
-                          iconSize: 36,
-                          color: Colors.white,
-                          onPressed: _togglePlayPause,
-                          icon: Icon(
-                            controller.isPlaying.value
-                                ? Icons.pause
-                                : Icons.play_arrow,
+          // One Center() shared by the spinner and the button (see the class
+          // doc comment) — only one of the two is ever present at a time.
+          Center(
+            child: Obx(
+              () => controller.isBuffering.value
+                  ? const IgnorePointer(
+                      child: CircularProgressIndicator(color: AppColors.red),
+                    )
+                  : AnimatedOpacity(
+                      opacity: _controlsVisible ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IgnorePointer(
+                        ignoring: !_controlsVisible,
+                        child: ExcludeFocus(
+                          excluding: !_controlsVisible,
+                          child: Material(
+                            color: Colors.black45,
+                            shape: const CircleBorder(),
+                            child: IconButton(
+                              focusNode: _playPauseFocus,
+                              focusColor: AppColors.red.withValues(alpha: 0.7),
+                              iconSize: 36,
+                              color: Colors.white,
+                              onPressed: _togglePlayPause,
+                              icon: Icon(
+                                controller.isPlaying.value
+                                    ? Icons.pause
+                                    : Icons.play_arrow,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-          ),
-        ),
-        AnimatedOpacity(
-          opacity: _controlsVisible ? 1 : 0,
-          duration: const Duration(milliseconds: 200),
-          child: IgnorePointer(
-            ignoring: !_controlsVisible,
-            child: Stack(
-              children: [
-                const IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: Colors.black26),
-                    child: SizedBox.expand(),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: SafeArea(bottom: false, child: _buildTopBar()),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Obx(() => _buildBottomBar()),
-                ),
-              ],
             ),
           ),
-        ),
-      ],
+          AnimatedOpacity(
+            opacity: _controlsVisible ? 1 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: IgnorePointer(
+              ignoring: !_controlsVisible,
+              child: ExcludeFocus(
+                excluding: !_controlsVisible,
+                child: Stack(
+                  children: [
+                    const IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: Colors.black26),
+                        child: SizedBox.expand(),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: SafeArea(bottom: false, child: _buildTopBar()),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Obx(() => _buildBottomBar()),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _topIcon(IconData icon, VoidCallback onPressed, {String? tooltip}) {
     return IconButton(
       tooltip: tooltip,
+      // Only shown after remote/keyboard input, never on touch.
+      focusColor: Colors.white30,
       visualDensity: VisualDensity.compact,
       iconSize: 24,
       color: Colors.white,
@@ -297,7 +433,8 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
               widget.onPictureInPicture!,
               tooltip: 'Picture in picture',
             ),
-          _topIcon(Icons.settings, widget.onSettings, tooltip: 'Settings'),
+          if (widget.onSettings != null)
+            _topIcon(Icons.settings, widget.onSettings!, tooltip: 'Settings'),
         ],
       ),
     );
@@ -373,6 +510,7 @@ class _LiveVideoControlsState extends State<LiveVideoControls> {
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
+                focusColor: Colors.white30,
                 iconSize: 22,
                 color: Colors.white,
                 onPressed: () {

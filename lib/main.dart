@@ -1,7 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/tv_layout.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/tv_shortcuts.dart';
 import 'package:flutter_almightyflippa/core/config/app_theme.dart';
+import 'package:flutter_almightyflippa/core/utils/tv_device.dart';
 import 'package:flutter_almightyflippa/features/app/screens/app_decision_screen.dart';
 import 'package:get/get.dart';
 import 'core/init/app_initializer.dart';
@@ -34,6 +37,9 @@ class MyApp extends StatelessWidget {
       title: 'LABBY TV',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
+      builder: TvDevice.isTv
+          ? (context, child) => TvShortcuts(child: TvLayout(child: child!))
+          : null,
 
       home: const AppDecisionScreen(),
     );

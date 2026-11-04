@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/core/common/widgets/app_scaffold.dart';
 import '/core/common/widgets/button_widgets.dart';
+import '/core/config/app_theme.dart';
 import '/core/constants/app_colors.dart';
 import '/features/profile/controller/profile_controller.dart';
 import 'package:flutx_core/flutx_core.dart';
@@ -187,6 +188,7 @@ class PlaylistListScreen extends StatelessWidget {
                               Icons.more_vert,
                               color: Colors.white,
                             ),
+                            style: AppTheme.focusStyle,
                             color: AppColors.containerBgColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

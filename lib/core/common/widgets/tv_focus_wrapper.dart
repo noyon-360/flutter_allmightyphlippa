@@ -7,6 +7,11 @@ class TvFocusWrapper extends StatefulWidget {
   final VoidCallback? onTap;
   final double borderRadius;
   final FocusNode? focusNode;
+  final bool autofocus;
+
+  /// Border shown while focused; override it where the child is already red
+  /// (e.g. a selected chip) so the focus ring stays visible.
+  final Color focusColor;
 
   const TvFocusWrapper({
     super.key,
@@ -14,6 +19,8 @@ class TvFocusWrapper extends StatefulWidget {
     this.onTap,
     this.borderRadius = 8.0,
     this.focusNode,
+    this.autofocus = false,
+    this.focusColor = AppColors.red,
   });
 
   @override
@@ -27,6 +34,9 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
   Widget build(BuildContext context) {
     return InkWell(
       focusNode: widget.focusNode,
+      autofocus: widget.autofocus,
+      // The border below is the focus indicator; skip the theme's fill.
+      focusColor: Colors.transparent,
       onFocusChange: (hasFocus) {
         setState(() {
           _isFocused = hasFocus;
@@ -47,7 +57,7 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           border: Border.all(
-            color: _isFocused ? AppColors.red : Colors.transparent,
+            color: _isFocused ? widget.focusColor : Colors.transparent,
             width: 2,
           ),
         ),

@@ -1,164 +1,211 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutx_core/core/theme/gap.dart';
-// import 'package:flutx_core/core/validation/validators.dart';
-// import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutx_core/flutx_core.dart';
+import 'package:get/get.dart';
 
-// import '../../../../core/common/widgets/app_scaffold.dart';
-// import '../../../../core/constants/app_colors.dart';
+import '/core/common/widgets/app_scaffold.dart';
+import '/core/common/widgets/button_widgets.dart';
+import '/core/common/widgets/tv_focus_wrapper.dart';
+import '/core/constants/app_colors.dart';
+import '/core/extensions/input_decoration_extensions.dart';
+import '/features/auth/controller/forgot_password_controller.dart';
 
-// import 'otp_verification_to_complete_register.dart';
-// import 'login_screen.dart';
+/// Step 2 of forgot password: enter the emailed OTP and a new password.
+/// Pushed by [ForgotPasswordController.sendOtp], which owns the controller.
+class ResetPasswordScreen extends StatelessWidget {
+  const ResetPasswordScreen({super.key});
 
-// class ResetPasswordScreen extends StatefulWidget {
-//   const ResetPasswordScreen({super.key});
+  static const int _otpLength = 6;
 
-//   @override
-//   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
-// }
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.find<ForgotPasswordController>();
 
-// class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-//   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-//   final FocusNode _emailFocus = FocusNode();
-//   final TextEditingController _emailController = TextEditingController();
+    return AppScaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.adaptive.arrow_back, color: AppColors.primaryWhite),
+          onPressed: () => Get.back(),
+        ),
+      ),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Form(
+              key: ctrl.resetFormKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Gap.h24,
+                  Text(
+                    "Reset Password",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.primaryWhite,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Gap.h12,
+                  Text(
+                    "Enter the code sent to ${ctrl.email} and choose a new password.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.primaryGray),
+                  ),
+                  Gap.h24,
+                  Obx(
+                    () => ctrl.errorMessage.value.isNotEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Text(
+                              ctrl.errorMessage.value,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: AppColors.red),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
 
-//   @override
-//   void dispose() {
-//     _emailController.dispose();
-//     _emailFocus.dispose();
-//     super.dispose();
-//   }
+                  // Verification code
+                  TextFormField(
+                    autofocus: true,
+                    controller: ctrl.otpController,
+                    focusNode: ctrl.otpFocus,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(_otpLength),
+                    ],
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.primaryWhite,
+                      letterSpacing: 4,
+                    ),
+                    decoration: context.primaryInputDecoration.copyWith(
+                      hintText: "Verification code",
+                    ),
+                    validator: (value) {
+                      if ((value?.trim().length ?? 0) != _otpLength) {
+                        return "Enter the $_otpLength-digit code";
+                      }
+                      return null;
+                    },
+                    onFieldSubmitted: (_) => FocusScope.of(
+                      context,
+                    ).requestFocus(ctrl.passwordFocus),
+                    autofillHints: const [AutofillHints.oneTimeCode],
+                  ),
+                  Gap.h16,
 
-//   void _submit() async {
-//     if (!_formKey.currentState!.validate()) return;
-//     if (mounted) FocusScope.of(context).unfocus();
-//     if (mounted) FocusScope.of(context).unfocus();
-//     Get.to(() => OtpVerificationToCompleteRegister(email: _emailController.text));
-//   }
+                  // New password
+                  Obx(
+                    () => TextFormField(
+                      controller: ctrl.passwordController,
+                      focusNode: ctrl.passwordFocus,
+                      obscureText: ctrl.obscurePassword.value,
+                      textInputAction: TextInputAction.next,
+                      style: TextStyle(color: AppColors.primaryWhite),
+                      decoration: context.primaryInputDecoration.copyWith(
+                        hintText: "New Password",
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            ctrl.obscurePassword.value
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: AppColors.primaryGray,
+                          ),
+                          onPressed: ctrl.toggleObscurePassword,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "New password is required";
+                        }
+                        if (value.length < 6) {
+                          return "Password must be at least 6 characters";
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) => FocusScope.of(
+                        context,
+                      ).requestFocus(ctrl.confirmPasswordFocus),
+                      autofillHints: const [AutofillHints.newPassword],
+                    ),
+                  ),
+                  Gap.h16,
 
-//   @override
-//     Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: () => FocusScope.of(context).unfocus(),
-//       child: AppScaffold(
-//         backgroundColor: AppColors.scaffoldBackground, // Dark background
-//         body: SafeArea(
-//           child: SingleChildScrollView(
-//             child: Padding(
-//               padding: const EdgeInsets.symmetric(horizontal: 24.0),
-//               child: Form(
-//                 key: _formKey,
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     SizedBox(height: 20),
-//                     IconButton(
-//                       icon: Icon(Icons.arrow_back_ios, color: AppColors.white, size: 20),
-//                       onPressed: () => Get.back(),
-//                     ),
-//                     SizedBox(height: 60),
-                    
-//                     Text(
-//                       'Forgot Password',
-//                       style: TextStyle(
-//                         fontSize: 24, 
-//                         fontWeight: FontWeight.w700, 
-//                         color: AppColors.white
-//                       ),
-//                     ),
-//                     SizedBox(height: 12),
-//                     Text(
-//                       'Enter your email to receive the verification code',
-//                       style: TextStyle(
-//                         fontSize: 14, 
-//                         fontWeight: FontWeight.w400, 
-//                         color: AppColors.secondaryText,
-//                         height: 1.5,
-//                       ),
-//                     ),
-                    
-//                     SizedBox(height: 40),
-                    
-//                     TextFormField(
-//                       controller: _emailController,
-//                       focusNode: _emailFocus,
-//                       keyboardType: TextInputType.emailAddress,
-//                       textInputAction: TextInputAction.done,
-//                       style: TextStyle(fontSize: 16, color: AppColors.white),
-//                       cursorColor: AppColors.white,
-//                       decoration: InputDecoration(
-//                         hintText: "Email",
-//                         hintStyle: TextStyle(color: AppColors.hintText),
-//                         filled: true,
-//                         fillColor: Colors.transparent,
-//                         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-//                         enabledBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(8),
-//                           borderSide: BorderSide(color: AppColors.inputBorder),
-//                         ),
-//                         focusedBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(8),
-//                           borderSide: BorderSide(color: AppColors.white),
-//                         ),
-//                         errorBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(8),
-//                           borderSide: BorderSide(color: AppColors.error),
-//                         ),
-//                         focusedErrorBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(8),
-//                           borderSide: BorderSide(color: AppColors.error),
-//                         ),
-//                       ),
-//                       validator: Validators.email,
-//                       onFieldSubmitted: (_) => _submit(),
-//                       autofillHints: const [AutofillHints.email],
-//                     ),
-                    
-//                     Gap.h16,
-//                     SizedBox(height: 16),
-                    
-//                     SizedBox(
-//                       width: double.infinity,
-//                       height: 52,
-//                       child: ElevatedButton(
-//                         onPressed: _submit,
-//                         style: ElevatedButton.styleFrom(
-//                           backgroundColor: AppColors.primaryButtonColor,
-//                           foregroundColor: AppColors.primaryButtonText,
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(30),
-//                           ),
-//                           elevation: 0,
-//                         ),
-//                         child: Text(
-//                           "Submit",
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.w600,
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-                    
-//                     SizedBox(height: 40),
-//                     Center(
-//                       child: Row(
-//                         mainAxisAlignment: MainAxisAlignment.center,
-//                         children: [
-//                           Text("Remembered password? ", style: TextStyle(color: AppColors.secondaryText, fontSize: 14)),
-//                           GestureDetector(
-//                             onTap: () => Get.to(() => LoginScreen()),
-//                             child: Text('Sign in', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
+                  // Confirm password
+                  Obx(
+                    () => TextFormField(
+                      controller: ctrl.confirmPasswordController,
+                      focusNode: ctrl.confirmPasswordFocus,
+                      obscureText: ctrl.obscureConfirmPassword.value,
+                      textInputAction: TextInputAction.done,
+                      style: TextStyle(color: AppColors.primaryWhite),
+                      decoration: context.primaryInputDecoration.copyWith(
+                        hintText: "Confirm New Password",
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            ctrl.obscureConfirmPassword.value
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: AppColors.primaryGray,
+                          ),
+                          onPressed: ctrl.toggleObscureConfirmPassword,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value != ctrl.passwordController.text) {
+                          return "Passwords do not match";
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) => ctrl.resetPassword(),
+                    ),
+                  ),
+                  Gap.h24,
+
+                  PrimaryButton(
+                    text: "Reset Password",
+                    onApiPressed: () => ctrl.resetPassword(),
+                  ),
+                  Gap.h24,
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Didn't get the code? ",
+                        style: TextStyle(color: AppColors.primaryGray),
+                      ),
+                      Obx(
+                        () => TvFocusWrapper(
+                          onTap: ctrl.isResending.value
+                              ? null
+                              : () => ctrl.resendOtp(),
+                          child: Text(
+                            ctrl.isResending.value ? "Sending..." : "Resend",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Gap.h24,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

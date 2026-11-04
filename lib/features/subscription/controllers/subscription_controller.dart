@@ -7,6 +7,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/services/revenuecat_service.dart';
+import '../../../core/utils/tv_device.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../models/subscription_history_model.dart';
 import '../repositories/subscription_repo.dart';
@@ -130,18 +131,15 @@ class SubscriptionController extends GetxController {
     }
   }
 
+  static const String _playSubscriptionsUrl =
+      'https://play.google.com/store/account/subscriptions';
+
   /// Open the platform refund page.
   Future<void> requestRefund() async {
     final Uri uri = Platform.isIOS
         ? Uri.parse('https://reportaproblem.apple.com')
-        : Uri.parse('https://play.google.com/store/account/subscriptions');
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      debugPrint('[Subscription] Could not open refund page: $e');
-    }
+        : Uri.parse(_playSubscriptionsUrl);
+    await _openOrExplain(uri, 'request a refund');
   }
 
   /// Opens the platform subscription management page where users can cancel.
@@ -150,14 +148,40 @@ class SubscriptionController extends GetxController {
   Future<void> manageSubscription() async {
     final Uri uri = Platform.isIOS
         ? Uri.parse('https://apps.apple.com/account/subscriptions')
-        : Uri.parse('https://play.google.com/store/account/subscriptions');
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        : Uri.parse(_playSubscriptionsUrl);
+    await _openOrExplain(uri, 'manage or cancel your subscription');
+  }
+
+  /// Opens [uri] in the browser/Play Store. A TV usually has no browser, and
+  /// if nothing can open the link the buttons used to silently do nothing —
+  /// in both cases, tell the user where to go instead.
+  Future<void> _openOrExplain(Uri uri, String action) async {
+    if (!TvDevice.isTv) {
+      try {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          return;
+        }
+      } catch (e) {
+        debugPrint('[Subscription] Could not open $uri: $e');
       }
-    } catch (e) {
-      debugPrint('[Subscription] Could not open manage page: $e');
     }
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Google Play subscriptions'),
+        content: Text(
+          'To $action, open Google Play on your phone or go to '
+          '$_playSubscriptionsUrl, signed in with the same Google account.',
+        ),
+        actions: [
+          TextButton(
+            autofocus: true,
+            onPressed: () => Get.back(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Retry loading offerings if they failed on init.

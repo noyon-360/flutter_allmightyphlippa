@@ -58,6 +58,8 @@ class MovieSeriesItemWidget extends StatelessWidget {
                 streamId: streamId,
                 channelName: name,
                 channelLogo: image,
+                // So the guide shows this channel's category.
+                categoryId: (item as LiveTvModel).categoryId,
               ),
             );
           } else {

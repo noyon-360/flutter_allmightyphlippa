@@ -13,6 +13,7 @@ import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/cast_service.dart';
 import '../../../core/services/pip_service.dart';
+import '../../../core/utils/tv_device.dart';
 import '../../epg/controllers/epg_timeline_controller.dart';
 import '../../epg/widgets/epg_timeline_channel_row.dart';
 import '../../epg/widgets/epg_timeline_day_nav.dart';
@@ -29,11 +30,17 @@ class LiveVideoPlayScreen extends StatefulWidget {
   final String channelName;
   final String channelLogo;
 
+  /// The channel's category, when it's opened from outside the Live TV
+  /// list (e.g. search). The guide below the video then shows that category
+  /// instead of whatever the Live TV tab last loaded.
+  final String? categoryId;
+
   const LiveVideoPlayScreen({
     super.key,
     required this.streamId,
     required this.channelName,
     this.channelLogo = '',
+    this.categoryId,
   });
 
   @override
@@ -88,6 +95,11 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _revealPlayingChannel(),
     );
+    // After the first frame: it updates the shared channel list, which
+    // can't change while this screen is still building.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _loadChannelCategory(),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initializeLiveVideo(
         streamId: widget.streamId,
@@ -131,10 +143,14 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   }
 
   void _enterFullScreen() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    // A TV is always landscape; asking for an orientation there can get the
+    // app letterboxed instead.
+    if (!TvDevice.isTv) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     setState(() => _isFullScreen = true);
   }
@@ -148,7 +164,10 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     // landscape-only mask ("UISceneErrorDomain Code=101"). Waiting for the
     // frame to finish first lets that transition settle before we ask.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      // Never lock a TV to portrait — Android letterboxes the whole app.
+      if (!TvDevice.isTv) {
+        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      }
       SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.edgeToEdge,
         overlays: SystemUiOverlay.values,
@@ -172,6 +191,28 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   /// Scrolls the EPG channel list so the row for the channel being watched
   /// is at the top. Row height (64) + separator (8) is fixed, so its offset
   /// is index * 72 without needing to build the rows above it.
+  /// Loads the guide with the channel's own category (see [categoryId]),
+  /// then scrolls to the channel. The Live TV tab shares this list, so it
+  /// shows the same category afterwards.
+  Future<void> _loadChannelCategory() async {
+    final categoryId = widget.categoryId;
+    if (categoryId == null ||
+        categoryId.isEmpty ||
+        !Get.isRegistered<LiveTvController>()) {
+      return;
+    }
+    final liveTvCtrl = Get.find<LiveTvController>();
+    if (liveTvCtrl.selectedCategoryId.value == categoryId &&
+        liveTvCtrl.liveTvList.isNotEmpty) {
+      return;
+    }
+    await liveTvCtrl.getLiveTvList(categoryId: categoryId);
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _revealPlayingChannel(),
+    );
+  }
+
   void _revealPlayingChannel() {
     if (!mounted ||
         !_epgScrollController.hasClients ||
@@ -233,6 +274,10 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
       body: SafeArea(
         top: !_isFullScreen,
         bottom: false,
+        // Fullscreen video on TV runs edge to edge, ignoring the overscan
+        // margins TvLayout adds for the rest of the UI.
+        left: !(TvDevice.isTv && _isFullScreen),
+        right: !(TvDevice.isTv && _isFullScreen),
         child: Container(
           width: MediaQuery.of(context).size.width,
           color: Colors.black,
@@ -362,11 +407,16 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
               isFullScreen: _isFullScreen,
               onToggleFullScreen: _toggleFullScreen,
               onBack: () => Navigator.of(context).maybePop(),
-              onSettings: () => _showSettingsDialog(context),
+              // Settings only holds casting, which a TV has no use for.
+              onSettings: TvDevice.isTv
+                  ? null
+                  : () => _showSettingsDialog(context),
               onPictureInPicture: _pipService.isAvailable
                   ? () =>
                         _pipService.enable(videoUrl: controller.currentPlayUrl)
                   : null,
+              onNextChannel: () => _switchChannelBy(1),
+              onPreviousChannel: () => _switchChannelBy(-1),
             ),
             Obx(() {
               if (PremiumService.to.isPremium.value) {
@@ -525,28 +575,38 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
   /// player for that channel — simplest safe way to switch without having
   /// to keep this screen's AppBar/state in sync with an in-place controller
   /// swap.
+  void _openChannel(LiveTvModel channel) {
+    if (channel.streamId == widget.streamId) return;
+    Get.off(
+      () => LiveVideoPlayScreen(
+        streamId: channel.streamId,
+        channelName: channel.name,
+        channelLogo: channel.streamIcon,
+      ),
+      // LiveVideoPlayScreen isn't a named route, so GetX derives the
+      // route name from the widget type — every channel produces the
+      // same generated name. With the default preventDuplicates:true,
+      // GetX sees that name matching the current route and silently
+      // no-ops the navigation, so switching to another channel from
+      // within this screen never happened.
+      preventDuplicates: false,
+    );
+  }
+
+  /// Channel up/down from the remote: the next/previous channel in the
+  /// list loaded on the Live TV tab, wrapping around at either end.
+  void _switchChannelBy(int delta) {
+    if (!Get.isRegistered<LiveTvController>()) return;
+    final channels = Get.find<LiveTvController>().liveTvList;
+    final index = channels.indexWhere((c) => c.streamId == widget.streamId);
+    if (index < 0) return;
+    _openChannel(channels[(index + delta) % channels.length]);
+  }
+
   Widget _buildPortraitEpgList() {
     if (!Get.isRegistered<LiveTvController>()) return const SizedBox.shrink();
     final liveTvCtrl = Get.find<LiveTvController>();
     final timelineCtrl = Get.find<EpgTimelineController>();
-
-    void openChannel(LiveTvModel channel) {
-      if (channel.streamId == widget.streamId) return;
-      Get.off(
-        () => LiveVideoPlayScreen(
-          streamId: channel.streamId,
-          channelName: channel.name,
-          channelLogo: channel.streamIcon,
-        ),
-        // LiveVideoPlayScreen isn't a named route, so GetX derives the
-        // route name from the widget type — every channel produces the
-        // same generated name. With the default preventDuplicates:true,
-        // GetX sees that name matching the current route and silently
-        // no-ops the navigation, so switching to another channel from
-        // within this screen never happened.
-        preventDuplicates: false,
-      );
-    }
 
     return Obx(() {
       final channels = liveTvCtrl.liveTvList;
@@ -593,7 +653,7 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
                     channelLogo: channel.streamIcon,
                     day: day,
                     currentStreamId: widget.streamId,
-                    onOpenChannel: (_) => openChannel(channel),
+                    onOpenChannel: (_) => _openChannel(channel),
                   );
                 },
               );

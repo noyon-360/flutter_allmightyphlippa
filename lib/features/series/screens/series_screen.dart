@@ -143,7 +143,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                       ),
                                 ),
                                 if (genreCtrl.genres.length > 8)
-                                  GestureDetector(
+                                  TvFocusWrapper(
                                     onTap: () =>
                                         _showAllCategories(context, genreCtrl),
                                     child: const Text(
@@ -164,7 +164,8 @@ class _SeriesScreenState extends State<SeriesScreen> {
                     // Genres List
                     SliverToBoxAdapter(
                       child: Container(
-                        height: 35,
+                        // 35 for the chip + the focus ring's 2px on each side.
+                        height: 39,
                         margin: const EdgeInsets.symmetric(vertical: 16),
                         child: GetBuilder<GenreController>(
                           init: GenreController(),
@@ -198,44 +199,46 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                         seriesCtrl.selectedCategoryId.value ==
                                         categoryId;
 
-                                    return GestureDetector(
-                                      onTap: () {
-                                        seriesCtrl.getSeries(
-                                          categoryId: categoryId,
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                        ),
-                                        margin: const EdgeInsets.only(
-                                          right: 12,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? AppColors.red
-                                              : AppColors.containerBgColor,
-                                          borderRadius: BorderRadius.circular(
-                                            25,
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: TvFocusWrapper(
+                                        onTap: () {
+                                          seriesCtrl.getSeries(
+                                            categoryId: categoryId,
+                                          );
+                                        },
+                                        borderRadius: 25,
+                                        focusColor: AppColors.primaryWhite,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
                                           ),
-                                          border: Border.all(
+                                          decoration: BoxDecoration(
                                             color: isSelected
                                                 ? AppColors.red
-                                                : AppColors.primaryWhite
-                                                      .withOpacity(0.1),
+                                                : AppColors.containerBgColor,
+                                            borderRadius: BorderRadius.circular(
+                                              25,
+                                            ),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? AppColors.red
+                                                  : AppColors.primaryWhite
+                                                        .withOpacity(0.1),
+                                            ),
                                           ),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          categoryName,
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? AppColors.primaryWhite
-                                                : AppColors.primaryGray,
-                                            fontWeight: isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            fontSize: 14,
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            categoryName,
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? AppColors.primaryWhite
+                                                  : AppColors.primaryGray,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                              fontSize: 14,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -294,16 +297,16 @@ class _SeriesScreenState extends State<SeriesScreen> {
                         child: _buildSeriesEmptyOrError(),
                       )
                     else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final series = seriesCtrl.series[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0,
-                          ),
-                          child: TvFocusWrapper(
-                            onTap: () {
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final series = seriesCtrl.series[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
+                            ),
+                            child: TvFocusWrapper(
+                              onTap: () {
                                 Get.to(
                                   () => VideoPlayScreen(
                                     streamId: series.seriesId!,
@@ -311,76 +314,76 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                     autoPlay: false,
                                   ),
                                 );
-                            },
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 100,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.containerBgColor,
-                                    borderRadius: BorderRadius.circular(8),
-                                    image: series.cover.isNotEmpty
-                                        ? DecorationImage(
-                                            image: NetworkImage(series.cover),
-                                            fit: BoxFit.cover,
-                                            onError: (_, __) {},
+                              },
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 100,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.containerBgColor,
+                                      borderRadius: BorderRadius.circular(8),
+                                      image: series.cover.isNotEmpty
+                                          ? DecorationImage(
+                                              image: NetworkImage(series.cover),
+                                              fit: BoxFit.cover,
+                                              onError: (_, __) {},
+                                            )
+                                          : null,
+                                    ),
+                                    child: series.cover.isEmpty
+                                        ? const Icon(
+                                            Icons.movie,
+                                            color: AppColors.iconColor,
                                           )
                                         : null,
                                   ),
-                                  child: series.cover.isEmpty
-                                      ? const Icon(
-                                          Icons.movie,
-                                          color: AppColors.iconColor,
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        series.name ?? "",
-                                        style: const TextStyle(
-                                          color: AppColors.primaryWhite,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.star,
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          series.name ?? "",
+                                          style: const TextStyle(
                                             color: AppColors.primaryWhite,
-                                            size: 12,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            // Formatting date and duration if available, else placeholder
-                                            '${series.rating5Based}',
-                                            style: const TextStyle(
-                                              color: AppColors.primaryGray,
-                                              fontSize: 12,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.star,
+                                              color: AppColors.primaryWhite,
+                                              size: 12,
                                             ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              // Formatting date and duration if available, else placeholder
+                                              '${series.rating5Based}',
+                                              style: const TextStyle(
+                                                color: AppColors.primaryGray,
+                                                fontSize: 12,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      }, childCount: seriesCtrl.series.length),
-                    ),
+                          );
+                        }, childCount: seriesCtrl.series.length),
+                      ),
 
                     // Loading Indicator for Pagination
                     if (seriesCtrl.isMoreLoading.value)

@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import '/core/common/widgets/app_logo.dart';
 import '/core/constants/app_colors.dart';
 import '/core/extensions/input_decoration_extensions.dart';
+import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -123,21 +124,37 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
 
+                        Gap.h8,
+
                         // Forget Password
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             TvFocusWrapper(
-                              onTap: () {
-                                // TODO: Implement forget password
-                              },
-                              child: Text(
-                                "Forget Password",
-                                style: TextStyle(color: AppColors.primaryWhite),
+                              onTap: () => Get.to(
+                                () => ForgotPasswordScreen(
+                                  initialEmail: loginCtrl.emailController.text
+                                      .trim(),
+                                ),
+                              ),
+                              // Padding enlarges the tap/focus target.
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 4,
+                                ),
+                                child: Text(
+                                  "Forget Password",
+                                  style: TextStyle(
+                                    color: AppColors.primaryWhite,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
+
+                        Gap.h16,
 
                         PrimaryButton(
                           text: "Login",

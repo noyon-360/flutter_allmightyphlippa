@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/revenuecat_service.dart';
 import '../../auth/models/user_response_model.dart';
@@ -281,123 +282,135 @@ class SubscriptionScreen extends StatelessWidget {
     final isCurrentPlan = controller.isCurrentPlan(productId);
     final isPurchasing = controller.isLoading.value;
 
-    return GestureDetector(
-      onTap: isPurchasing ? null : () => controller.selectProduct(productId),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isSelected
-              ? AppColors.red.withAlpha((0.12 * 255).toInt())
-              : Colors.white.withAlpha((0.04 * 255).toInt()),
-          border: Border.all(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TvFocusWrapper(
+        onTap: isPurchasing ? null : () => controller.selectProduct(productId),
+        // Remote users start on the preselected plan.
+        autofocus: isSelected,
+        borderRadius: 18,
+        focusColor: Colors.white,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
             color: isSelected
-                ? AppColors.red
-                : Colors.white.withAlpha((0.15 * 255).toInt()),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-              child: Row(
-                children: [
-                  Text(
-                    _planNameFromProductId(productId),
-                    style: TextStyle(
-                      color: isSelected ? AppColors.red : Colors.white70,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                  if (isCurrentPlan) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.red.withAlpha((0.2 * 255).toInt()),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'Current',
-                        style: TextStyle(
-                          color: AppColors.red,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected ? AppColors.red : Colors.transparent,
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.red
-                            : Colors.white.withAlpha((0.3 * 255).toInt()),
-                        width: 2,
-                      ),
-                    ),
-                    child: isSelected
-                        ? const Icon(Icons.check, color: Colors.white, size: 14)
-                        : null,
-                  ),
-                ],
-              ),
+                ? AppColors.red.withAlpha((0.12 * 255).toInt())
+                : Colors.white.withAlpha((0.04 * 255).toInt()),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.red
+                  : Colors.white.withAlpha((0.15 * 255).toInt()),
+              width: isSelected ? 2 : 1,
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: package.storeProduct.priceString,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                child: Row(
+                  children: [
+                    Text(
+                      _planNameFromProductId(productId),
+                      style: TextStyle(
+                        color: isSelected ? AppColors.red : Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    if (isCurrentPlan) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.red.withAlpha((0.2 * 255).toInt()),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'Current',
+                          style: TextStyle(
+                            color: AppColors.red,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        TextSpan(
-                          text: ' ${_periodLabel(productId)}',
-                          style: TextStyle(
-                            color: Colors.white.withAlpha((0.7 * 255).toInt()),
-                            fontSize: 18,
-                          ),
+                      ),
+                    ],
+                    const Spacer(),
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected ? AppColors.red : Colors.transparent,
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.red
+                              : Colors.white.withAlpha((0.3 * 255).toInt()),
+                          width: 2,
                         ),
-                      ],
+                      ),
+                      child: isSelected
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 14,
+                            )
+                          : null,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Divider(color: Colors.white.withAlpha((0.2 * 255).toInt())),
-                  const SizedBox(height: 16),
-                  _buildFeatureRow('Instant sync across devices'),
-                  const SizedBox(height: 12),
-                  _buildFeatureRow('Unlimited EPG navigation'),
-                  const SizedBox(height: 12),
-                  _buildFeatureRow('EPG reminders'),
-                  const SizedBox(height: 12),
-                  _buildFeatureRow('No watermarks'),
-                  const SizedBox(height: 12),
-                  _buildFeatureRow('No device limit'),
-                  const SizedBox(height: 12),
-                  _buildFeatureRow('Offline playback'),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: package.storeProduct.priceString,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextSpan(
+                            text: ' ${_periodLabel(productId)}',
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(
+                                (0.7 * 255).toInt(),
+                              ),
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(color: Colors.white.withAlpha((0.2 * 255).toInt())),
+                    const SizedBox(height: 16),
+                    _buildFeatureRow('Instant sync across devices'),
+                    const SizedBox(height: 12),
+                    _buildFeatureRow('Unlimited EPG navigation'),
+                    const SizedBox(height: 12),
+                    _buildFeatureRow('EPG reminders'),
+                    const SizedBox(height: 12),
+                    _buildFeatureRow('No watermarks'),
+                    const SizedBox(height: 12),
+                    _buildFeatureRow('No device limit'),
+                    const SizedBox(height: 12),
+                    _buildFeatureRow('Offline playback'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

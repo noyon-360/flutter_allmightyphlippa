@@ -192,361 +192,405 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           crossAxisCount = 3;
         }
 
-        return Column(
-          children: [
-            // Search Bar
-            /// [Todo: Implement search bar later]
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                onTap: () =>
-                    Get.to(() => SearchScreen(type: ServerType.channels)),
-                readOnly: true,
-                decoration: InputDecoration(
-                  hintText: 'Search Channel',
-                  hintStyle: const TextStyle(color: AppColors.hintText),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: AppColors.iconColor,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.containerBgColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                style: const TextStyle(color: AppColors.primaryWhite),
-              ),
-            ),
-
-            // Categories Header
-            GetBuilder<GenreController>(
-              init: GenreController(),
-              tag: 'channels',
-              builder: (genreCtrl) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Categories',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.primaryWhite,
-                          fontWeight: FontWeight.bold,
+        // One scroll view for the whole tab: the search bar, categories and
+        // title scroll away with the channels. With only the grid scrolling,
+        // a landscape phone had no room left for it (the header filled the
+        // short screen) and the channel list couldn't be scrolled at all.
+        return RefreshIndicator.adaptive(
+          onRefresh: () async {
+            await liveTvCtrl.getLiveTvList();
+          },
+          color: AppColors.red,
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Search Bar
+                    /// [Todo: Implement search bar later]
+                    // Looks like a search field but is a button that opens the search
+                    // screen: a read-only TextField can't be activated with a TV
+                    // remote's OK button (onTap only fires for touch).
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TvFocusWrapper(
+                        onTap: () => Get.to(
+                          () => SearchScreen(type: ServerType.channels),
+                        ),
+                        child: Container(
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: AppColors.containerBgColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              SizedBox(
+                                width: 48,
+                                child: Icon(
+                                  Icons.search,
+                                  color: AppColors.iconColor,
+                                ),
+                              ),
+                              Text(
+                                'Search Channel',
+                                style: TextStyle(
+                                  color: AppColors.hintText,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      Gap(h: 10),
-                      if (genreCtrl.genres.length > 8)
-                        GestureDetector(
-                          onTap: () => _showAllCategories(context, genreCtrl),
-                          child: const Text(
-                            'See All',
-                            style: TextStyle(
-                              color: AppColors.red,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    ),
+
+                    // Categories Header
+                    GetBuilder<GenreController>(
+                      init: GenreController(),
+                      tag: 'channels',
+                      builder: (genreCtrl) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Categories',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      color: AppColors.primaryWhite,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              Gap(h: 10),
+                              if (genreCtrl.genres.length > 8)
+                                TvFocusWrapper(
+                                  onTap: () =>
+                                      _showAllCategories(context, genreCtrl),
+                                  child: const Text(
+                                    'See All',
+                                    style: TextStyle(
+                                      color: AppColors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-
-            // Categories
-            Container(
-              height: 35,
-              margin: const EdgeInsets.only(bottom: 16),
-              child: GetBuilder<GenreController>(
-                init: GenreController(),
-                tag: 'channels',
-                builder: (genreCtrl) {
-                  return Obx(
-                    () => ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount:
-                          (genreCtrl.genres.length > 8
-                              ? 8
-                              : genreCtrl.genres.length) +
-                          1,
-                      itemBuilder: (context, index) {
-                        final isAll = index == 0;
-                        final genre = isAll
-                            ? null
-                            : genreCtrl.genres[index - 1];
-                        final categoryId = isAll ? '' : genre!.categoryId;
-                        final categoryName = isAll
-                            ? 'All'
-                            : genre!.categoryName;
-
-                        return Obx(() {
-                          final isSelected =
-                              liveTvCtrl.selectedCategoryId.value == categoryId;
-
-                          return GestureDetector(
-                            onTap: () {
-                              liveTvCtrl.getLiveTvList(categoryId: categoryId);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              margin: const EdgeInsets.only(right: 12),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.red
-                                    : AppColors.containerBgColor,
-                                borderRadius: BorderRadius.circular(25),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.red
-                                      : AppColors.primaryWhite.withOpacity(0.1),
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                categoryName,
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? AppColors.primaryWhite
-                                      : AppColors.primaryGray,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          );
-                        });
+                        );
                       },
                     ),
-                  );
-                },
-              ),
-            ),
-            // Results Title
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: GetBuilder<GenreController>(
-                tag: 'channels',
-                builder: (genreCtrl) {
-                  return Obx(() {
-                    String title = 'All Channels';
-                    if (liveTvCtrl.selectedCategoryId.value.isNotEmpty) {
-                      final genre = genreCtrl.genres.firstWhereOrNull(
-                        (g) =>
-                            g.categoryId == liveTvCtrl.selectedCategoryId.value,
-                      );
-                      title = genre?.categoryName ?? 'Channels';
-                    }
 
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: AppColors.primaryWhite,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ),
-                        // Premium: the whole category as a full TV guide.
-                        if (PremiumService.to.isPremium.value)
-                          TextButton.icon(
-                            onPressed: () =>
-                                Get.to(() => CategoryEpgScreen(title: title)),
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.red,
+                    // Categories
+                    Container(
+                      // 35 for the chip + the focus ring's 2px on each side.
+                      height: 39,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: GetBuilder<GenreController>(
+                        init: GenreController(),
+                        tag: 'channels',
+                        builder: (genreCtrl) {
+                          return Obx(
+                            () => ListView.builder(
+                              scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
+                                horizontal: 16,
                               ),
-                            ),
-                            icon: const Icon(Icons.view_timeline_outlined),
-                            label: const Text(
-                              'Full Guide',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                      ],
-                    );
-                  });
-                },
-              ),
-            ),
-            Expanded(
-              child: liveTvCtrl.isLoading.value
-                  ? _buildShimmerGrid(crossAxisCount)
-                  : liveTvCtrl.liveTvList.isEmpty
-                  ? RefreshIndicator.adaptive(
-                      onRefresh: () async {
-                        await liveTvCtrl.getLiveTvList();
-                      },
-                      color: AppColors.red,
-                      child: ListView(children: [_buildLiveTvEmptyOrError()]),
-                    )
-                  : RefreshIndicator.adaptive(
-                      onRefresh: () async {
-                        await liveTvCtrl.getLiveTvList();
-                      },
-                      color: AppColors.red,
-                      child: GridView.builder(
-                        controller: _scrollController,
-                        // Bottom: clear of the floating nav bar.
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          0,
-                          16,
-                          MediaQuery.of(context).padding.bottom + 8,
-                        ),
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: 1.5,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount:
-                            liveTvCtrl.liveTvList.length +
-                            (liveTvCtrl.isMoreLoading.value
-                                ? crossAxisCount
-                                : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= liveTvCtrl.liveTvList.length) {
-                            return _buildSingleShimmerItem();
-                          }
+                              itemCount:
+                                  (genreCtrl.genres.length > 8
+                                      ? 8
+                                      : genreCtrl.genres.length) +
+                                  1,
+                              itemBuilder: (context, index) {
+                                final isAll = index == 0;
+                                final genre = isAll
+                                    ? null
+                                    : genreCtrl.genres[index - 1];
+                                final categoryId = isAll
+                                    ? ''
+                                    : genre!.categoryId;
+                                final categoryName = isAll
+                                    ? 'All'
+                                    : genre!.categoryName;
 
-                          final channel = liveTvCtrl.liveTvList[index];
-                          return TvFocusWrapper(
-                            onTap: () {
-                              // Live video play screen
-                              Get.to(
-                                () => LiveVideoPlayScreen(
-                                  streamId: channel.streamId,
-                                  channelName: channel.name,
-                                  channelLogo: channel.streamIcon,
-                                ),
-                              );
-                            },
-                            borderRadius: 12,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.containerBgColor,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.primaryWhite.withOpacity(
-                                    0.05,
-                                  ),
-                                ),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Stack(
-                                children: [
-                                  // Background/Icon
-                                  Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(20.0),
-                                      child: channel.streamIcon.isNotEmpty
-                                          ? Image.network(
-                                              channel.streamIcon,
-                                              fit: BoxFit.contain,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                    return const Icon(
-                                                      Icons.tv,
-                                                      color:
-                                                          AppColors.iconColor,
-                                                      size: 40,
-                                                    );
-                                                  },
-                                            )
-                                          : const Icon(
-                                              Icons.tv,
-                                              color: AppColors.iconColor,
-                                              size: 40,
-                                            ),
-                                    ),
-                                  ),
+                                return Obx(() {
+                                  final isSelected =
+                                      liveTvCtrl.selectedCategoryId.value ==
+                                      categoryId;
 
-                                  // Bottom Overlay for Name
-                                  Positioned(
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.bottomCenter,
-                                          end: Alignment.topCenter,
-                                          colors: [
-                                            Colors.black.withValues(alpha: 0.8),
-                                            Colors.transparent,
-                                          ],
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 12),
+                                    child: TvFocusWrapper(
+                                      onTap: () {
+                                        liveTvCtrl.getLiveTvList(
+                                          categoryId: categoryId,
+                                        );
+                                      },
+                                      borderRadius: 25,
+                                      focusColor: AppColors.primaryWhite,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
                                         ),
-                                      ),
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        channel.name,
-                                        style: const TextStyle(
-                                          color: AppColors.primaryWhite,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-
-                                  // EPG bell — premium only
-                                  Positioned(
-                                    top: 4,
-                                    right: 4,
-                                    child: Obx(() {
-                                      if (!PremiumService.to.isPremium.value) {
-                                        return const SizedBox.shrink();
-                                      }
-                                      return GestureDetector(
-                                        onTap: () => _showEpgSheet(
-                                          context,
-                                          channel.streamId,
-                                          channel.name,
-                                          channel.streamIcon,
-                                        ),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.55,
-                                            ),
-                                            shape: BoxShape.circle,
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? AppColors.red
+                                              : AppColors.containerBgColor,
+                                          borderRadius: BorderRadius.circular(
+                                            25,
                                           ),
-                                          child: const Icon(
-                                            Icons.notifications_none,
-                                            color: Colors.white,
-                                            size: 16,
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.red
+                                                : AppColors.primaryWhite
+                                                      .withOpacity(0.1),
                                           ),
                                         ),
-                                      );
-                                    }),
-                                  ),
-                                ],
-                              ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          categoryName,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? AppColors.primaryWhite
+                                                : AppColors.primaryGray,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                });
+                              },
                             ),
                           );
                         },
                       ),
                     ),
-            ),
-          ],
+                    // Results Title
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: GetBuilder<GenreController>(
+                        tag: 'channels',
+                        builder: (genreCtrl) {
+                          return Obx(() {
+                            String title = 'All Channels';
+                            if (liveTvCtrl
+                                .selectedCategoryId
+                                .value
+                                .isNotEmpty) {
+                              final genre = genreCtrl.genres.firstWhereOrNull(
+                                (g) =>
+                                    g.categoryId ==
+                                    liveTvCtrl.selectedCategoryId.value,
+                              );
+                              title = genre?.categoryName ?? 'Channels';
+                            }
+
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          color: AppColors.primaryWhite,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ),
+                                // Premium: the whole category as a full TV guide.
+                                if (PremiumService.to.isPremium.value)
+                                  TextButton.icon(
+                                    onPressed: () => Get.to(
+                                      () => CategoryEpgScreen(title: title),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.red,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.view_timeline_outlined,
+                                    ),
+                                    label: const Text(
+                                      'Full Guide',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (liveTvCtrl.isLoading.value)
+                _buildShimmerGrid(crossAxisCount)
+              else if (liveTvCtrl.liveTvList.isEmpty)
+                SliverToBoxAdapter(child: _buildLiveTvEmptyOrError())
+              else
+                SliverPadding(
+                  // Bottom: clear of the floating nav bar.
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    MediaQuery.of(context).padding.bottom + 8,
+                  ),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      childCount:
+                          liveTvCtrl.liveTvList.length +
+                          (liveTvCtrl.isMoreLoading.value ? crossAxisCount : 0),
+                      (context, index) {
+                        if (index >= liveTvCtrl.liveTvList.length) {
+                          return _buildSingleShimmerItem();
+                        }
+
+                        final channel = liveTvCtrl.liveTvList[index];
+                        return TvFocusWrapper(
+                          onTap: () {
+                            // Live video play screen
+                            Get.to(
+                              () => LiveVideoPlayScreen(
+                                streamId: channel.streamId,
+                                channelName: channel.name,
+                                channelLogo: channel.streamIcon,
+                              ),
+                            );
+                          },
+                          borderRadius: 12,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.containerBgColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primaryWhite.withOpacity(0.05),
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Stack(
+                              children: [
+                                // Background/Icon
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20.0),
+                                    child: channel.streamIcon.isNotEmpty
+                                        ? Image.network(
+                                            channel.streamIcon,
+                                            fit: BoxFit.contain,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return const Icon(
+                                                    Icons.tv,
+                                                    color: AppColors.iconColor,
+                                                    size: 40,
+                                                  );
+                                                },
+                                          )
+                                        : const Icon(
+                                            Icons.tv,
+                                            color: AppColors.iconColor,
+                                            size: 40,
+                                          ),
+                                  ),
+                                ),
+
+                                // Bottom Overlay for Name
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black.withValues(alpha: 0.8),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      channel.name,
+                                      style: const TextStyle(
+                                        color: AppColors.primaryWhite,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+
+                                // EPG bell — premium only
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: Obx(() {
+                                    if (!PremiumService.to.isPremium.value) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return GestureDetector(
+                                      onTap: () => _showEpgSheet(
+                                        context,
+                                        channel.streamId,
+                                        channel.name,
+                                        channel.streamIcon,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.55,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.notifications_none,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       }),
       floatingActionButton: _showBackToTop
@@ -603,16 +647,20 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
   }
 
   Widget _buildShimmerGrid(int crossAxisCount) {
-    return GridView.builder(
+    return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: crossAxisCount * 4,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: 1.5,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: 1.5,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _buildSingleShimmerItem(),
+          childCount: crossAxisCount * 4,
+        ),
       ),
-      itemBuilder: (context, index) => _buildSingleShimmerItem(),
     );
   }
 

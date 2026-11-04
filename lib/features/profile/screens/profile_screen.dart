@@ -20,6 +20,7 @@ import '../../tv/controllers/live_tv_controller.dart';
 import '../../../core/common/widgets/app_cached_image.dart';
 import '../../../core/common/widgets/button_widgets.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import '../../../core/utils/tv_device.dart';
 import '../../auth/controller/auth_controller.dart';
 import '../../favourites/screens/favourite_screen.dart';
 import '../../history/screens/history_screen.dart';
@@ -338,19 +339,21 @@ class ProfileScreen extends StatelessWidget {
                   );
                 },
               ),
-              _buildMenuItem(
-                iconAsset: '',
-                isSvg: false,
-                iconData: Icons.download_for_offline_outlined,
-                iconColor: Colors.blueAccent,
-                title: "Downloads",
-                onTap: () {
-                  Get.to(
-                    () => const DownloadsScreen(),
-                    transition: Transition.rightToLeft,
-                  );
-                },
-              ),
+              // No downloads on TV (little storage, nowhere to watch offline).
+              if (!TvDevice.isTv)
+                _buildMenuItem(
+                  iconAsset: '',
+                  isSvg: false,
+                  iconData: Icons.download_for_offline_outlined,
+                  iconColor: Colors.blueAccent,
+                  title: "Downloads",
+                  onTap: () {
+                    Get.to(
+                      () => const DownloadsScreen(),
+                      transition: Transition.rightToLeft,
+                    );
+                  },
+                ),
               _buildMenuItem(
                 iconAsset: AssetsConstants.icons.favourite,
                 title: "Favourite",

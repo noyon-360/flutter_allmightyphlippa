@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
+import '../../../core/utils/tv_device.dart';
 import '/core/common/widgets/app_logo.dart';
 import '/core/common/widgets/button_widgets.dart';
 import '/core/constants/assest_const.dart' hide Icons;
@@ -63,8 +64,7 @@ class SignupScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 30),
                       Obx(
-                        () =>
-                            registerCtrl.registerErrorMessage.value.isNotEmpty
+                        () => registerCtrl.registerErrorMessage.value.isNotEmpty
                             ? Center(
                                 child: Text(
                                   registerCtrl.registerErrorMessage.value,
@@ -189,34 +189,18 @@ class SignupScreen extends StatelessWidget {
                               TextSpan(
                                 children: [
                                   const TextSpan(text: "I agree to "),
-                                  TextSpan(
-                                    text: "Terms & Conditions",
-                                    style: const TextStyle(
-                                      color: AppColors.primaryWhite,
-                                      fontWeight: FontWeight.bold,
-                                      decoration: TextDecoration.underline,
+                                  _link(
+                                    "Terms & Conditions",
+                                    () => Get.to(
+                                      () => const TermsConditionScreen(),
                                     ),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Get.to(
-                                          () => const TermsConditionScreen(),
-                                        );
-                                      },
                                   ),
                                   const TextSpan(text: " and "),
-                                  TextSpan(
-                                    text: "Privacy Policy",
-                                    style: const TextStyle(
-                                      color: AppColors.primaryWhite,
-                                      fontWeight: FontWeight.bold,
-                                      decoration: TextDecoration.underline,
+                                  _link(
+                                    "Privacy Policy",
+                                    () => Get.to(
+                                      () => const PrivacyPolicyScreen(),
                                     ),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Get.to(
-                                          () => const PrivacyPolicyScreen(),
-                                        );
-                                      },
                                   ),
                                 ],
                               ),
@@ -232,6 +216,7 @@ class SignupScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (TvDevice.isTv) _tvLinks(),
                       Gap.h16,
 
                       // Sign Up button
@@ -270,6 +255,51 @@ class SignupScreen extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  static const _linkStyle = TextStyle(
+    color: AppColors.primaryWhite,
+    fontWeight: FontWeight.bold,
+    decoration: TextDecoration.underline,
+  );
+
+  /// An underlined link inside the "I agree to ..." sentence: tappable on
+  /// phones. A remote can't reach a link inside text, so on TV it's plain
+  /// text here and [_tvLinks] adds focusable buttons below instead.
+  InlineSpan _link(String text, VoidCallback onTap) {
+    return TextSpan(
+      text: text,
+      style: _linkStyle,
+      recognizer: TvDevice.isTv
+          ? null
+          : (TapGestureRecognizer()..onTap = onTap),
+    );
+  }
+
+  /// TV only: the Terms / Privacy links as buttons the remote can reach.
+  Widget _tvLinks() {
+    Widget button(String text, VoidCallback onTap) => TvFocusWrapper(
+      onTap: onTap,
+      borderRadius: 6,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(text, style: _linkStyle),
+      ),
+    );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        button(
+          "Terms & Conditions",
+          () => Get.to(() => const TermsConditionScreen()),
+        ),
+        const SizedBox(width: 24),
+        button(
+          "Privacy Policy",
+          () => Get.to(() => const PrivacyPolicyScreen()),
+        ),
+      ],
     );
   }
 }
