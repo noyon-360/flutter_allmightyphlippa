@@ -137,6 +137,129 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
     );
   }
 
+  Widget _buildWatchLaterButton() {
+    return TvFocusWrapper(
+      onTap: controller.toggleWatchLater,
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Obx(
+              () => AnimatedOpacity(
+                opacity: controller.isTogglingWatchLater.value ? 0.5 : 1.0,
+                duration: const Duration(milliseconds: 150),
+                child: Icon(
+                  controller.isSavedForLater
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+            ),
+            const Text(
+              'Watch Later',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Shown when the title's details can't be loaded, typically because the
+  /// provider removed something that was saved for later.
+  Widget _buildLoadFailed(BuildContext context) {
+    final saved = controller.isSavedForLater;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.movie_filter_outlined,
+              color: AppColors.primaryGray,
+              size: 56,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "This title couldn't be loaded",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Check your connection. If it keeps happening, your provider may have removed it.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.primaryGray, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                _failedAction(
+                  label: 'Try again',
+                  autofocus: true,
+                  onTap: () => controller.initializeVideo(
+                    type: widget.type,
+                    streamId: widget.streamId,
+                    autoPlay: widget.autoPlay,
+                  ),
+                ),
+                if (saved)
+                  _failedAction(
+                    label: 'Remove from Watch Later',
+                    onTap: () async {
+                      await controller.toggleWatchLater();
+                      if (!controller.isSavedForLater) Get.back();
+                    },
+                  ),
+                _failedAction(label: 'Go back', onTap: Get.back),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _failedAction({
+    required String label,
+    required VoidCallback onTap,
+    bool autofocus = false,
+  }) {
+    return TvFocusWrapper(
+      onTap: onTap,
+      autofocus: autofocus,
+      borderRadius: 24,
+      focusColor: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.red,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMainContent(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primaryBlack,
@@ -150,6 +273,10 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                 child: CircularProgressIndicator(color: AppColors.red),
               ),
             );
+          }
+
+          if (controller.loadFailed.value) {
+            return _buildLoadFailed(context);
           }
 
           // Access reactive data here to ensure this Obx rebuilds when lists change
@@ -621,6 +748,8 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                             ),
                                           ),
                                         ),
+                                        const SizedBox(width: 24),
+                                        _buildWatchLaterButton(),
                                         // No downloads on TV (little storage,
                                         // nowhere to watch offline). Checked
                                         // outside the Obx: inside it, isTv

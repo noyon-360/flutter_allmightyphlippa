@@ -23,6 +23,7 @@ import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/utils/tv_device.dart';
 import '../../auth/controller/auth_controller.dart';
 import '../../favourites/screens/favourite_screen.dart';
+import '../../watch_later/screens/watch_later_screen.dart';
 import '../../history/screens/history_screen.dart';
 import '../../app/screens/about_app_screen.dart';
 import '../../app/screens/privacy_policy_screen.dart';
@@ -365,6 +366,19 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () {
                   Get.to(
                     () => const FavouriteScreen(),
+                    transition: Transition.rightToLeft,
+                  );
+                },
+              ),
+              _buildMenuItem(
+                context,
+                iconAsset: '',
+                isSvg: false,
+                iconData: Icons.bookmark_border,
+                title: "Watch Later",
+                onTap: () {
+                  Get.to(
+                    () => const WatchLaterScreen(),
                     transition: Transition.rightToLeft,
                   );
                 },

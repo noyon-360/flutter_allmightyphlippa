@@ -89,7 +89,7 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 | [ ] | Filter by release year / language | |
 | [x] | Global search across all content | |
 | [x] | Favourites | Stored on the backend |
-| [ ] | Watch Later list | Not started |
+| ⚠️ [ ] | Watch Later list | **Built in app + backend, not deployed (4 Nov 2026).** Movies and series only (Live TV has EPG reminders). Saved per playlist, because stream ids differ between providers. Watch Later button on the movie/series page; Profile → Watch Later screen with "This playlist" / "All playlists" tabs. Items from another playlist are dimmed with a "From: …" badge and offer *Switch to that playlist and play*, *Find it in this playlist* (search by title) or *Remove*. The active playlist's id is now stored in `PlaylistData` (older installs are matched by credentials). The player shows a "couldn't load" state with Retry / Remove. Files: `features/watch_later/`, `playlist/services/active_playlist_service.dart`, `video_play_controller.dart`, `video_play_screen.dart`, `playlist_controller.dart`; tests in `test/watch_later_test.dart`. Backend: `model/watchLater.model.js`, `controller/watchLater.controller.js`, `route/watchLater.route.js`, mounted at `/watch-later`; items are deleted with their playlist and in `deleteAccount` (contract in `docs/backend_watch_later.md`). Validation paths checked against the handlers; DB paths not run (no local MongoDB). **Tick after the backend is deployed and the flow is tested on a device.** |
 | [x] | Resume last-watched | Watch history + resume position |
 
 ---

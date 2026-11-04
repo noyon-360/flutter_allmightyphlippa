@@ -288,11 +288,7 @@ class PlaylistController extends GetxController {
 
     if (wasActive) {
       await _authStorageService.savePlaylistData(
-        PlaylistData(
-          url: updated.url ?? '',
-          username: updated.userName ?? '',
-          password: updated.password ?? '',
-        ),
+        PlaylistData.fromPlaylist(updated),
       );
     }
     await fetchPlaylists();
@@ -439,18 +435,21 @@ class PlaylistController extends GetxController {
     );
   }
 
-  Future<void> selectPlaylist(PlaylistModel playlist) async {
-    // Store selected playlist details for request model usage using the centralized model
-    final playlistData = PlaylistData(
-      url: playlist.url ?? '',
-      username: playlist.userName ?? '',
-      password: playlist.password ?? '',
+  /// Makes [playlist] the active one and reloads everything for it. [thenOpen]
+  /// is pushed on top of Home once the reload is done, e.g. the title a
+  /// Watch Later item from this playlist pointed at.
+  Future<void> selectPlaylist(
+    PlaylistModel playlist, {
+    Widget Function()? thenOpen,
+  }) async {
+    await _authStorageService.savePlaylistData(
+      PlaylistData.fromPlaylist(playlist),
     );
-    await _authStorageService.savePlaylistData(playlistData);
     await _loadActivePlaylistData();
 
     await updateControllers();
 
     Get.offAll(() => BottomNavScreen());
+    if (thenOpen != null) Get.to(thenOpen);
   }
 }

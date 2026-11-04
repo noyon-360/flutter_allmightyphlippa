@@ -44,6 +44,7 @@ class ApiConstants {
   static ServerEndpoints get server => ServerEndpoints();
 
   static VideoEndpoints get video => VideoEndpoints();
+  static WatchLaterEndpoints get watchLater => WatchLaterEndpoints();
 
   static PaymentEndpoints get payment => PaymentEndpoints();
   static GenreEndpoints get genre => GenreEndpoints();
@@ -104,6 +105,15 @@ class VideoEndpoints {
   final String getWatchHistory = '$_base/history';
   final String getVideoStatus = '$_base/status';
   final String getFavorites = '$_base/favorites';
+}
+
+class WatchLaterEndpoints {
+  static const String _base = '${ApiConstants.baseUrl}/watch-later';
+
+  final String list = _base;
+  final String add = _base;
+  final String status = '$_base/status';
+  String remove(String id) => '$_base/$id';
 }
 
 class PaymentEndpoints {

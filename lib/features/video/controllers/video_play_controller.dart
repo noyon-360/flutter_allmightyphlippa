@@ -14,6 +14,9 @@ import '../../series/models/single_series_response_model.dart';
 import '../../../core/services/auth_storage_service.dart';
 import '../../../core/services/watch_history_service.dart';
 import '../repositories/video_status_repo.dart';
+import '../../playlist/services/active_playlist_service.dart';
+import '../../watch_later/controllers/watch_later_controller.dart';
+import '../../watch_later/repositories/watch_later_repo.dart';
 import '../models/video_status_request_model.dart';
 
 class VideoPlayController extends GetxController {
@@ -36,6 +39,15 @@ class VideoPlayController extends GetxController {
   final selectedSeason = Rxn<String>();
   final isLoved = false.obs;
   final isTogglingFavorite = false.obs;
+
+  /// Id of this title's Watch Later entry on the active playlist, if saved.
+  final watchLaterId = RxnString();
+  final isTogglingWatchLater = false.obs;
+  bool get isSavedForLater => watchLaterId.value != null;
+
+  /// Set when the movie / series details couldn't be loaded, e.g. the
+  /// provider removed a title that was saved for later.
+  final loadFailed = false.obs;
 
   final playbackSpeed = 1.0.obs;
   final availableSpeeds = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
@@ -271,6 +283,8 @@ class VideoPlayController extends GetxController {
     hasStartedPlaying.value = autoPlay;
     isLoved.value = false;
     _seriesStreamId = null;
+    watchLaterId.value = null;
+    loadFailed.value = false;
 
     // Reset settings
     playbackSpeed.value = 1.0;
@@ -308,11 +322,13 @@ class VideoPlayController extends GetxController {
       return;
     }
 
+    unawaited(_loadWatchLaterStatus('movie', streamId.toString()));
     await movieCtrl.getMovieDetails(streamId: streamId);
     final movie = movieCtrl.movie.value;
     if (movie != null && movie.playUrl.isNotEmpty) {
       await _initializePlayer(movie.playUrl, autoPlay: autoPlay);
     } else {
+      if (movie == null) loadFailed.value = true;
       DPrint.error("No playUrl returned for movie streamId: $streamId");
       // Get.snackbar('Playback Error', 'Could not get a playable link for this movie.');
     }
@@ -375,10 +391,13 @@ class VideoPlayController extends GetxController {
       isLoved.value = status.data.isLoved;
     }
 
+    unawaited(_loadWatchLaterStatus('series', streamId.toString()));
+
     // Fetch details
     await seriesCtrl.getSeriesDetails(streamId: streamId);
 
     final series = seriesCtrl.singleSeries.value;
+    if (series?.data == null) loadFailed.value = true;
     final episodesMap = series?.data?.episodes;
     final seasonKeys = sortedSeasonKeys(episodesMap);
     if (seasonKeys.isNotEmpty) {
@@ -638,6 +657,82 @@ class VideoPlayController extends GetxController {
       }
     } finally {
       isTogglingFavorite.value = false;
+    }
+  }
+
+  // The title the Watch Later button refers to: the show for a series (like
+  // favourites), the movie otherwise.
+  String? _watchLaterKey;
+  final _activePlaylist = ActivePlaylistService();
+
+  Future<void> _loadWatchLaterStatus(String videoType, String videoId) async {
+    final key = '$videoType:$videoId';
+    _watchLaterKey = key;
+    final playlistId = await _activePlaylist.activePlaylistId();
+    if (playlistId == null || _watchLaterKey != key) return;
+
+    final result = await Get.find<WatchLaterRepo>().getStatus(
+      playlistId: playlistId,
+      videoType: videoType,
+      videoId: videoId,
+    );
+    // Another title may have been opened while this was in flight.
+    if (_watchLaterKey != key) return;
+    result.fold((_) {}, (s) => watchLaterId.value = s.data.id);
+  }
+
+  Future<void> toggleWatchLater() async {
+    if (isTogglingWatchLater.value) return;
+    final isSeries = currentType.value == ServerType.series;
+    final videoType = isSeries ? 'series' : 'movie';
+    final videoId = isSeries ? _seriesStreamId?.toString() : _currentVideoId;
+    if (videoId == null) return;
+    final key = '$videoType:$videoId';
+
+    isTogglingWatchLater.value = true;
+    try {
+      final playlistId = await _activePlaylist.activePlaylistId();
+      if (playlistId == null) {
+        Get.snackbar('Watch Later', 'Select a playlist first.');
+        return;
+      }
+      final repo = Get.find<WatchLaterRepo>();
+      final existingId = watchLaterId.value;
+
+      if (existingId != null) {
+        watchLaterId.value = null;
+        final result = await repo.remove(existingId);
+        if (result.isLeft() && _watchLaterKey == key) {
+          watchLaterId.value = existingId;
+          Get.snackbar('Watch Later', 'Could not remove it. Please try again.');
+          return;
+        }
+      } else {
+        final result = await repo.add(
+          playlistId: playlistId,
+          videoType: videoType,
+          videoId: videoId,
+          title: isSeries
+              ? (seriesCtrl.singleSeries.value?.data?.info?.name ?? title)
+              : title,
+          thumbnail: isSeries
+              ? seriesCtrl.singleSeries.value?.data?.info?.cover
+              : movieCtrl.movie.value?.streamData.info.movieImage,
+        );
+        final failed = result.fold((_) => true, (s) {
+          if (_watchLaterKey == key) watchLaterId.value = s.data.id;
+          return false;
+        });
+        if (failed) {
+          Get.snackbar('Watch Later', 'Could not save it. Please try again.');
+          return;
+        }
+      }
+      if (Get.isRegistered<WatchLaterController>()) {
+        Get.find<WatchLaterController>().load();
+      }
+    } finally {
+      isTogglingWatchLater.value = false;
     }
   }
 

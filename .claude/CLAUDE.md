@@ -18,7 +18,7 @@ Flutter IPTV player (Android, iOS, Android TV) for the client **almightyflippa**
 Scope rules:
 - Section 4 (nice-to-have) and section 5 (proposed improvements) are **not in scope** until the user says the client approved them. Then move the item into scope in the checklist.
 - New client bug reports go into section 0 with cause, fix and status.
-- Only commit or push when the user asks. Work on a feature branch, never directly on `main`.
+- Only commit or push when the user asks. **Don't create new branches** (in any of the three repos): work on whatever branch is currently checked out.
 
 ## Related repos
 

@@ -22,6 +22,8 @@ import '../../features/tv/repositories/live_tv_repo_impl.dart';
 
 import '../../features/subscription/repositories/subscription_repo.dart';
 import '../../features/epg/repositories/epg_repository.dart';
+import '../../features/watch_later/repositories/watch_later_repo.dart';
+import '../../features/watch_later/repositories/watch_later_repo_impl.dart';
 import '../utils/getx_helper.dart';
 
 Future<void> setupRepository() async {
@@ -54,6 +56,11 @@ Future<void> setupRepository() async {
 
   Get.getOrPutLazy<VideoStatusRepo>(
     () => VideoStatusRepoImpl(apiClient: Get.find()),
+    fenix: true,
+  );
+
+  Get.getOrPutLazy<WatchLaterRepo>(
+    () => WatchLaterRepoImpl(apiClient: Get.find()),
     fenix: true,
   );
 
