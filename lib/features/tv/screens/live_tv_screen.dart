@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
@@ -70,7 +71,13 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         title: 'Live TV Categories',
         genreTag: 'channels',
         selectedCategoryId: liveTvCtrl.selectedCategoryId,
-        onCategorySelected: (categoryId) {
+        onCategorySelected: (categoryId) async {
+          if (!await ParentalLockService.to.guardCategory(
+            ParentalSection.live,
+            categoryId,
+          )) {
+            return;
+          }
           liveTvCtrl.getLiveTvList(categoryId: categoryId);
         },
       ),
@@ -326,7 +333,14 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                   return Padding(
                                     padding: const EdgeInsets.only(right: 12),
                                     child: TvFocusWrapper(
-                                      onTap: () {
+                                      onTap: () async {
+                                        if (!await ParentalLockService.to
+                                            .guardCategory(
+                                              ParentalSection.live,
+                                              categoryId,
+                                            )) {
+                                          return;
+                                        }
                                         liveTvCtrl.getLiveTvList(
                                           categoryId: categoryId,
                                         );

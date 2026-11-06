@@ -61,8 +61,10 @@ class CategorySelectionScreen extends StatelessWidget {
 
               return TvFocusWrapper(
                 onTap: () {
-                  onCategorySelected(categoryId);
+                  // Close first: selecting a locked category opens the PIN
+                  // dialog, which Get.back() would otherwise dismiss.
                   Get.back();
+                  onCategorySelected(categoryId);
                 },
                 // Remote users start on the current category.
                 autofocus: isSelected,

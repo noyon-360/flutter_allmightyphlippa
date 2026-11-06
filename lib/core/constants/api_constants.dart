@@ -80,6 +80,9 @@ class UserEndpoints {
   final String deleteAccount = '$_base/delete-account';
   final String registerFcmToken = '$_base/fcm-token';
   final String removeFcmToken = '$_base/fcm-token';
+  // Parental lock "Forgot PIN": {password} → {valid}. Answers 200 even for a
+  // wrong password, because a 401 would make ApiClient log the user out.
+  final String verifyPassword = '$_base/verify-password';
 }
 
 class PlaylistEndpoints {

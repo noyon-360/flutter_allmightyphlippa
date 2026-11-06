@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/features/search/widgets/search_section_widget.dart';
 import 'package:flutx_core/flutx_core.dart';
@@ -69,7 +70,13 @@ class _SeriesScreenState extends State<SeriesScreen> {
         title: 'Series Categories',
         genreTag: 'series',
         selectedCategoryId: seriesCtrl.selectedCategoryId,
-        onCategorySelected: (categoryId) {
+        onCategorySelected: (categoryId) async {
+          if (!await ParentalLockService.to.guardCategory(
+            ParentalSection.series,
+            categoryId,
+          )) {
+            return;
+          }
           seriesCtrl.getSeries(categoryId: categoryId);
         },
       ),
@@ -203,7 +210,14 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                     return Padding(
                                       padding: const EdgeInsets.only(right: 12),
                                       child: TvFocusWrapper(
-                                        onTap: () {
+                                        onTap: () async {
+                                          if (!await ParentalLockService.to
+                                              .guardCategory(
+                                                ParentalSection.series,
+                                                categoryId,
+                                              )) {
+                                            return;
+                                          }
                                           seriesCtrl.getSeries(
                                             categoryId: categoryId,
                                           );

@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_almightyflippa/core/constants/app_colors.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
@@ -62,7 +63,13 @@ class _MovieScreenState extends State<MovieScreen> {
         title: 'Movie Categories',
         genreTag: 'movies',
         selectedCategoryId: movieCtrl.selectedCategoryId,
-        onCategorySelected: (categoryId) {
+        onCategorySelected: (categoryId) async {
+          if (!await ParentalLockService.to.guardCategory(
+            ParentalSection.movies,
+            categoryId,
+          )) {
+            return;
+          }
           movieCtrl.getMovies(categoryId: categoryId);
         },
       ),
@@ -157,7 +164,14 @@ class _MovieScreenState extends State<MovieScreen> {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12),
                                 child: TvFocusWrapper(
-                                  onTap: () {
+                                  onTap: () async {
+                                    if (!await ParentalLockService.to
+                                        .guardCategory(
+                                          ParentalSection.movies,
+                                          categoryId,
+                                        )) {
+                                      return;
+                                    }
                                     movieCtrl.getMovies(categoryId: categoryId);
                                   },
                                   borderRadius: 25,

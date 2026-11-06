@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../../core/services/theme_service.dart';
+import '../../core/services/parental_lock_service.dart';
 import '../../core/services/watch_history_service.dart';
 import '../../core/services/cast_service.dart';
 import '../../core/services/notification_service.dart';
@@ -12,6 +13,10 @@ import '../../features/notifications/services/notification_inbox_service.dart';
 
 Future<void> setupServices() async {
   Get.put(ThemeService(), permanent: true);
+  await Get.putAsync<ParentalLockService>(
+    () => ParentalLockService().init(),
+    permanent: true,
+  );
   Get.put(WatchHistoryService());
   Get.put(CastService(), permanent: true);
   Get.put(RevenueCatService(), permanent: true);

@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'package:flutter_almightyflippa/features/tv/models/live_tv_reponse_model.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
@@ -35,6 +36,27 @@ class SearchingController extends GetxController {
   };
 
   SearchState getState(ServerType type) => _states[type] ??= SearchState();
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (Get.isRegistered<ParentalLockService>()) {
+      ever(ParentalLockService.to.changes, (_) => _applyParentalLock());
+    }
+  }
+
+  /// Results already on screen follow lock changes right away: drop newly
+  /// locked items, or search again when something was unlocked.
+  void _applyParentalLock() {
+    final reveals = ParentalLockService.to.lastChangeReveals;
+    _states.forEach((type, state) {
+      if (reveals && state.hasSearched.value) {
+        searchData(type: type);
+      } else {
+        state.results.removeWhere(_hiddenByParentalLock);
+      }
+    });
+  }
 
   void onQueryChanged(String val, ServerType type) {
     final state = getState(type);
@@ -89,10 +111,10 @@ class SearchingController extends GetxController {
         }
       },
       (success) {
-        final data = success.data;
-        if (data.length < _limit) {
+        if (success.data.length < _limit) {
           state.hasMore.value = false;
         }
+        final data = success.data.where((i) => !_hiddenByParentalLock(i));
 
         if (isLoadMore) {
           state.results.addAll(data);
@@ -115,4 +137,15 @@ class SearchingController extends GetxController {
   void onClose() {
     super.onClose();
   }
+
+  bool _hiddenByParentalLock(dynamic item) => switch (item) {
+    MoviesResponseModel m =>
+      ParentalLockService.hides(ParentalSection.movies, m.categoryId),
+    SeriesResponesModel s => ParentalLockService.hides(
+      ParentalSection.series,
+      '${s.categoryId ?? ''}',
+    ),
+    LiveTvModel c => ParentalLockService.hides(ParentalSection.live, c.categoryId),
+    _ => false,
+  };
 }

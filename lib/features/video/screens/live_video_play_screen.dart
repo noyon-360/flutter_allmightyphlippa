@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -199,6 +200,8 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
     final categoryId = widget.categoryId;
     if (categoryId == null ||
         categoryId.isEmpty ||
+        // Don't pull a locked category into the guide the Live TV tab shares.
+        ParentalLockService.hides(ParentalSection.live, categoryId) ||
         !Get.isRegistered<LiveTvController>()) {
       return;
     }

@@ -21,4 +21,10 @@ class KeyConstants {
   static const String deviceId = 'device_id';
 
   static const String themeMode = 'theme_mode';
+
+  // Parental lock: PIN hash + salt in secure storage, the rest in Hive.
+  static const String parentalPinHash = 'parental_pin_hash';
+  static const String parentalPinSalt = 'parental_pin_salt';
+  static const String parentalBiometrics = 'parental_biometrics';
+  static const String parentalLockedPrefix = 'parental_locked_';
 }

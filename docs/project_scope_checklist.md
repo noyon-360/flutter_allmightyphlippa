@@ -28,11 +28,11 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 | VOD / movies / series | 6 | 7 |
 | Playback | 3 | 4 |
 | Casting & TV | 3 | 4 |
-| Personalisation | 2 | 5 |
+| Personalisation | 3 | 5 |
 | Sync & cloud | 3 | 3 |
 | Monetisation | 2 | 5 |
 | Platforms & delivery | 3 | 6 |
-| **Total** | **30** | **51** |
+| **Total** | **31** | **51** |
 
 ---
 
@@ -118,7 +118,7 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 
 | | Feature | Notes |
 |---|---|---|
-| [ ] | Parental lock (PIN / Face ID / Touch ID) | Not started: no `local_auth` |
+| [x] | Parental lock (PIN / Face ID / Touch ID) | 4 Nov 2026: done. Profile → Parental Lock: set / change / remove a 4-digit PIN, optional Face ID / fingerprint (`local_auth`), and lock Live / Movies / Series categories. Locked categories ask for the PIN (or biometrics) before opening and are hidden from "All", Home and Search. Entering the PIN opens only that category, and every unlock ends when the app goes to the background. Lock changes apply immediately (no restart): lists filter or reload through `ParentalLockService.changes`. 5 wrong PINs → 30 s wait. PIN stored as a salted SHA-256 hash in secure storage, locked IDs in Hive. Files: `core/services/parental_lock_service.dart`, `core/common/widgets/pin_pad_dialog.dart` (on-screen pad, D-pad + remote number keys), `features/parental/screens/parental_lock_screen.dart`. "Forgot PIN?" on the PIN pad asks for the account password (`POST /user/verify-password`, `core/common/widgets/password_confirm_dialog.dart`) and removes the PIN. ⚠️ Needs the backend endpoint deployed; until then it shows "Not available yet". Tests: `test/parental_lock_test.dart`. Not covered: Favourites, History, Watch Later and Continue Watching still show locked items. Locks are per area, not per playlist. Needs a device check for Face ID / fingerprint and the TV PIN pad. |
 | [x] | Dark / light themes | 4 Nov 2026: done, free for all users. Visual pass in Light on phone + Android TV confirmed by developer. Profile → Appearance: Dark (default) / Light / System. `AppPalette` theme extension (`core/config/app_palette.dart`, read via `context.palette`), light + dark `ThemeData` in `app_theme.dart`, choice saved in Hive by `core/services/theme_service.dart`, picker in `features/profile/widgets/theme_picker_dialog.dart`. Players and the welcome screen stay dark on purpose. Dark looks exactly as before. Tests: `test/theme_test.dart`. Picking an option closes the dialog (needed on TV). |
 | [x] | Rename playlists | |
 | [ ] | Rename / reorder categories | |
@@ -204,3 +204,51 @@ Not agreed yet. Move an item into scope once the client approves it.
 8. Background audio playback
 9. Apple TV app
 10. Admin dashboard: host the built dashboard (in scope); the section 5 extras only if the client approves them
+
+
+
+
+
+
+```
+**IPTV Catch-Up Feature**
+
+Catch-Up allows users to go back and watch programs that already aired on a live TV channel.
+
+**Example:**
+
+Let's say ESPN has the following schedule:
+
+- 6:00 PM: SportsCenter
+- 7:00 PM: NBA Basketball
+- 9:30 PM: SportsCenter
+- 10:30 PM: NBA Highlights
+
+It's currently 11:00 PM.
+
+A user opens ESPN's EPG (TV Guide), scrolls backward to the NBA game that aired at 7:00 PM, and clicks it.
+
+Instead of switching to the current live broadcast, the app plays the NBA game from 7:00 PM.
+
+**How It Should Work:**
+
+1. Open a live TV channel that supports Catch-Up.
+2. Open the channel's EPG.
+3. Scroll backward to previous programs.
+4. Select a program that already aired.
+5. Choose "Watch Catch-Up" or "Play."
+6. The program starts playing from its original beginning.
+7. Users can pause, rewind, and fast-forward if supported.
+
+**Important Details:**
+
+- Catch-Up is only available on channels that support it.
+- The IPTV provider must supply the archived content.
+- Some providers offer 24 hours, 3 days, or 7 days of Catch-Up.
+- The EPG should visually identify programs that support Catch-Up.
+- Programs outside the available archive period shouldn't display a working Catch-Up option.
+
+**The Goal:**
+
+Make Catch-Up feel like selecting an older program from a TV guide and watching it on demand, without having to search for a separate recording.
+```

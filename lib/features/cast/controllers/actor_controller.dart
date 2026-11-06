@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
@@ -34,6 +35,27 @@ class ActorController extends GetxController {
     super.onInit();
     loadMovies();
     loadSeries();
+    if (Get.isRegistered<ParentalLockService>()) {
+      ever(ParentalLockService.to.changes, (_) => _applyParentalLock());
+    }
+  }
+
+  bool _hiddenMovie(MoviesResponseModel m) =>
+      ParentalLockService.hides(ParentalSection.movies, m.categoryId);
+
+  bool _hiddenSeries(SeriesResponesModel s) => ParentalLockService.hides(
+    ParentalSection.series,
+    '${s.categoryId ?? ''}',
+  );
+
+  void _applyParentalLock() {
+    if (ParentalLockService.to.lastChangeReveals) {
+      loadMovies();
+      loadSeries();
+    } else {
+      movies.removeWhere(_hiddenMovie);
+      series.removeWhere(_hiddenSeries);
+    }
   }
 
   Future<void> loadMovies({bool more = false}) async {
@@ -55,7 +77,8 @@ class ActorController extends GetxController {
         failed.value = true;
       },
       (success) {
-        more ? movies.addAll(success.data) : movies.assignAll(success.data);
+        final visible = success.data.where((m) => !_hiddenMovie(m));
+        more ? movies.addAll(visible) : movies.assignAll(visible);
         hasMoreMovies.value = success.data.length >= _pageSize;
         _moviePage++;
       },
@@ -82,7 +105,8 @@ class ActorController extends GetxController {
         failed.value = true;
       },
       (success) {
-        more ? series.addAll(success.data) : series.assignAll(success.data);
+        final visible = success.data.where((s) => !_hiddenSeries(s));
+        more ? series.addAll(visible) : series.assignAll(visible);
         hasMoreSeries.value = success.data.length >= _pageSize;
         _seriesPage++;
       },

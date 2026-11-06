@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'package:flutter_almightyflippa/features/series/models/series_response_model.dart';
 import 'package:flutter_almightyflippa/features/series/repositories/series_repo.dart';
 import 'package:flutx_core/flutx_core.dart';
@@ -28,7 +29,36 @@ class SeriesController extends GetxController {
     super.onInit();
     getSeries();
     Get.put(GenreController(), tag: 'series').getGenres(type: ServerType.series);
+    if (Get.isRegistered<ParentalLockService>()) {
+      ever(ParentalLockService.to.changes, (_) => _applyParentalLock());
+    }
   }
+
+  bool _hidden(SeriesResponesModel s) => ParentalLockService.hides(
+    ParentalSection.series,
+    '${s.categoryId ?? ''}',
+  );
+
+  /// Applies lock changes right away: leave a category that just got
+  /// locked, drop newly locked items, or reload when something was unlocked
+  /// (filtered-out items can't be brought back without fetching them again).
+  void _applyParentalLock() {
+    // A load in flight would drop the reload/switch below (it returns early
+    // while loading), so apply the change once it has finished.
+    if (isLoading.value) {
+      once(isLoading, (_) => _applyParentalLock());
+      return;
+    }
+    final lock = ParentalLockService.to;
+    if (lock.isHidden(ParentalSection.series, selectedCategoryId.value)) {
+      getSeries(categoryId: '');
+    } else if (lock.lastChangeReveals) {
+      getSeries(categoryId: selectedCategoryId.value);
+    } else {
+      series.removeWhere(_hidden);
+    }
+  }
+
 
   Future<void> getSeries({bool isLoadMore = false, String? categoryId}) async {
     if (isLoading.value || isMoreLoading.value) return;
@@ -68,11 +98,10 @@ class SeriesController extends GetxController {
       },
       (success) {
         errorMessage.value = null;
-        final data = success.data;
-
-        if (data.length < _limit) {
+        if (success.data.length < _limit) {
           hasMore.value = false;
         }
+        final data = success.data.where((s) => !_hidden(s)).toList();
         if (isLoadMore) {
           // Xtream's catalog ordering isn't guaranteed stable across
           // separate paginated requests, so a later page can return an

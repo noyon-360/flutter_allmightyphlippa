@@ -24,6 +24,8 @@ import '../../../core/utils/tv_device.dart';
 import '../../auth/controller/auth_controller.dart';
 import '../../favourites/screens/favourite_screen.dart';
 import '../../watch_later/screens/watch_later_screen.dart';
+import '../../parental/screens/parental_lock_screen.dart';
+import '../../../core/services/parental_lock_service.dart';
 import '../../history/screens/history_screen.dart';
 import '../../app/screens/about_app_screen.dart';
 import '../../app/screens/privacy_policy_screen.dart';
@@ -419,6 +421,20 @@ class ProfileScreen extends StatelessWidget {
                 iconData: Icons.brightness_6_outlined,
                 title: "Appearance",
                 onTap: showThemePickerDialog,
+              ),
+              _buildMenuItem(
+                context,
+                iconAsset: '',
+                iconData: Icons.family_restroom,
+                title: "Parental Lock",
+                onTap: () async {
+                  // Only the parent may change the locks.
+                  if (!await ParentalLockService.to.verifyParent()) return;
+                  Get.to(
+                    () => const ParentalLockScreen(),
+                    transition: Transition.rightToLeft,
+                  );
+                },
               ),
               _buildMenuItem(
                 context,

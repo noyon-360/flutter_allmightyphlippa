@@ -1,3 +1,4 @@
+import 'package:flutter_almightyflippa/core/services/parental_lock_service.dart';
 import 'package:flutx_core/flutx_core.dart';
 import 'package:get/get.dart';
 
@@ -28,7 +29,34 @@ class MovieController extends GetxController {
     super.onInit();
     getMovies();
     Get.put(GenreController(), tag: 'movies').getGenres(type: ServerType.movies);
+    if (Get.isRegistered<ParentalLockService>()) {
+      ever(ParentalLockService.to.changes, (_) => _applyParentalLock());
+    }
   }
+
+  bool _hidden(MoviesResponseModel m) =>
+      ParentalLockService.hides(ParentalSection.movies, m.categoryId);
+
+  /// Applies lock changes right away: leave a category that just got
+  /// locked, drop newly locked items, or reload when something was unlocked
+  /// (filtered-out items can't be brought back without fetching them again).
+  void _applyParentalLock() {
+    // A load in flight would drop the reload/switch below (it returns early
+    // while loading), so apply the change once it has finished.
+    if (isLoading.value) {
+      once(isLoading, (_) => _applyParentalLock());
+      return;
+    }
+    final lock = ParentalLockService.to;
+    if (lock.isHidden(ParentalSection.movies, selectedCategoryId.value)) {
+      getMovies(categoryId: '');
+    } else if (lock.lastChangeReveals) {
+      getMovies(categoryId: selectedCategoryId.value);
+    } else {
+      movies.removeWhere(_hidden);
+    }
+  }
+
 
   Future<void> getMovies({bool isLoadMore = false, String? categoryId}) async {
     if (isLoading.value || isMoreLoading.value) return;
@@ -68,10 +96,10 @@ class MovieController extends GetxController {
       },
       (success) {
         errorMessage.value = null;
-        final data = success.data;
-        if (data.length < _limit) {
+        if (success.data.length < _limit) {
           hasMore.value = false;
         }
+        final data = success.data.where((m) => !_hidden(m)).toList();
 
         if (isLoadMore) {
           // Xtream's catalog ordering isn't guaranteed stable across
