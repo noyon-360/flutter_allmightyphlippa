@@ -23,9 +23,7 @@ class ProfileRepoImpl implements ProfileRepo {
   }
 
   @override
-  NetworkResult<UserModel> updateProfile({
-    required FormData formData,
-  }) async {
+  NetworkResult<UserModel> updateProfile({required FormData formData}) async {
     return await apiClient.put<UserModel>(
       endpoint: ApiConstants.user.profile,
       data: formData,

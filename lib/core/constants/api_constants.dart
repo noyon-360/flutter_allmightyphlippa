@@ -70,6 +70,11 @@ class AuthEndpoints {
 
   final String refreshToken = '$_base/refresh-token';
 
+  // Sign in on a TV with a phone (docs/backend_tv_login.md).
+  final String tvCode = '$_base/tv/code';
+  final String tvPoll = '$_base/tv/poll';
+  final String tvApprove = '$_base/tv/approve';
+
   // final String logout = '$_base/logout';
 }
 

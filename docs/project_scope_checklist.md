@@ -27,12 +27,12 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 | Live TV | 6 | 7 |
 | VOD / movies / series | 6 | 7 |
 | Playback | 3 | 4 |
-| Casting & TV | 3 | 4 |
+| Casting & TV | 3 | 5 |
 | Personalisation | 3 | 5 |
 | Sync & cloud | 3 | 3 |
 | Monetisation | 2 | 5 |
 | Platforms & delivery | 3 | 6 |
-| **Total** | **31** | **51** |
+| **Total** | **31** | **52** |
 
 ---
 
@@ -112,6 +112,7 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 | [x] | Chromecast | Custom implementation in `core/services/cast` |
 | [x] | AirPlay | `airplay_service.dart` |
 | [x] | Android TV interface | Leanback launcher, TV nav rail, focus widgets. 4 Nov 2026: movie/series player has its own remote controls on TV (`features/video/widgets/tv_vod_controls.dart`), replacing media_kit's desktop controls, which only appear on mouse hover and so never showed on TV. Any key shows the bar (title, progress, time) and it hides after 5 s while playing. OK: fullscreen when embedded, play/pause in fullscreen. Left/Right ±10 s (hold to keep seeking), media keys work, Back exits fullscreen. Verified on the Android TV emulator; test `test/tv_vod_controls_test.dart`. The emulator shows a black picture (media_kit forces software rendering on emulators and the GL context fails); not yet checked on a real TV box. |
+| ⚠️ [ ] | Sign in on TV with phone (QR code) | Added 6 Nov 2026 at the developer's request. **App + backend done (not committed or deployed); needs a real TV + phone test.** TV login screen shows a QR code + 8-character code next to the email form; a signed-in phone approves it from Profile → Sign in on a TV (in-app scanner or type the code, then confirm). The TV polls and signs in with its own tokens; no password is typed on the TV. Files: `features/auth/models/tv_login_models.dart`, `controller/tv_qr_login_controller.dart`, `widgets/tv_qr_login_panel.dart`, `controller/tv_login_approve_controller.dart`, `screens/tv_login_approve_screen.dart`, `login_screen.dart`, `profile_screen.dart`; new deps `qr_flutter`, `mobile_scanner`. Tests: `test/tv_login_test.dart`. **Backend:** `controller/tvLogin.controller.js`, `model/tvLogin.model.js`, `route/auth.route.js` (`/auth/tv/code`, `/tv/poll`, `/tv/approve`), in-memory rate limits `utils/rateLimit.js`, and per-device refresh tokens `utils/sessionTokens.js` (so the phone stays signed in when the TV signs in; login / refresh / logout / password changes use it). Checked against a local test MongoDB (34 checks). Details in `docs/backend_tv_login.md`. Until deployed the TV shows "not available yet" and the email form still works. Open: client decision for Free users (today the TV becomes the one active device). Not verified on a device: camera scanning, TV layout on a real TV. Phone camera app opening the QR needs a deep link (follow-up). |
 | [ ] | Apple TV (tvOS) app | Needs a separate native Swift app (Flutter can't target tvOS). Build prompt ready: `docs/tvos_app_prompt.md` |
 
 ### 2.3 Personalisation
@@ -203,7 +204,8 @@ Not agreed yet. Move an item into scope once the client approves it.
 7. Light theme + multi-language
 8. Background audio playback
 9. Apple TV app
-10. Admin dashboard: host the built dashboard (in scope); the section 5 extras only if the client approves them
+10. Sign in on TV with phone: deploy backend, then test on a TV + phone
+11. Admin dashboard: host the built dashboard (in scope); the section 5 extras only if the client approves them
 
 
 

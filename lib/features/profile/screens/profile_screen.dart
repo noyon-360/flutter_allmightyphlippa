@@ -31,6 +31,7 @@ import '../../app/screens/about_app_screen.dart';
 import '../../app/screens/privacy_policy_screen.dart';
 import '../../app/screens/terms_condition_screen.dart';
 import '../../auth/screens/change_password_screen.dart';
+import '../../auth/screens/tv_login_approve_screen.dart';
 import '../../downloads/screens/downloads_screen.dart';
 import '../../subscription/screens/subscription_screen.dart';
 import '../widgets/theme_picker_dialog.dart';
@@ -169,7 +170,9 @@ class ProfileScreen extends StatelessWidget {
                           },
                           child: Text(
                             "See All",
-                            style: TextStyle(color: context.palette.textSecondary),
+                            style: TextStyle(
+                              color: context.palette.textSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -181,7 +184,8 @@ class ProfileScreen extends StatelessWidget {
                         itemCount: watchHistoryService.watchHistory.length,
                         separatorBuilder: (context, index) => Gap.w12,
                         itemBuilder: (context, index) {
-                          final history = watchHistoryService.watchHistory[index];
+                          final history =
+                              watchHistoryService.watchHistory[index];
                           return TvFocusWrapper(
                             onTap: () {
                               final streamId = int.tryParse(history.videoId);
@@ -239,11 +243,12 @@ class ProfileScreen extends StatelessWidget {
                                           else
                                             Positioned.fill(
                                               child: Container(
-                                                color:
-                                                    context.palette.surface,
+                                                color: context.palette.surface,
                                                 child: Icon(
                                                   Icons.movie,
-                                                  color: context.palette.textPrimary,
+                                                  color: context
+                                                      .palette
+                                                      .textPrimary,
                                                   size: 40,
                                                 ),
                                               ),
@@ -415,6 +420,20 @@ class ProfileScreen extends StatelessWidget {
                 title: "Update EPG",
                 onTap: _updateEpg,
               ),
+              // A TV can't scan its own QR code; this is the phone side.
+              if (!TvDevice.isTv)
+                _buildMenuItem(
+                  context,
+                  iconAsset: '',
+                  iconData: Icons.connected_tv,
+                  title: "Sign in on a TV",
+                  onTap: () {
+                    Get.to(
+                      () => const TvLoginApproveScreen(),
+                      transition: Transition.rightToLeft,
+                    );
+                  },
+                ),
               _buildMenuItem(
                 context,
                 iconAsset: '',
@@ -644,8 +663,7 @@ class ProfileScreen extends StatelessWidget {
     Get.find<EpgTimelineCache>().clear();
     nowPlaying.clear();
 
-    final streamIds = Get.find<LiveTvController>()
-        .liveTvList
+    final streamIds = Get.find<LiveTvController>().liveTvList
         .take(_epgUpdateChannelLimit)
         .map((channel) => channel.streamId)
         .toList();
@@ -665,7 +683,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, {
+  Widget _buildMenuItem(
+    BuildContext context, {
     required String iconAsset,
     required String title,
     required VoidCallback onTap,
@@ -679,21 +698,25 @@ class ProfileScreen extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: iconData != null
-              ? Icon(iconData, color: iconColor ?? context.palette.textPrimary, size: 24)
+              ? Icon(
+                  iconData,
+                  color: iconColor ?? context.palette.textPrimary,
+                  size: 24,
+                )
               : isSvg
-                  ? AppSvg(
-                      asset: iconAsset,
-                      color: iconColor ?? context.palette.textPrimary,
-                      width: 24,
-                      height: 24,
-                    )
-                  : Image.asset(
-                      iconAsset,
-                      color: iconColor ?? context.palette.textPrimary,
-                      width: 24,
-                      height: 24,
-                      fit: BoxFit.contain,
-                    ),
+              ? AppSvg(
+                  asset: iconAsset,
+                  color: iconColor ?? context.palette.textPrimary,
+                  width: 24,
+                  height: 24,
+                )
+              : Image.asset(
+                  iconAsset,
+                  color: iconColor ?? context.palette.textPrimary,
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                ),
           title: Text(
             title,
             style: TextStyle(

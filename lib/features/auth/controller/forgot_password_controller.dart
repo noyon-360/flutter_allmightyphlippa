@@ -134,7 +134,9 @@ class ForgotPasswordController extends GetxController {
       title,
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppPalette.current.background.withAlpha((0.2 * 255).toInt()),
+      backgroundColor: AppPalette.current.background.withAlpha(
+        (0.2 * 255).toInt(),
+      ),
       colorText: AppPalette.current.textPrimary,
     );
   }

@@ -124,9 +124,16 @@ class ApiClient {
         return false;
       }
 
+      // The backend keeps one session per device; the device id lets it move
+      // a pre-upgrade (single-token) session onto this device.
       final response = await _dio.post(
         ApiConstants.auth.refreshToken,
         data: {'refreshToken': refreshToken},
+        options: Options(
+          headers: {
+            'X-Device-ID': await _authStorageService.getOrCreateDeviceId(),
+          },
+        ),
       );
 
       final baseResponse = BaseResponse<Map<String, dynamic>>.fromJson(

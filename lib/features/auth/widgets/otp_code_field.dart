@@ -36,7 +36,9 @@ class PinCode extends StatelessWidget {
         focusedFillColor: dark
             ? const Color(0xFF3D3D3D)
             : context.palette.surfaceHigh,
-        filledFillColor: dark ? const Color(0xFF2E2E2E) : context.palette.surface,
+        filledFillColor: dark
+            ? const Color(0xFF2E2E2E)
+            : context.palette.surface,
 
         cursorColor: Colors.black,
         entryAnimation: MaterialPinAnimation.fade,

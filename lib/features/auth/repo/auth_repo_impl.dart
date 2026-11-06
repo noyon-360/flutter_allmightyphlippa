@@ -7,6 +7,7 @@ import 'package:flutter_almightyflippa/features/auth/repo/auth_repo.dart';
 
 import '../models/login_response_model.dart';
 import '../models/register_request_model.dart';
+import '../models/tv_login_models.dart';
 import '../models/user_response_model.dart';
 
 class AuthRepoImpl implements AuthRepo {
@@ -68,6 +69,39 @@ class AuthRepoImpl implements AuthRepo {
   NetworkResult<void> deleteAccount() {
     return _apiClient.delete(
       endpoint: ApiConstants.user.deleteAccount,
+      fromJsonT: (json) => {},
+    );
+  }
+
+  @override
+  NetworkResult<TvLoginCode> requestTvLoginCode({
+    required String deviceId,
+    required String deviceName,
+  }) {
+    return _apiClient.post(
+      endpoint: ApiConstants.auth.tvCode,
+      data: {'deviceId': deviceId, 'deviceName': deviceName},
+      fromJsonT: (json) => TvLoginCode.fromJson(json),
+    );
+  }
+
+  @override
+  NetworkResult<TvLoginPollResult> pollTvLogin(String deviceCode) {
+    return _apiClient.post(
+      endpoint: ApiConstants.auth.tvPoll,
+      data: {'deviceCode': deviceCode},
+      fromJsonT: (json) => TvLoginPollResult.fromJson(json),
+    );
+  }
+
+  @override
+  NetworkResult<void> approveTvLogin({
+    required String userCode,
+    required bool approve,
+  }) {
+    return _apiClient.post(
+      endpoint: ApiConstants.auth.tvApprove,
+      data: {'userCode': userCode, 'approve': approve},
       fromJsonT: (json) => {},
     );
   }

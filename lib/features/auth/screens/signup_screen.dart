@@ -235,7 +235,9 @@ class SignupScreen extends StatelessWidget {
                         children: [
                           Text(
                             "Already have an account? ",
-                            style: TextStyle(color: context.palette.textSecondary),
+                            style: TextStyle(
+                              color: context.palette.textSecondary,
+                            ),
                           ),
                           TvFocusWrapper(
                             onTap: () => Get.back(),

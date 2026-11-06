@@ -27,7 +27,10 @@ class ResetPasswordScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.adaptive.arrow_back, color: context.palette.textPrimary),
+          icon: Icon(
+            Icons.adaptive.arrow_back,
+            color: context.palette.textPrimary,
+          ),
           onPressed: () => Get.back(),
         ),
       ),
@@ -96,9 +99,8 @@ class ResetPasswordScreen extends StatelessWidget {
                       }
                       return null;
                     },
-                    onFieldSubmitted: (_) => FocusScope.of(
-                      context,
-                    ).requestFocus(ctrl.passwordFocus),
+                    onFieldSubmitted: (_) =>
+                        FocusScope.of(context).requestFocus(ctrl.passwordFocus),
                     autofillHints: const [AutofillHints.oneTimeCode],
                   ),
                   Gap.h16,

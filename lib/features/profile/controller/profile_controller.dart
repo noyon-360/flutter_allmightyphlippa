@@ -32,7 +32,7 @@ class ProfileController extends GetxController {
 
   Future<void> refreshProfile() async {
     getProfile(isRefresh: true);
-    if(Get.isRegistered<WatchHistoryService>()) {
+    if (Get.isRegistered<WatchHistoryService>()) {
       Get.find<WatchHistoryService>().refreshList();
     }
   }

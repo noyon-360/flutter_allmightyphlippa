@@ -53,9 +53,9 @@
 //     final parts = email.split('@');
 //     final local = parts[0];
 //     final domain = parts[1];
-    
+
 //     if (local.length <= 2) return email;
-    
+
 //     final prefix = local.substring(0, 2);
 //     return '$prefix*********@$domain';
 //   }
@@ -83,7 +83,7 @@
 //                     ),
 //                   ),
 //                   SizedBox(height: 40),
-              
+
 //                   Text(
 //                     'Enter OTP',
 //                     style: TextStyle(
@@ -104,7 +104,7 @@
 //                     ),
 //                   ),
 //                   SizedBox(height: 40),
-              
+
 //                   // Custom OTP Fields
 //                   Padding(
 //                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -115,7 +115,7 @@
 //                           width: 48,
 //                           height: 56,
 //                           decoration: BoxDecoration(
-//                             color: Colors.transparent, 
+//                             color: Colors.transparent,
 //                             borderRadius: BorderRadius.circular(16),
 //                             border: Border.all(color: AppColors.inputBorder),
 //                           ),
@@ -147,9 +147,9 @@
 //                       }),
 //                     ),
 //                   ),
-              
+
 //                   SizedBox(height: 40),
-              
+
 //                   // Verify Button
 //                   Padding(
 //                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -176,9 +176,9 @@
 //                       ),
 //                     ),
 //                   ),
-              
+
 //                   SizedBox(height: 24),
-              
+
 //                   // Resend Email Text
 //                   Center(
 //                     child: RichText(
@@ -203,7 +203,7 @@
 //                       ),
 //                     ),
 //                   ),
-                  
+
 //                   SizedBox(height: 20),
 //                 ],
 //               ),
