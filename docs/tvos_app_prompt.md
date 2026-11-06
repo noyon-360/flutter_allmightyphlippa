@@ -61,7 +61,7 @@ Common body: `{ serverUrl, username, password, type, search?, limit, page }` whe
 - Backend status: `/payment/my-subscription` (GET). After an Apple purchase the app calls `/payment/verify-apple-purchase` — copy the exact body from the Flutter `SubscriptionRepo`.
 - Ask me for the **RevenueCat Apple API key**; never hard-code a placeholder that looks real.
 
-**Reference implementation:** the Flutter app at `<path to flutter_allmightyphlippa-1>` — read `lib/core/constants/api_constants.dart`, the `*_repo_impl.dart` files and the models in `lib/features/*/models/` for exact field names before writing each `Codable` model. Don't guess field names.
+**Reference implementation:** the Flutter app at `<path to flutter_allmightyphlippa>` — read `lib/core/constants/api_constants.dart`, the `*_repo_impl.dart` files and the models in `lib/features/*/models/` for exact field names before writing each `Codable` model. Don't guess field names.
 
 ## Screens (TV-style layout, not a phone layout)
 
