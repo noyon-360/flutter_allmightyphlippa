@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/premium_upsell_dialog.dart';
 import 'package:flutter_almightyflippa/core/constants/app_colors.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
     hide Icons;
@@ -447,6 +448,17 @@ class ProfileScreen extends StatelessWidget {
                 iconData: Icons.family_restroom,
                 title: "Parental Lock",
                 onTap: () async {
+                  // Paid Premium only (not the free trial). A parent who
+                  // already set a PIN keeps access after their plan ends, so
+                  // they can still change or remove it; the locks themselves
+                  // keep protecting the kids either way.
+                  if (!ParentalLockService.to.hasPin.value &&
+                      !PremiumUpsell.check(
+                        feature: 'Parental lock',
+                        trialIncluded: false,
+                      )) {
+                    return;
+                  }
                   // Only the parent may change the locks.
                   if (!await ParentalLockService.to.verifyParent()) return;
                   Get.to(

@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../features/profile/controller/profile_controller.dart';
+import '../../features/subscription/models/free_trial_offer.dart';
 import 'auth_storage_service.dart';
 
 /// Outcome of a purchase or restore attempt.
@@ -43,6 +44,10 @@ class RevenueCatService extends GetxService {
   /// True while the initial offerings fetch is in progress.
   final isOfferingsLoading = true.obs;
 
+  /// iOS free-trial eligibility per store product ID. Empty on Android, where
+  /// Play only returns the trial offer to eligible users.
+  final introEligibility = <String, IntroEligibilityStatus>{}.obs;
+
   // ── Computed Properties ─────────────────────────────────────────────────────
   bool get hasActiveSubscription =>
       customerInfo.value?.entitlements.active.containsKey(entitlementId) ??
@@ -58,6 +63,26 @@ class RevenueCatService extends GetxService {
   DateTime? get expirationDate {
     final raw = expirationDateString;
     return raw != null ? DateTime.tryParse(raw) : null;
+  }
+
+  /// True while the store entitlement is in its free-trial period. The
+  /// backend's "trialing" status can lag the webhook by a few seconds.
+  bool get isInFreeTrial => activeEntitlement?.periodType == PeriodType.trial;
+
+  /// The free trial this user can get on [package], or null.
+  FreeTrialOffer? freeTrialFor(Package package) => FreeTrialOffer.fromProduct(
+    package.storeProduct,
+    isIOS: Platform.isIOS,
+    iosEligibility: introEligibility[package.storeProduct.identifier],
+  );
+
+  /// A free trial this user can start on any plan, for "try it free" prompts.
+  FreeTrialOffer? get availableFreeTrial {
+    for (final p in availablePackages) {
+      final trial = freeTrialFor(p);
+      if (trial != null) return trial;
+    }
+    return null;
   }
 
   String? get activeProductIdentifier {
@@ -122,10 +147,25 @@ class RevenueCatService extends GetxService {
     isOfferingsLoading.value = true;
     try {
       offerings.value = await Purchases.getOfferings();
+      await _checkIntroEligibility();
     } catch (e) {
       debugPrint('[RevenueCat] fetchOfferings error: $e');
     } finally {
       isOfferingsLoading.value = false;
+    }
+  }
+
+  /// Apple shows every user the product's intro offer, even those who already
+  /// used a trial, so ask StoreKit who is eligible before advertising it.
+  Future<void> _checkIntroEligibility() async {
+    if (!Platform.isIOS) return;
+    final ids = availablePackages.map((p) => p.storeProduct.identifier).toList();
+    if (ids.isEmpty) return;
+    try {
+      final result = await Purchases.checkTrialOrIntroductoryPriceEligibility(ids);
+      introEligibility.assignAll(result.map((id, e) => MapEntry(id, e.status)));
+    } catch (e) {
+      debugPrint('[RevenueCat] intro eligibility error: $e');
     }
   }
 

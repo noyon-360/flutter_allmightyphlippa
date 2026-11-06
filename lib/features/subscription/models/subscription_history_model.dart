@@ -6,7 +6,11 @@ class SubscriptionHistoryModel {
   final DateTime? endDate;
   final String? platform;
 
+  /// The period was a store free trial (backend `isTrial`, missing on older rows).
+  final bool isTrial;
+
   const SubscriptionHistoryModel({
+    this.isTrial = false,
     this.status,
     this.plan,
     this.productId,
@@ -47,6 +51,7 @@ class SubscriptionHistoryModel {
       plan: json['plan'],
       productId: json['productId'] ?? json['subscriptionProductId'],
       platform: json['platform'] ?? json['subscriptionPlatform'],
+      isTrial: json['isTrial'] == true,
       startDate: _parseDate(
         json['startDate'] ?? json['subscriptionStartDate'] ?? json['createdAt'],
       ),

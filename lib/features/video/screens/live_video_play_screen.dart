@@ -8,6 +8,7 @@ import 'package:floating/floating.dart';
 import 'package:get/get.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../../../core/services/airplay_service.dart';
+import '../../../core/common/widgets/premium_upsell_dialog.dart';
 import '../../../core/services/premium_service.dart';
 
 import '../../../core/common/widgets/tv_focus_wrapper.dart';
@@ -419,9 +420,17 @@ class _LiveVideoPlayScreenState extends State<LiveVideoPlayScreen>
               onSettings: TvDevice.isTv
                   ? null
                   : () => _showSettingsDialog(context),
+              // The button stays visible for free users so they can find
+              // the feature; tapping it explains it's Premium.
               onPictureInPicture: _pipService.isAvailable
-                  ? () =>
-                        _pipService.enable(videoUrl: controller.currentPlayUrl)
+                  ? () {
+                      if (PremiumUpsell.check(
+                        feature: 'Picture-in-Picture',
+                        trialIncluded: true,
+                      )) {
+                        _pipService.enable(videoUrl: controller.currentPlayUrl);
+                      }
+                    }
                   : null,
               onNextChannel: () => _switchChannelBy(1),
               onPreviousChannel: () => _switchChannelBy(-1),

@@ -1,4 +1,5 @@
 import 'package:flutter_almightyflippa/core/services/premium_service.dart';
+import 'package:flutter_almightyflippa/core/services/revenuecat_service.dart';
 import 'package:get/get.dart';
 
 import '../models/download_item.dart';
@@ -56,7 +57,14 @@ class DownloadController extends GetxController {
     String? thumbnail,
   }) async {
     if (!PremiumService.to.check) {
-      Get.snackbar('Premium Required', 'Offline downloads are available for premium subscribers.');
+      final trial = Get.find<RevenueCatService>().availableFreeTrial;
+      Get.snackbar(
+        'Premium Required',
+        trial == null
+            ? 'Offline downloads are available for premium subscribers.'
+            : 'Offline downloads are a Premium feature. Start your '
+                  '${trial.label} from Profile › Subscription.',
+      );
       return;
     }
 

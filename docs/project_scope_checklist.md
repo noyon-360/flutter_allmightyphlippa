@@ -30,7 +30,7 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 | Casting & TV | 3 | 5 |
 | Personalisation | 3 | 5 |
 | Sync & cloud | 3 | 3 |
-| Monetisation | 2 | 5 |
+| Monetisation | 2 | 7 |
 | Platforms & delivery | 3 | 6 |
 | **Total** | **31** | **52** |
 
@@ -142,6 +142,8 @@ Items marked "backend" (sync, favourites, purchase verification, EPG, announceme
 | ⚠️ [ ] | Premium: ad-free playback | There are no ads at all. Ads not recommended yet (see section 5) |
 | ⚠️ [ ] | Premium: unlimited EPG | EPG is premium-only. Free users get no EPG instead of a limited one |
 | [ ] | Premium: theme customisation | Depends on the light theme / theme options |
+| [ ] | Premium: Picture-in-Picture (free trial included) + parental lock (paid plans only) | Client request 2026-11-07. **Code done 2026-11-07, needs a device check.** PiP: gated inside `PiPService` (`enable` + Android `armAutoEnter`, so the button, Android auto-PiP and iOS background PiP are all covered); auto-PiP is disarmed if premium ends mid-playback; the button stays visible and shows an upsell. Parental lock: `PremiumService.hasPaidPremium` (new `isFreeTrial` flag); the Profile entry shows an upsell for free + trial users. A parent who already set a PIN keeps the locks and can still change or remove the PIN after the plan ends, so lapsing never silently unhides kids' content. Upsell: `core/common/widgets/premium_upsell_dialog.dart`. Tests: `test/premium_upsell_test.dart`. |
+| [ ] | 7-day free trial | Moved into scope 2026-11-07 (client approved). **Code done 2026-11-07, not ticked until a sandbox purchase is tested.** Backend: RevenueCat `period_type: TRIAL` sets `subscriptionStatus: "trialing"` + history `isTrial`, trial-ending push in `scheduler.js`. App (phone + Android TV): `features/subscription/models/free_trial_offer.dart`, trial badge / "Start 7-Day Free Trial" / store terms on `subscription_screen.dart`, "Free Trial" banner, trial snackbar, history label, downloads prompt; iOS eligibility via `checkTrialOrIntroductoryPriceEligibility`. tvOS: `Core/Premium/FreeTrialOffer.swift`, `PlanCard`, `PaywallView`. Tests: `test/free_trial_offer_test.dart`. **Pending:** 7-day free trial offer on all 3 products in Play Console + App Store Connect, backend deploy, sandbox test. |
 
 ---
 
@@ -178,7 +180,7 @@ Not agreed yet. Move an item into scope once the client approves it.
 - [ ] **Easier setup:** guided playlist setup with clear errors + reminder to users with no playlist (52% never add one)
 - [ ] **Better live TV:** swipe to change channel, recent channels, now/next bar, one-tap favourites
 - [ ] **Sports hub:** today's games, live badges, game reminders
-- [ ] **More subscribers:** 7-day free trial, clearer upgrade prompts, more premium-only features
+- [ ] **More subscribers:** clearer upgrade prompts, more premium-only features (7-day free trial approved and moved to 2.5 on 2026-11-07)
 - Ads: **not recommended yet** (too few users)
 
 ---

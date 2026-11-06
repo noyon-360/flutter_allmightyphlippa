@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -61,6 +63,7 @@ class SubscriptionScreen extends StatelessWidget {
                 final user = profileController.userProfile.value;
                 return _buildCurrentPlanBanner(
                   context, user,
+                  isTrial: controller.isInFreeTrial,
                   // The store's live answer when this device has the
                   // entitlement; otherwise what the backend last heard.
                   willRenew:
@@ -73,6 +76,8 @@ class SubscriptionScreen extends StatelessWidget {
               Obx(() {
                 final isOfferingsLoading = controller.isOfferingsLoading.value;
                 final packages = controller.availablePackages;
+                // iOS trial eligibility lands just after the offerings.
+                controller.introEligibility.length;
 
                 if (isOfferingsLoading) {
                   return Center(
@@ -137,8 +142,14 @@ class SubscriptionScreen extends StatelessWidget {
   /// Always shows the user's current LABBY membership status — Free,
   /// active Premium, or expired/canceled Premium — so a user never has to
   /// infer their plan from side effects like whether a watermark appears.
-  Widget _buildCurrentPlanBanner(BuildContext context, UserModel? user, {bool? willRenew}) {
+  Widget _buildCurrentPlanBanner(
+    BuildContext context,
+    UserModel? user, {
+    bool? willRenew,
+    bool isTrial = false,
+  }) {
     final isActive = user?.hasActiveSubscription ?? false;
+    final onTrial = isActive && isTrial;
     // The backend resets plan to "free" on expiry, so an expiry date is the
     // reliable sign that this user had a subscription at some point.
     final wasPremium = user?.subscriptionExpiresAt != null;
@@ -152,7 +163,7 @@ class SubscriptionScreen extends StatelessWidget {
 
     if (isActive) {
       planName = _planNameFromProductId(user?.subscriptionProductId);
-      statusLabel = 'Active';
+      statusLabel = onTrial ? 'Free Trial' : 'Active';
       statusColor = AppColors.successGreen;
       gradientColors = [
         AppColors.red.withAlpha((0.85 * 255).toInt()),
@@ -222,7 +233,7 @@ class SubscriptionScreen extends StatelessWidget {
             const SizedBox(height: 8),
             if (startDate != null && isActive)
               Text(
-                'Started: ${_fmtDate(startDate)}',
+                '${onTrial ? 'Trial started' : 'Started'}: ${_fmtDate(startDate)}',
                 style: TextStyle(
                   color: onBanner.withAlpha((0.8 * 255).toInt()),
                   fontSize: 13,
@@ -233,6 +244,8 @@ class SubscriptionScreen extends StatelessWidget {
               Text(
                 '${!isActive
                     ? 'Expired'
+                    : onTrial
+                    ? 'Trial ends'
                     : willRenew == false
                     ? 'Expires'
                     : 'Renews'}: ${_fmtDate(expiresAt)}',
@@ -242,6 +255,21 @@ class SubscriptionScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ],
+          if (onTrial && expiresAt != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              willRenew == false
+                  ? 'You\'re on your free trial. Auto-renew is off, so '
+                        'Premium ends on ${_fmtDate(expiresAt)}.'
+                  : 'You\'re on your free trial. Your plan starts on '
+                        '${_fmtDate(expiresAt)} unless you cancel before then.',
+              style: TextStyle(
+                color: onBanner,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ],
       ),
@@ -284,6 +312,7 @@ class SubscriptionScreen extends StatelessWidget {
     final isSelected = controller.selectedProductId.value == productId;
     final isCurrentPlan = controller.isCurrentPlan(productId);
     final isPurchasing = controller.isLoading.value;
+    final trial = isCurrentPlan ? null : controller.freeTrialFor(package);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -342,6 +371,33 @@ class SubscriptionScreen extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (trial != null) ...[
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.successGreen.withAlpha(
+                              (0.18 * 255).toInt(),
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.successGreen),
+                          ),
+                          child: Text(
+                            trial.label.toUpperCase(),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.successGreen,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const Spacer(),
                     Container(
                       width: 24,
@@ -395,6 +451,18 @@ class SubscriptionScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (trial != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Free for ${trial.durationText}, then '
+                        '${package.storeProduct.priceString}${_periodLabel(productId)}',
+                        style: const TextStyle(
+                          color: AppColors.successGreen,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     Divider(color: context.palette.textPrimary.withAlpha((0.2 * 255).toInt())),
                     const SizedBox(height: 16),
@@ -409,6 +477,13 @@ class SubscriptionScreen extends StatelessWidget {
                     _buildFeatureRow(context, 'No device limit'),
                     const SizedBox(height: 12),
                     _buildFeatureRow(context, 'Offline playback'),
+                    const SizedBox(height: 12),
+                    _buildFeatureRow(context, 'Picture-in-Picture'),
+                    const SizedBox(height: 12),
+                    _buildFeatureRow(
+                      context,
+                      'Parental lock (paid plans, not the free trial)',
+                    ),
                   ],
                 ),
               ),
@@ -445,8 +520,12 @@ class SubscriptionScreen extends StatelessWidget {
 
       final bool disabled =
           isCurrentPlan || isPurchasing || selectedPackage == null;
+      controller.introEligibility.length;
+      final trial = selectedPackage == null || isCurrentPlan
+          ? null
+          : controller.freeTrialFor(selectedPackage);
 
-      return SizedBox(
+      final button = SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           onPressed: disabled
@@ -472,7 +551,9 @@ class SubscriptionScreen extends StatelessWidget {
                   ),
                 )
               : Text(
-                  isCurrentPlan ? 'Current Plan' : 'Subscribe',
+                  isCurrentPlan
+                      ? 'Current Plan'
+                      : trial?.buttonLabel ?? 'Subscribe',
                   style: TextStyle(
                     color: disabled
                         ? context.palette.textPrimary.withValues(alpha: 0.38)
@@ -482,6 +563,25 @@ class SubscriptionScreen extends StatelessWidget {
                   ),
                 ),
         ),
+      );
+
+      if (trial == null) return button;
+      // App Store / Play policy: state the trial length, the price after it
+      // and how to avoid being charged, right next to the button.
+      return Column(
+        children: [
+          button,
+          const SizedBox(height: 10),
+          Text(
+            '${trial.termsText('${selectedPackage!.storeProduct.priceString}${_periodLabel(selectedId)}')} '
+            '${Platform.isIOS ? 'Manage it in your App Store subscriptions.' : 'Manage it in your Google Play subscriptions.'}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: context.palette.textPrimary.withValues(alpha: 0.7),
+              fontSize: 13,
+            ),
+          ),
+        ],
       );
     });
   }

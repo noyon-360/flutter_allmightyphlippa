@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/services/revenuecat_service.dart';
 import '../../../core/utils/tv_device.dart';
 import '../../profile/controller/profile_controller.dart';
+import '../models/free_trial_offer.dart';
 import '../models/subscription_history_model.dart';
 import '../repositories/subscription_repo.dart';
 
@@ -41,6 +42,21 @@ class SubscriptionController extends GetxController {
   bool? get willRenew => _service.activeEntitlement?.willRenew;
 
   List<Package> get availablePackages => _service.availablePackages;
+  RxMap<String, IntroEligibilityStatus> get introEligibility =>
+      _service.introEligibility;
+
+  /// The free trial this user can get on [package], or null.
+  FreeTrialOffer? freeTrialFor(Package package) =>
+      _service.freeTrialFor(package);
+
+  /// In a free trial, by the store (instant) or the backend (other devices).
+  bool get isInFreeTrial {
+    if (_service.isInFreeTrial) return true;
+    final user = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>().userProfile.value
+        : null;
+    return user?.isOnFreeTrial ?? false;
+  }
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
   @override
@@ -57,10 +73,23 @@ class SubscriptionController extends GetxController {
   /// Subscribe to a [Package] from the RevenueCat offering.
   Future<void> subscribe(Package package) async {
     isLoading.value = true;
+    // Read before buying: once the trial is used, the offer disappears.
+    final trial = freeTrialFor(package);
     try {
       final outcome = await _service.purchasePackage(package);
       DPrint.log("Subscription button -> $outcome");
       switch (outcome) {
+        case PurchaseOutcome.success when trial != null || _service.isInFreeTrial:
+          Get.snackbar(
+            'Your free trial has started 🎉',
+            'Enjoy ${trial?.label ?? 'your free trial'} of Premium. '
+                'You can cancel anytime before it ends and you won\'t be charged.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+          await loadPurchaseHistory();
         case PurchaseOutcome.success:
           Get.snackbar(
             'Subscribed',

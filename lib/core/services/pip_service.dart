@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:floating/floating.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+
+import 'premium_service.dart';
 
 /// Unified Picture-in-Picture service for Android and iOS.
 ///
@@ -93,6 +96,8 @@ class PiPService {
   /// [videoUrl] and [positionSeconds] are used on iOS only when no
   /// AVPlayerLayer is found in the view hierarchy (i.e. media_kit content).
   Future<void> enable({String? videoUrl, double? positionSeconds}) async {
+    // Also covers iOS entering PiP when the app goes to the background.
+    if (!_premium) return;
     if (Platform.isAndroid) {
       if (_floating == null || !_androidAvailable) return;
       try {
@@ -121,6 +126,7 @@ class PiPService {
   /// session, not shrink the app into a window nobody can see.
   Future<void> armAutoEnter() async {
     if (!Platform.isAndroid || _floating == null || !_androidAvailable) return;
+    if (!_premium) return;
     _autoEnterOwner = this;
     try {
       await _androidChannel.invokeMethod<void>('setAutoEnter', {
@@ -130,6 +136,13 @@ class PiPService {
       debugPrint('PiPService Android armAutoEnter: $e');
     }
   }
+
+  /// PiP is Premium (free trial included).
+  static bool get _premium =>
+      Get.isRegistered<PremiumService>() && PremiumService.to.check;
+
+  /// Premium ended while a player had auto-PiP armed.
+  static void disarmAll() => _autoEnterOwner?.disarmAutoEnter();
 
   Future<void> disarmAutoEnter() async {
     if (!Platform.isAndroid || !identical(_autoEnterOwner, this)) return;

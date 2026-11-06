@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_almightyflippa/core/services/airplay_service.dart';
 import 'package:flutter_almightyflippa/core/utils/tv_device.dart';
+import 'package:flutter_almightyflippa/core/common/widgets/premium_upsell_dialog.dart';
 import 'package:flutter_almightyflippa/core/services/premium_service.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/cast_airplay_buttons.dart';
 import 'package:flutter_almightyflippa/core/common/widgets/tv_focus_wrapper.dart';
@@ -536,11 +537,22 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
                                       // ),
                                       if (_pipService.isAvailable)
                                         TvFocusWrapper(
-                                          onTap: () => _pipService.enable(
-                                            videoUrl: controller.currentPlayUrl,
-                                            positionSeconds: controller
-                                                .currentPositionSeconds,
-                                          ),
+                                          // Visible to free users too;
+                                          // tapping explains it's Premium.
+                                          onTap: () {
+                                            if (!PremiumUpsell.check(
+                                              feature: 'Picture-in-Picture',
+                                              trialIncluded: true,
+                                            )) {
+                                              return;
+                                            }
+                                            _pipService.enable(
+                                              videoUrl:
+                                                  controller.currentPlayUrl,
+                                              positionSeconds: controller
+                                                  .currentPositionSeconds,
+                                            );
+                                          },
                                           child: const Padding(
                                             padding: EdgeInsets.all(8.0),
                                             child: Icon(

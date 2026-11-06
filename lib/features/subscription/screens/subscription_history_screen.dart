@@ -116,7 +116,7 @@ class SubscriptionHistoryScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.planLabel,
+                  item.isTrial ? '${item.planLabel} · Free trial' : item.planLabel,
                   style: TextStyle(
                     color: context.palette.textPrimary,
                     fontSize: 16,

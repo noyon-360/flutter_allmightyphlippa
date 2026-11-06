@@ -71,6 +71,11 @@ class UserModel {
         (expiresAt == null || expiresAt.isAfter(DateTime.now()));
   }
 
+  /// In a store free trial. The backend sets "trialing" from RevenueCat's
+  /// period_type and switches to "active" when the first payment goes through.
+  bool get isOnFreeTrial =>
+      subscriptionStatus == 'trialing' && hasActiveSubscription;
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       avatar: json['avatar'] != null ? Avatar.fromJson(json['avatar']) : null,

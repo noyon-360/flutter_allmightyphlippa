@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
+import '../../features/auth/models/user_response_model.dart';
 import '../../features/profile/controller/profile_controller.dart';
+import 'pip_service.dart';
 import 'revenuecat_service.dart';
 
 /// Single source of truth for premium status.
@@ -27,7 +29,15 @@ class PremiumService extends GetxService {
   late final RevenueCatService _rc;
 
   /// Reactive premium flag. Observe with Obx or .value in GetX workers.
+  /// True during a free trial too.
   final isPremium = false.obs;
+
+  /// Premium, but still in the store's free trial.
+  final isFreeTrial = false.obs;
+
+  /// Premium on a paid period. Some features (parental lock) are for paying
+  /// subscribers only and stay closed during the free trial.
+  bool get hasPaidPremium => isPremium.value && !isFreeTrial.value;
 
   @override
   void onInit() {
@@ -44,8 +54,20 @@ class PremiumService extends GetxService {
   void refresh() => _evaluate();
 
   void _evaluate() {
-    isPremium.value = _fromRevenueCat() || _fromBackend();
+    final fromStore = _fromRevenueCat();
+    isPremium.value = fromStore || _fromBackend();
+    // This device's store entitlement is the freshest answer (the backend
+    // hears about the trial ending through a webhook); otherwise use the
+    // backend, e.g. for a trial started on another device.
+    isFreeTrial.value = isPremium.value &&
+        (fromStore ? _rc.isInFreeTrial : _backendUser()?.isOnFreeTrial ?? false);
+    // Losing premium mid-playback must not leave auto-PiP armed.
+    if (!isPremium.value) PiPService.disarmAll();
   }
+
+  UserModel? _backendUser() => Get.isRegistered<ProfileController>()
+      ? Get.find<ProfileController>().userProfile.value
+      : null;
 
   bool _fromRevenueCat() => _rc.hasActiveSubscription;
 
