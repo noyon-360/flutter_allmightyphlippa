@@ -15,6 +15,7 @@ import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 import '/core/utils/tv_device.dart';
 import '/features/auth/widgets/tv_qr_login_panel.dart';
+import '/features/auth/widgets/login_welcome_intro.dart';
 import 'package:flutter_almightyflippa/core/config/app_palette.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -51,15 +52,19 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
                       if (!isTv) Gap.h40,
-                      Text(
-                        isTv ? "Sign in with email" : "Login To Your Account",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: context.palette.textPrimary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      // TV shows the intro once above both columns instead.
+                      if (isTv)
+                        Text(
+                          "Sign in with email",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: context.palette.textPrimary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        )
+                      else
+                        const LoginWelcomeIntro(),
 
                       Gap.h12,
 
@@ -208,37 +213,61 @@ class LoginScreen extends StatelessWidget {
     // TV: typing a password with the remote is painful, so the QR sign-in
     // sits next to the form and gets focus first.
     return AppScaffold(
-      body: Row(
+      body: Column(
         children: [
-          const Expanded(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(48, 24, 48, 0),
             child: Center(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: TvQrLoginPanel(),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: const LoginWelcomeIntro(compact: true),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
-            child: Column(
+          Expanded(
+            child: Row(
               children: [
-                Expanded(
-                  child: VerticalDivider(color: context.palette.textSecondary),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    'OR',
-                    style: TextStyle(color: context.palette.textSecondary),
+                const Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: TvQrLoginPanel(),
+                    ),
                   ),
                 ),
-                Expanded(
-                  child: VerticalDivider(color: context.palette.textSecondary),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 60,
+                  ),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: VerticalDivider(
+                          color: context.palette.textSecondary,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: context.palette.textSecondary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: VerticalDivider(
+                          color: context.palette.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                Expanded(child: form),
               ],
             ),
           ),
-          Expanded(child: form),
         ],
       ),
     );
