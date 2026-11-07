@@ -14,6 +14,9 @@ import '../../../core/common/widgets/tv_focus_wrapper.dart';
 import '../../../core/utils/tv_device.dart';
 import '../../../core/services/watch_history_service.dart';
 import '../../history/screens/history_screen.dart';
+import '../../history/services/episode_series_store.dart';
+import '../../history/utils/open_watch_history_item.dart';
+import '../utils/continue_watching.dart';
 import '../../notifications/widgets/notification_bell.dart';
 import '../../playlist/models/server_request_model.dart';
 import 'package:flutter_almightyflippa/core/constants/assest_const.dart'
@@ -53,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildHeader(),
 
+              _buildContinueWatching(),
               const SizedBox(height: 20),
               _buildSectionHeader(context, 'Popular Movies', () {
                 Get.find<BottomNavController>().changeIndex(2);
@@ -156,6 +160,107 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Hidden when there's nothing to resume. Reads the shared history list,
+  /// so progress saved while playing shows up as soon as the player closes.
+  Widget _buildContinueWatching() {
+    return Obx(() {
+      final entries = continueWatchingEntries(
+        watchHistoryService.watchHistory,
+        EpisodeSeriesStore.seriesIdFor,
+      );
+      if (entries.isEmpty) return const SizedBox.shrink();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          _buildSectionHeader(context, 'Continue Watching', () {
+            Get.to(() => const HistoryScreen());
+          }),
+          SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: entries.length,
+              itemBuilder: (context, index) =>
+                  _buildContinueWatchingCard(entries[index]),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildContinueWatchingCard(ContinueWatchingEntry entry) {
+    final item = entry.item;
+    final season = item.seasonNumber;
+    final episode = item.episodeNumber;
+    final subtitle = !entry.isEpisode
+        ? 'Movie'
+        : (season != null && episode != null)
+        ? 'S$season E$episode'
+        : 'Series';
+
+    return TvFocusWrapper(
+      onTap: () => openWatchHistoryItem(item),
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    item.thumbnail.isNotEmpty
+                        ? Image.network(
+                            item.thumbnail,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _buildPlaceholder(),
+                          )
+                        : _buildPlaceholder(),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: LinearProgressIndicator(
+                        value: entry.progress,
+                        minHeight: 4,
+                        backgroundColor: Colors.black54,
+                        color: AppColors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.name ?? '',
+              style: TextStyle(
+                color: context.palette.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: context.palette.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

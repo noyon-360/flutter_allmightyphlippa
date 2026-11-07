@@ -13,6 +13,7 @@ import '../../series/controllers/series_controller.dart';
 import '../../series/models/single_series_response_model.dart';
 import '../../../core/services/auth_storage_service.dart';
 import '../../../core/services/watch_history_service.dart';
+import '../../history/services/episode_series_store.dart';
 import '../repositories/video_status_repo.dart';
 import '../../playlist/services/active_playlist_service.dart';
 import '../../watch_later/controllers/watch_later_controller.dart';
@@ -274,6 +275,7 @@ class VideoPlayController extends GetxController {
     required int streamId,
     bool autoPlay = true,
     String? localPath,
+    String? resumeEpisodeId,
   }) async {
     // Reset previous state
     isLoading.value = true;
@@ -300,7 +302,11 @@ class VideoPlayController extends GetxController {
       if (type == ServerType.movies) {
         await _loadMovie(streamId, autoPlay: autoPlay, localPath: localPath);
       } else if (type == ServerType.series) {
-        await _loadSeries(streamId, autoPlay: autoPlay);
+        await _loadSeries(
+          streamId,
+          autoPlay: autoPlay,
+          resumeEpisodeId: resumeEpisodeId,
+        );
       }
     } finally {
       isLoading.value = false;
@@ -373,7 +379,11 @@ class VideoPlayController extends GetxController {
     selectedSeason.value = seasonKey;
   }
 
-  Future<void> _loadSeries(int streamId, {bool autoPlay = true}) async {
+  Future<void> _loadSeries(
+    int streamId, {
+    bool autoPlay = true,
+    String? resumeEpisodeId,
+  }) async {
     // Clear the previously loaded series' detail state so the UI can't show
     // stale title/description/episodes while the new series' data is in
     // flight, or indefinitely if this fetch fails.
@@ -404,6 +414,21 @@ class VideoPlayController extends GetxController {
       selectedSeason.value = seasonKeys.first;
     }
 
+    // Continue Watching: open the season holding that episode and play it.
+    // The saved position is picked up by _initializePlayer.
+    if (resumeEpisodeId != null && episodesMap != null) {
+      for (final key in seasonKeys) {
+        final episode = episodesMap[key]?.firstWhereOrNull(
+          (e) => e.id == resumeEpisodeId,
+        );
+        if (episode != null) {
+          selectedSeason.value = key;
+          playEpisode(episode);
+          return;
+        }
+      }
+    }
+
     if (!autoPlay) return;
 
     if (episodesMap != null && seasonKeys.isNotEmpty) {
@@ -432,6 +457,15 @@ class VideoPlayController extends GetxController {
     try {
       _currentVideoId = episode.id.toString();
       _currentVideoType = 'series';
+      final seriesId = _seriesStreamId;
+      if (episode.id != null && seriesId != null) {
+        unawaited(
+          EpisodeSeriesStore.remember(
+            episodeId: episode.id!,
+            seriesId: seriesId,
+          ),
+        );
+      }
 
       // Play from local file if downloaded
       if (Get.isRegistered<DownloadController>()) {

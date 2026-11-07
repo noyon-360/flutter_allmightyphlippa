@@ -4,6 +4,7 @@ import '../../playlist/models/server_request_model.dart';
 import '../../video/models/watch_history_model.dart';
 import '../../video/screens/live_video_play_screen.dart';
 import '../../video/screens/video_play_screen.dart';
+import '../services/episode_series_store.dart';
 
 /// Opens the player for a watch history entry. Playback resumes from the saved
 /// position, which the player loads itself.
@@ -21,6 +22,22 @@ void openWatchHistoryItem(WatchHistoryModel item) {
       ),
     );
     return;
+  }
+
+  // A series entry's videoId is the episode id. If this device knows its
+  // series, open the show at that episode.
+  if (videoType == 'series') {
+    final seriesId = EpisodeSeriesStore.seriesIdFor(item.videoId);
+    if (seriesId != null) {
+      Get.to(
+        () => VideoPlayScreen(
+          streamId: seriesId,
+          type: ServerType.series,
+          resumeEpisodeId: item.videoId,
+        ),
+      );
+      return;
+    }
   }
 
   final type = videoType == 'series' ? ServerType.series : ServerType.movies;

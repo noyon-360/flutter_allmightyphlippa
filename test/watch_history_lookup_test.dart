@@ -54,8 +54,8 @@ void main() {
   late WatchHistoryService service;
 
   setUp(() async {
-    // 25 entries: the service only keeps the first 10 loaded.
-    Get.put<VideoStatusRepo>(_FakeRepo(List.generate(25, entry)));
+    // 50 entries: the service only keeps the first 30 loaded.
+    Get.put<VideoStatusRepo>(_FakeRepo(List.generate(50, entry)));
     service = Get.put(WatchHistoryService());
     await service.getWatchHistory();
   });
@@ -63,7 +63,7 @@ void main() {
   tearDown(Get.reset);
 
   test('finds a loaded entry by its record id, not its stream id', () async {
-    expect(service.watchHistory, hasLength(10));
+    expect(service.watchHistory, hasLength(30));
 
     final found = await service.findByRecordId('record3');
 
@@ -72,9 +72,9 @@ void main() {
   });
 
   test('finds an entry older than the loaded page', () async {
-    final found = await service.findByRecordId('record20');
+    final found = await service.findByRecordId('record40');
 
-    expect(found?.videoId, '20');
+    expect(found?.videoId, '40');
   });
 
   test('returns null for an entry that no longer exists', () async {

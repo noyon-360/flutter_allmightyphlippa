@@ -31,7 +31,9 @@ class WatchHistoryService extends GetxService {
 
   Future<void> getWatchHistory() async {
     _safeMutate(() => isLoading.value = true);
-    final result = await _videoStatusRepo.getWatchHistory();
+    // 30, not the repo default of 10: Home's Continue Watching row filters
+    // out live and finished entries, so it needs more to choose from.
+    final result = await _videoStatusRepo.getWatchHistory(limit: 30);
     result.fold(
       (failure) {
         _safeMutate(() => isLoading.value = false);

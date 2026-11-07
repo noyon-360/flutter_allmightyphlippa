@@ -28,12 +28,16 @@ class VideoPlayScreen extends StatefulWidget {
   final ServerType type;
   final bool autoPlay;
   final String? localPath;
+
+  /// Series only: play this episode (Continue Watching) instead of the first.
+  final String? resumeEpisodeId;
   const VideoPlayScreen({
     super.key,
     required this.streamId,
     required this.type,
     this.autoPlay = true,
     this.localPath,
+    this.resumeEpisodeId,
   });
 
   @override
@@ -87,6 +91,7 @@ class _VideoPlayScreenState extends State<VideoPlayScreen>
         streamId: widget.streamId,
         autoPlay: widget.autoPlay,
         localPath: widget.localPath,
+        resumeEpisodeId: widget.resumeEpisodeId,
       );
     });
   }
